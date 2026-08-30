@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f7f3ec">
+<title>Pastelhayaller Sahaf</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="deneme-serit" class="serit" hidden>
+  Deneme modu — veriler sadece bu cihazda saklanıyor.
+</div>
+
+<!-- GİRİŞ -->
+<section id="ekran-giris" class="ekran" hidden>
+  <div class="giris-kutu">
+    <h1 class="marka">Pastelhayaller<span>Sahaf</span></h1>
+    <form id="giris-form" novalidate>
+      <label for="giris-eposta">E-posta</label>
+      <input id="giris-eposta" type="email" autocomplete="username" required>
+      <label for="giris-sifre">Şifre</label>
+      <input id="giris-sifre" type="password" autocomplete="current-password" required>
+      <button class="btn birincil" type="submit">Giriş yap</button>
+      <p id="giris-hata" class="hata" hidden></p>
+    </form>
+  </div>
+</section>
+
+<!-- ARA -->
+<section id="ekran-ara" class="ekran" hidden>
+  <header class="baslik">
+    <h1 class="marka kucuk">Pastelhayaller<span>Sahaf</span></h1>
+    <button id="btn-cikis" class="btn sade" type="button" hidden>Çıkış</button>
+  </header>
+
+  <div class="arama-alani">
+    <input id="arama" type="search" placeholder="Kitap adı veya yazar ara…"
+           autocomplete="off" autocapitalize="none" spellcheck="false">
+  </div>
+
+  <p id="ara-durum" class="durum"></p>
+
+  <div id="sonuclar" class="liste"></div>
+
+  <div id="bos-sonuc" class="bos" hidden>
+    <p>Bu isimde kitap kayıtlı değil.</p>
+    <button id="btn-bunu-ekle" class="btn birincil" type="button">Bunu ekle</button>
+  </div>
+
+  <button id="btn-ekle-ac" class="fab" type="button" aria-label="Yeni kitap ekle">+</button>
+</section>
+
+<!-- EKLE -->
+<section id="ekran-ekle" class="ekran" hidden>
+  <header class="baslik">
+    <button class="btn sade" type="button" data-geri>‹ Geri</button>
+    <h2>Kitap ekle</h2>
+  </header>
+
+  <form id="ekle-form" class="form" novalidate>
+    <label for="ekle-ad">Kitap adı *</label>
+    <input id="ekle-ad" name="ad" required autocomplete="off">
+
+    <label for="ekle-yazar">Yazar</label>
+    <input id="ekle-yazar" name="yazar" autocomplete="off">
+
+    <label for="ekle-raf">Raf *</label>
+    <input id="ekle-raf" name="raf" list="raf-listesi" required autocomplete="off"
+           autocapitalize="characters">
+    <datalist id="raf-listesi"></datalist>
+    <p class="ipucu">Raf, kaydettikten sonra silinmez — aynı rafa arka arkaya kitap girebilirsin.</p>
+
+    <label for="ekle-fiyat">Fiyat (₺)</label>
+    <input id="ekle-fiyat" name="fiyat" type="number" inputmode="decimal" step="0.01" min="0">
+
+    <label for="ekle-notlar">Not</label>
+    <input id="ekle-notlar" name="notlar" autocomplete="off" placeholder="örn. kapağı yıpranmış">
+
+    <button class="btn birincil" type="submit">Kaydet</button>
+    <p id="ekle-hata" class="hata" hidden></p>
+  </form>
+</section>
+
+<!-- DÜZENLE -->
+<section id="ekran-duzenle" class="ekran" hidden>
+  <header class="baslik">
+    <button class="btn sade" type="button" data-geri>‹ Geri</button>
+    <h2>Kitabı düzenle</h2>
+  </header>
+
+  <form id="duzenle-form" class="form" novalidate>
+    <label for="duz-ad">Kitap adı *</label>
+    <input id="duz-ad" name="ad" required autocomplete="off">
+
+    <label for="duz-yazar">Yazar</label>
+    <input id="duz-yazar" name="yazar" autocomplete="off">
+
+    <label for="duz-raf">Raf *</label>
+    <input id="duz-raf" name="raf" list="raf-listesi" required autocomplete="off"
+           autocapitalize="characters">
+
+    <label for="duz-fiyat">Fiyat (₺)</label>
+    <input id="duz-fiyat" name="fiyat" type="number" inputmode="decimal" step="0.01" min="0">
+
+    <label for="duz-notlar">Not</label>
+    <input id="duz-notlar" name="notlar" autocomplete="off">
+
+    <button class="btn birincil" type="submit">Kaydet</button>
+    <button id="btn-satildi" class="btn tehlike" type="button">Satıldı — sil</button>
+    <p id="duzenle-hata" class="hata" hidden></p>
+  </form>
+</section>
+
+<!-- ONAY -->
+<div id="onay" class="perde" hidden>
+  <div class="kutu">
+    <p id="onay-metin"></p>
+    <div class="kutu-butonlar">
+      <button id="onay-vazgec" class="btn sade" type="button">Vazgeç</button>
+      <button id="onay-evet" class="btn tehlike" type="button">Evet, sil</button>
+    </div>
+  </div>
+</div>
+
+<div id="bildirim" class="bildirim" hidden>
+  <span id="bildirim-metin"></span>
+  <button id="bildirim-geri" class="btn sade kucuk" type="button" hidden>Geri al</button>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
