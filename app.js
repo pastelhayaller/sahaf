@@ -5,11 +5,39 @@ const ekranlar = ['giris', 'ara', 'ekle', 'duzenle'];
 let seciliKitap = null;
 let sonSilinen = null;
 let bildirimZaman = null;
+let bildirimSayac = null;
 
-function ekranGoster(ad) {
+function ekranCiz(ad) {
   ekranlar.forEach(e => { $('#ekran-' + e).hidden = (e !== ad); });
   window.scrollTo(0, 0);
 }
+
+// --- Gezinme -------------------------------------------------------------
+// Her ekran ve onay penceresi bir tarayici gecmisi girdisidir; boylece
+// telefonun geri tusu siteden cikmak yerine bir adim geri alir.
+function durumUygula(d) {
+  ekranCiz(d.ekran);
+  $('#onay').hidden = !d.onay;
+}
+
+function git(ekran) {
+  const d = { ekran, onay: false };
+  history.pushState(d, '');
+  durumUygula(d);
+}
+
+// Gecmise yeni girdi eklemeden ekran degistirir (acilis, giris, cikis).
+function koku(ekran) {
+  const d = { ekran, onay: false };
+  history.replaceState(d, '');
+  durumUygula(d);
+}
+
+window.addEventListener('popstate', async (ev) => {
+  const d = ev.state || { ekran: 'ara', onay: false };
+  durumUygula(d);
+  if (d.ekran === 'ara' && !d.onay) await aramayiCalistir();
+});
 
 function paraYaz(f) {
   if (f == null || f === '') return '';
@@ -18,12 +46,31 @@ function paraYaz(f) {
 
 function bildir(metin, geriAlFn) {
   clearTimeout(bildirimZaman);
+  clearInterval(bildirimSayac);
   $('#bildirim-metin').textContent = metin;
   const btn = $('#bildirim-geri');
   btn.hidden = !geriAlFn;
-  btn.onclick = geriAlFn ? () => { $('#bildirim').hidden = true; geriAlFn(); } : null;
+  btn.onclick = geriAlFn ? () => { bildirimKapat(); geriAlFn(); } : null;
   $('#bildirim').hidden = false;
-  bildirimZaman = setTimeout(() => { $('#bildirim').hidden = true; }, geriAlFn ? 15000 : 2200);
+
+  if (!geriAlFn) {
+    bildirimZaman = setTimeout(bildirimKapat, 2200);
+    return;
+  }
+  // Geri alma penceresi sayili gorunur: "Geri al (15sn)"
+  let kalan = 15;
+  btn.textContent = `Geri al (${kalan}sn)`;
+  bildirimSayac = setInterval(() => {
+    kalan -= 1;
+    if (kalan <= 0) bildirimKapat();
+    else btn.textContent = `Geri al (${kalan}sn)`;
+  }, 1000);
+}
+
+function bildirimKapat() {
+  clearTimeout(bildirimZaman);
+  clearInterval(bildirimSayac);
+  $('#bildirim').hidden = true;
 }
 
 function hataGoster(secici, e) {
@@ -103,7 +150,7 @@ function ekleAc(onDolguAd = '') {
   $('#ekle-fiyat').value = '';
   $('#ekle-notlar').value = '';
   raflariTazele();
-  ekranGoster('ekle');
+  git('ekle');
   $('#ekle-ad').focus();
 }
 
@@ -142,7 +189,7 @@ function duzenleAc(k) {
   $('#duz-fiyat').value = k.fiyat == null ? '' : k.fiyat;
   $('#duz-notlar').value = k.notlar || '';
   raflariTazele();
-  ekranGoster('duzenle');
+  git('duzenle');
 }
 
 $('#duzenle-form').addEventListener('submit', async (ev) => {
@@ -157,8 +204,7 @@ $('#duzenle-form').addEventListener('submit', async (ev) => {
       notlar: $('#duz-notlar').value,
     });
     bildir('✓ Güncellendi');
-    ekranGoster('ara');
-    await aramayiCalistir();
+    history.back();
   } catch (e) {
     hataGoster('#duzenle-hata', e);
   }
@@ -167,9 +213,12 @@ $('#duzenle-form').addEventListener('submit', async (ev) => {
 // --- Silme + geri alma ---------------------------------------------------
 function onaySor(metin, evetFn) {
   $('#onay-metin').textContent = metin;
-  $('#onay').hidden = false;
-  $('#onay-evet').onclick = () => { $('#onay').hidden = true; evetFn(); };
-  $('#onay-vazgec').onclick = () => { $('#onay').hidden = true; };
+  const d = { ekran: (history.state && history.state.ekran) || 'duzenle', onay: true };
+  history.pushState(d, '');
+  durumUygula(d);
+  // Geri tusu de "vazgec" ile ayni sey: pencereyi kapatir, silmez.
+  $('#onay-evet').onclick = () => { history.back(); evetFn(); };
+  $('#onay-vazgec').onclick = () => { history.back(); };
 }
 
 $('#btn-satildi').addEventListener('click', () => {
@@ -179,8 +228,7 @@ $('#btn-satildi').addEventListener('click', () => {
     try {
       await db.sil(yedek.id);
       sonSilinen = yedek;
-      ekranGoster('ara');
-      await aramayiCalistir();
+      history.back();
       bildir('Kitap silindi', async () => {
         try {
           await db.geriKoy(sonSilinen);
@@ -208,7 +256,7 @@ $('#giris-form').addEventListener('submit', async (ev) => {
 
 $('#btn-cikis').addEventListener('click', async () => {
   await db.cikisYap();
-  ekranGoster('giris');
+  koku('giris');
 });
 
 // --- Bağlantılar ---------------------------------------------------------
@@ -219,15 +267,14 @@ $('#arama').addEventListener('input', () => {
 $('#btn-ekle-ac').addEventListener('click', () => ekleAc());
 $('#btn-bunu-ekle').addEventListener('click', () => ekleAc($('#arama').value.trim()));
 document.querySelectorAll('[data-geri]').forEach(function (b) {
-  b.addEventListener('click', async function () {
-    ekranGoster('ara');
-    await aramayiCalistir();
+  b.addEventListener('click', function () {
+    history.back();
   });
 });
 
 // --- Açılış --------------------------------------------------------------
 async function araEkraniAc() {
-  ekranGoster('ara');
+  koku('ara');
   $('#btn-cikis').hidden = db.denemeModu;
   await raflariTazele();
   await aramayiCalistir();
@@ -237,5 +284,5 @@ async function araEkraniAc() {
 (async function baslat() {
   $('#deneme-serit').hidden = !db.denemeModu;
   if (await db.oturumVarMi()) await araEkraniAc();
-  else ekranGoster('giris');
+  else koku('giris');
 })();
