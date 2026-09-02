@@ -238,3 +238,80 @@ body::before {
 @media (prefers-reduced-motion: reduce) {
   *, .ekran:not([hidden]), .perde, .perde .kutu { animation: none !important; transition: none !important; }
 }
+
+/* --- Uyarı şeridi (yama eksik) ---------------------------------------- */
+.serit.uyari { background: #f6e2b8; color: #5d4614; }
+.serit.uyari code { font-size: 12px; background: rgba(0,0,0,.06); padding: 1px 5px; border-radius: 4px; }
+
+/* --- Ziyaretçi girişi -------------------------------------------------- */
+.ayirac {
+  display: flex; align-items: center; gap: 12px;
+  margin: 24px 0 16px; color: var(--soluk); font-size: 12px;
+  letter-spacing: .12em; text-transform: uppercase;
+}
+.ayirac::before, .ayirac::after { content: ''; flex: 1; height: 1px; background: var(--cizgi-ince); }
+.btn.ikincil {
+  width: 100%; background: transparent; color: var(--vurgu);
+  border-color: var(--vurgu-acik); background-color: rgba(204,234,207,.28);
+}
+.btn.ikincil:active { background-color: var(--vurgu-acik); transform: translateY(1px); }
+.ipucu.ortala { text-align: center; margin-top: 12px; }
+
+/* Rol rozeti — personelin bir bakışta hangi hesapta olduğunu görmesi için */
+.rozet {
+  position: absolute; left: -2px; top: 6px;
+  background: var(--vurgu-acik); color: var(--vurgu-koyu);
+  font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  padding: 4px 10px; border-radius: var(--r-hap);
+}
+
+/* --- Sıralama çubuğu ---------------------------------------------------- */
+.arac-cubugu { display: flex; align-items: center; gap: 10px; margin: 10px 0 2px; }
+.arac-cubugu label {
+  font-size: 11px; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--soluk); flex: 0 0 auto;
+}
+#siralama {
+  flex: 1 1 auto; min-width: 0; height: 42px; font: inherit; font-size: 15px;
+  color: var(--metin); padding: 0 38px 0 14px;
+  border: 1px solid var(--cizgi-ince); border-radius: var(--r-hap);
+  background-color: var(--kart); box-shadow: var(--golge-1);
+  appearance: none; -webkit-appearance: none;
+  background-repeat: no-repeat; background-position: right 14px center;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%234a654f' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+#siralama:focus { outline: none; border-color: var(--vurgu); box-shadow: 0 0 0 3px rgba(74,101,79,.10); }
+
+/* Ziyaretçi kartı tıklanmaz — düzenleme ekranının kapısı yok */
+.kart.salt-okunur { cursor: default; }
+.kart.salt-okunur:hover { border-color: var(--cizgi-ince); box-shadow: var(--golge-1); }
+
+/* --- Sayfalama ---------------------------------------------------------- */
+.sayfalama {
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+  gap: 6px; margin: 26px 0 8px;
+}
+.sayfa-btn {
+  min-width: 40px; height: 40px; padding: 0 10px; font: inherit; font-weight: 600;
+  font-size: 15px; color: var(--vurgu-koyu); cursor: pointer;
+  background: var(--kart); border: 1px solid var(--cizgi-ince);
+  border-radius: .6rem; box-shadow: var(--golge-1);
+  transition: background .15s, border-color .15s, color .15s;
+}
+.sayfa-btn:hover:not(:disabled):not(.aktif) { border-color: var(--cizgi); background: var(--kart-alt); }
+.sayfa-btn.aktif {
+  background: var(--vurgu); color: #fff; border-color: var(--vurgu);
+  box-shadow: 0 2px 8px rgba(74,101,79,.25);
+}
+.sayfa-btn:disabled { opacity: .35; cursor: default; box-shadow: none; }
+.sayfa-btn.ok { font-size: 19px; line-height: 1; }
+.sayfa-bosluk { color: var(--soluk); padding: 0 2px; user-select: none; }
+
+/* Dar telefonda 9 öğe tek satıra sığmıyordu (375px'te üç satıra sarıyordu).
+   Yükseklik korunuyor — dokunma hedefi küçülmesin; daralan sadece genişlik. */
+@media (max-width: 430px) {
+  .sayfalama { gap: 4px; }
+  .sayfa-btn { min-width: 34px; padding: 0 5px; font-size: 14.5px; }
+  .sayfa-btn.ok { font-size: 17px; }
+  .sayfa-bosluk { padding: 0; font-size: 13px; }
+}

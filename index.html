@@ -16,6 +16,11 @@
   Deneme modu — veriler sadece bu cihazda saklanıyor.
 </div>
 
+<div id="yama-serit" class="serit uyari" hidden>
+  Rol tablosu bulunamadı — <code>supabase/yama-002-roller-ve-ziyaretci.sql</code>
+  henüz çalıştırılmamış. Ziyaretçi kısıtlaması devrede değil.
+</div>
+
 <!-- GİRİŞ -->
 <section id="ekran-giris" class="ekran" hidden>
   <div class="giris-kutu">
@@ -28,12 +33,19 @@
       <button class="btn birincil" type="submit">Giriş yap</button>
       <p id="giris-hata" class="hata" hidden></p>
     </form>
+
+    <div id="ziyaretci-alani" hidden>
+      <p class="ayirac"><span>veya</span></p>
+      <button id="btn-ziyaretci" class="btn ikincil" type="button">Ziyaretçi olarak gir</button>
+      <p class="ipucu ortala">Kitapları görebilirsin; ekleme ve düzenleme personele aittir.</p>
+    </div>
   </div>
 </section>
 
 <!-- ARA -->
 <section id="ekran-ara" class="ekran" hidden>
   <header class="baslik">
+    <span id="rol-rozet" class="rozet" hidden>Ziyaretçi</span>
     <h1 class="marka kucuk">Pastelhayaller<span>Sahaf</span></h1>
     <button id="btn-cikis" class="btn sade" type="button" hidden>Çıkış</button>
   </header>
@@ -43,9 +55,16 @@
            autocomplete="off" autocapitalize="none" spellcheck="false">
   </div>
 
+  <div class="arac-cubugu">
+    <label for="siralama">Sırala</label>
+    <select id="siralama"></select>
+  </div>
+
   <p id="ara-durum" class="durum"></p>
 
   <div id="sonuclar" class="liste"></div>
+
+  <nav id="sayfalama" class="sayfalama" aria-label="Sayfalar" hidden></nav>
 
   <div id="bos-sonuc" class="bos" hidden>
     <p>Bu isimde kitap kayıtlı değil.</p>

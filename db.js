@@ -1,12 +1,27 @@
 // Veri katmanı. İki mod, tek sözleşme:
 //   config.js doluysa  -> Supabase
 //   boşsa              -> localStorage (deneme modu)
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
+import {
+  SUPABASE_URL, SUPABASE_ANON_KEY,
+  ZIYARETCI_EPOSTA, ZIYARETCI_SIFRE,
+} from './config.js';
 
 export const denemeModu = !SUPABASE_URL || !SUPABASE_ANON_KEY;
+export const ziyaretciGirisiVar = !denemeModu && !!ZIYARETCI_EPOSTA && !!ZIYARETCI_SIFRE;
 
 const TABLO = 'kitaplar';
 const YEREL_ANAHTAR = 'pastelhayaller_kitaplar';
+
+export const SAYFA_BOYU = 20;
+
+// Sıralama seçenekleri. Anahtarlar arayüzdeki <select> değerleriyle birebir.
+export const SIRALAMALAR = {
+  yeni:         { etiket: 'Son eklenenler',      kolon: 'created_at', artan: false },
+  ad:           { etiket: 'Ada göre (A→Z)',      kolon: 'ad',         artan: true  },
+  fiyat_artan:  { etiket: 'Fiyat — önce ucuz',   kolon: 'fiyat',      artan: true  },
+  fiyat_azalan: { etiket: 'Fiyat — önce pahalı', kolon: 'fiyat',      artan: false },
+};
+export const VARSAYILAN_SIRALAMA = 'yeni';
 
 // --- Türkçe arama normalizasyonu ---------------------------------------
 // Sunucudaki `arama` kolonu ile birebir aynı dönüşüm. "cigdem" -> "Çiğdem" bulunur.
@@ -33,6 +48,16 @@ function hata(e) {
   return new Error(m);
 }
 
+// RLS reddi ham haliyle "row-level security policy" diye gelir — dükkândaki
+// kişiye bir anlam ifade etmiyor. Sebebi söyleyen bir cümleye çeviriyoruz.
+function yetkiHatasi(e) {
+  const m = (e && e.message) || '';
+  if (e && (e.code === '42501' || /row-level security/i.test(m))) {
+    return new Error('Ziyaretçi hesabı değişiklik yapamaz. Personel hesabıyla giriş yap.');
+  }
+  return e;
+}
+
 // --- Yerel depo (deneme modu) ------------------------------------------
 function yerelOku() {
   try { return JSON.parse(localStorage.getItem(YEREL_ANAHTAR) || '[]'); }
@@ -46,6 +71,12 @@ function yeniId() {
 }
 
 // --- Oturum -------------------------------------------------------------
+// Rol her girişte bir kez okunur; her liste isteğinde tekrar sorulmaz.
+let _rol = null;
+
+// Yama-002 çalıştırılmamışsa arayüz bunu uyarı olarak gösterir.
+export const durum = { yamaEksik: false };
+
 export async function oturumVarMi() {
   if (denemeModu) return true;
   try {
@@ -56,14 +87,63 @@ export async function oturumVarMi() {
 
 export async function girisYap(eposta, sifre) {
   if (denemeModu) return true;
+  _rol = null;
   const { error } = await (await sb()).auth.signInWithPassword({ email: eposta, password: sifre });
   if (error) throw hata(error);
   return true;
 }
 
+export async function ziyaretciGirisiYap() {
+  if (!ziyaretciGirisiVar) throw new Error('Ziyaretçi girişi bu kurulumda tanımlı değil.');
+  return girisYap(ZIYARETCI_EPOSTA, ZIYARETCI_SIFRE);
+}
+
 export async function cikisYap() {
+  _rol = null;
   if (denemeModu) return;
   await (await sb()).auth.signOut();
+}
+
+/**
+ * Giriş yapan kullanıcının rolü: 'yonetici' (baba + eş) veya 'ziyaretci'.
+ *
+ * Rol satırı YOKSA ziyaretçidir — varsayılan reddetme. Bu, güvenliğin asıl
+ * dayandığı yer değil (o RLS'te); arayüzün neyi göstereceğini belirler.
+ *
+ * `roller` tablosu hiç yoksa (yama-002 henüz çalıştırılmamış) yönetici kabul
+ * edilir: o aşamada ziyaretçi hesabı da yoktur, yani kaybedilen bir yetki
+ * sınırı yok — ama tablo yokken ziyaretçi varsaymak dükkânı çalışamaz hale
+ * getirirdi. Bunun yerine `durum.yamaEksik` ile açıkça uyarılıyor.
+ */
+export async function rolGetir() {
+  if (denemeModu) return 'yonetici';
+  if (_rol) return _rol;
+  try {
+    const istemci = await sb();
+    const { data: oturum } = await istemci.auth.getUser();
+    const kimlik = oturum && oturum.user && oturum.user.id;
+    if (!kimlik) return 'ziyaretci';
+
+    const { data, error } = await istemci
+      .from('roller').select('rol').eq('kullanici_id', kimlik).maybeSingle();
+
+    if (error) {
+      const tabloYok = error.code === '42P01' ||
+        /relation .*roller.* does not exist|could not find the table/i.test(error.message || '');
+      if (tabloYok) {
+        durum.yamaEksik = true;
+        _rol = 'yonetici';
+      } else {
+        _rol = 'ziyaretci';
+      }
+      return _rol;
+    }
+
+    _rol = data && data.rol === 'yonetici' ? 'yonetici' : 'ziyaretci';
+    return _rol;
+  } catch {
+    return 'ziyaretci';
+  }
 }
 
 // --- Kitaplar -----------------------------------------------------------
@@ -77,31 +157,69 @@ function kayitTemizle(k) {
   };
 }
 
-export async function ara(terim) {
-  const t = normalize(terim);
-  if (!t) return sonEklenenler();
-  if (denemeModu) {
-    return yerelOku()
-      .filter(k => normalize(`${k.ad} ${k.yazar || ''} ${k.raf}`).includes(t))
-      .sort((a, b) => a.ad.localeCompare(b.ad, 'tr'))
-      .slice(0, 100);
-  }
-  const { data, error } = await (await sb())
-    .from(TABLO).select('id,ad,yazar,raf,fiyat,notlar')
-    .ilike('arama', `%${t}%`).order('ad').limit(100);
-  if (error) throw hata(error);
-  return data || [];
+function yerelSirala(liste, sirala) {
+  // Eklenme sırası dizinin kendi sırasıdır; created_at yerel kayıtta yok.
+  const s = SIRALAMALAR[sirala] || SIRALAMALAR[VARSAYILAN_SIRALAMA];
+  const damgali = liste.map((k, i) => ({ k, i }));
+  damgali.sort((a, b) => {
+    if (s.kolon === 'created_at') return b.i - a.i;
+    if (s.kolon === 'ad') return (a.k.ad || '').localeCompare(b.k.ad || '', 'tr');
+    // Fiyat: boş fiyat her iki yönde de en sona.
+    const af = a.k.fiyat, bf = b.k.fiyat;
+    if (af == null && bf == null) return a.i - b.i;
+    if (af == null) return 1;
+    if (bf == null) return -1;
+    return s.artan ? af - bf : bf - af;
+  });
+  return damgali.map(d => d.k);
 }
 
-export async function sonEklenenler(limit = 20) {
+/**
+ * Tek liste kapısı: arama + sıralama + sayfalama. Arama terimi boşsa TÜM
+ * envanter listelenir — eskiden ana ekranda yalnız "son 20" görünüyordu.
+ * Döner: { kayitlar, toplam, sayfa, sayfaSayisi }
+ */
+export async function listele({ terim = '', sirala = VARSAYILAN_SIRALAMA, sayfa = 1 } = {}) {
+  const s = SIRALAMALAR[sirala] || SIRALAMALAR[VARSAYILAN_SIRALAMA];
+  const t = normalize(terim);
+  const istenen = Math.max(1, Math.floor(sayfa) || 1);
+
   if (denemeModu) {
-    return yerelOku().slice().reverse().slice(0, limit);
+    const tumu = t
+      ? yerelOku().filter(k => normalize(`${k.ad} ${k.yazar || ''} ${k.raf}`).includes(t))
+      : yerelOku();
+    const sirali = yerelSirala(tumu, sirala);
+    const toplam = sirali.length;
+    const sayfaSayisi = Math.max(1, Math.ceil(toplam / SAYFA_BOYU));
+    const aktif = Math.min(istenen, sayfaSayisi);
+    const bas = (aktif - 1) * SAYFA_BOYU;
+    return { kayitlar: sirali.slice(bas, bas + SAYFA_BOYU), toplam, sayfa: aktif, sayfaSayisi };
   }
-  const { data, error } = await (await sb())
-    .from(TABLO).select('id,ad,yazar,raf,fiyat,notlar')
-    .order('created_at', { ascending: false }).limit(limit);
+
+  const istemci = await sb();
+  const sorgula = (sayfaNo) => {
+    let q = istemci.from(TABLO).select('id,ad,yazar,raf,fiyat,notlar', { count: 'exact' });
+    if (t) q = q.ilike('arama', `%${t}%`);
+    // nullsFirst:false — fiyatı girilmemiş kitap her iki yönde de en sonda.
+    q = q.order(s.kolon, { ascending: s.artan, nullsFirst: false });
+    // İkincil sıra: eşit fiyat/ad'da sayfalar arası kayma olmasın.
+    q = q.order('id', { ascending: true });
+    const bas = (sayfaNo - 1) * SAYFA_BOYU;
+    return q.range(bas, bas + SAYFA_BOYU - 1);
+  };
+
+  const { data, error, count } = await sorgula(istenen);
   if (error) throw hata(error);
-  return data || [];
+
+  const toplam = count || 0;
+  const sayfaSayisi = Math.max(1, Math.ceil(toplam / SAYFA_BOYU));
+  // Silmeden sonra son sayfa yok olmuş olabilir: aralık dışına düşersek geri çekil.
+  if (istenen > sayfaSayisi && toplam > 0) {
+    const tekrar = await sorgula(sayfaSayisi);
+    if (tekrar.error) throw hata(tekrar.error);
+    return { kayitlar: tekrar.data || [], toplam, sayfa: sayfaSayisi, sayfaSayisi };
+  }
+  return { kayitlar: data || [], toplam, sayfa: istenen, sayfaSayisi };
 }
 
 export async function ekle(kitap) {
@@ -115,7 +233,7 @@ export async function ekle(kitap) {
     return kayit;
   }
   const { data, error } = await (await sb()).from(TABLO).insert(k).select().single();
-  if (error) throw hata(error);
+  if (error) throw hata(yetkiHatasi(error));
   return data;
 }
 
@@ -131,7 +249,7 @@ export async function guncelle(id, kitap) {
     return liste[i];
   }
   const { data, error } = await (await sb()).from(TABLO).update(k).eq('id', id).select().single();
-  if (error) throw hata(error);
+  if (error) throw hata(yetkiHatasi(error));
   return data;
 }
 
@@ -141,7 +259,7 @@ export async function sil(id) {
     return;
   }
   const { error } = await (await sb()).from(TABLO).delete().eq('id', id);
-  if (error) throw hata(error);
+  if (error) throw hata(yetkiHatasi(error));
 }
 
 // Silmeyi geri almak için: aynı kaydı geri koyar.
@@ -153,7 +271,7 @@ export async function geriKoy(kitap) {
     return kitap;
   }
   const { data, error } = await (await sb()).from(TABLO).insert(kitap).select().single();
-  if (error) throw hata(error);
+  if (error) throw hata(yetkiHatasi(error));
   return data;
 }
 
