@@ -21,5 +21,5 @@ export const SUPABASE_ANON_KEY = "sb_publishable_SbMPKHAK6Q7G3gf_XbeKqw_yl92FMOi
 // Kurulum: yama-002'yi çalıştır → Authentication → Users'tan bu kullanıcıyı
 // oluştur → e-posta ve şifresini buraya yaz. Boş bırakırsan buton görünmez,
 // uygulama eskisi gibi sadece şifreli girişle çalışır.
-export const ZIYARETCI_EPOSTA = "";
-export const ZIYARETCI_SIFRE = "";
+export const ZIYARETCI_EPOSTA = "ziyaretci@pastelhayaller.com";
+export const ZIYARETCI_SIFRE = "1906";
