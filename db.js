@@ -11,6 +11,7 @@ export const ziyaretciGirisiVar = !denemeModu && !!ZIYARETCI_EPOSTA && !!ZIYARET
 
 const TABLO = 'kitaplar';
 const YEREL_ANAHTAR = 'pastelhayaller_kitaplar';
+const KAPAK_BUCKET = 'kitap-kapaklari';
 
 export const SAYFA_BOYU = 20;
 
@@ -154,6 +155,7 @@ function kayitTemizle(k) {
     raf: (k.raf || '').trim(),
     fiyat: k.fiyat === '' || k.fiyat == null ? null : Number(k.fiyat),
     notlar: (k.notlar || '').trim() || null,
+    foto_url: (k.foto_url || '').trim() || null,
   };
 }
 
@@ -198,7 +200,7 @@ export async function listele({ terim = '', sirala = VARSAYILAN_SIRALAMA, sayfa 
 
   const istemci = await sb();
   const sorgula = (sayfaNo) => {
-    let q = istemci.from(TABLO).select('id,ad,yazar,raf,fiyat,notlar', { count: 'exact' });
+    let q = istemci.from(TABLO).select('id,ad,yazar,raf,fiyat,notlar,foto_url', { count: 'exact' });
     if (t) q = q.ilike('arama', `%${t}%`);
     // nullsFirst:false — fiyatı girilmemiş kitap her iki yönde de en sonda.
     q = q.order(s.kolon, { ascending: s.artan, nullsFirst: false });
@@ -273,6 +275,36 @@ export async function geriKoy(kitap) {
   const { data, error } = await (await sb()).from(TABLO).insert(kitap).select().single();
   if (error) throw hata(yetkiHatasi(error));
   return data;
+}
+
+// Telefonla çekilen kapak fotoğrafı. İki modda da aynı sözleşme korunur:
+// denemede data URL, gerçek kullanımda Storage'ın herkese açık katalog URL'si.
+export async function kapakYukle(dosya) {
+  if (!dosya) return null;
+  if (!/^image\/(jpeg|png|webp)$/.test(dosya.type)) {
+    throw new Error('Yalnız JPG, PNG veya WEBP fotoğraf yüklenebilir.');
+  }
+  if (dosya.size > 6 * 1024 * 1024) throw new Error('Fotoğraf 6 MB’dan küçük olmalı.');
+
+  if (denemeModu) {
+    return new Promise((resolve, reject) => {
+      const okuyucu = new FileReader();
+      okuyucu.onload = () => resolve(okuyucu.result);
+      okuyucu.onerror = () => reject(new Error('Fotoğraf okunamadı.'));
+      okuyucu.readAsDataURL(dosya);
+    });
+  }
+
+  const uzanti = dosya.type === 'image/png' ? 'png' : dosya.type === 'image/webp' ? 'webp' : 'jpg';
+  const yol = `${crypto.randomUUID()}.${uzanti}`;
+  const istemci = await sb();
+  const { error } = await istemci.storage.from(KAPAK_BUCKET).upload(yol, dosya, {
+    contentType: dosya.type,
+    cacheControl: '31536000',
+  });
+  if (error) throw hata(yetkiHatasi(error));
+  const { data } = istemci.storage.from(KAPAK_BUCKET).getPublicUrl(yol);
+  return data.publicUrl;
 }
 
 export async function raflar() {

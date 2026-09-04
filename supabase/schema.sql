@@ -11,6 +11,7 @@ create table if not exists kitaplar (
   raf        text not null,
   fiyat      numeric(10,2),
   notlar     text,
+  foto_url   text,
   -- Türkçe arama normalizasyonu: "Çiğdem" yazılmadan "cigdem" ile de bulunsun.
   arama      text generated always as (
                lower(translate(

@@ -1,11 +1,15 @@
 import * as db from './db.js';
 
 const $ = (s) => document.querySelector(s);
-const ekranlar = ['giris', 'ara', 'ekle', 'duzenle'];
+const ekranlar = ['giris', 'ara', 'ekle', 'duzenle', 'sepet'];
 let seciliKitap = null;
 let sonSilinen = null;
 let bildirimZaman = null;
 let bildirimSayac = null;
+const SEPET_ANAHTAR = 'pastelhayaller_ziyaretci_sepeti';
+const WHATSAPP_NUMARASI = '905369782758';
+let sepet = sepetOku();
+const fotoTaslak = { ekle: { dosya: null, url: null }, duz: { dosya: null, url: null } };
 
 // Liste durumu tek yerde: arama, sıralama ve sayfa birbirine bağlı.
 // Terim ya da sıralama değişince sayfa 1'e döner — 7. sayfada arama yapıp
@@ -54,6 +58,13 @@ function paraYaz(f) {
   return Number(f).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
 }
 
+function sepetOku() {
+  try { return JSON.parse(localStorage.getItem(SEPET_ANAHTAR) || '[]'); }
+  catch { return []; }
+}
+function sepetKaydet() { localStorage.setItem(SEPET_ANAHTAR, JSON.stringify(sepet)); }
+function sepetRozetiniYaz() { $('#sepet-sayi').textContent = sepet.length; }
+
 function bildir(metin, geriAlFn) {
   clearTimeout(bildirimZaman);
   clearInterval(bildirimSayac);
@@ -98,6 +109,7 @@ function escapeHtml(s) {
 
 function kartIci(k) {
   return `
+    ${k.foto_url ? `<img class="kart-kapak" src="${escapeHtml(k.foto_url)}" alt="${escapeHtml(k.ad)} kapağı">` : '<span class="kart-kapak yok" aria-hidden="true">☷</span>'}
     <span class="raf-rozet"><span class="raf-etiket">RAF</span>${escapeHtml(k.raf)}</span>
     <span class="kart-orta">
       <span class="kart-ad">${escapeHtml(k.ad)}</span>
@@ -115,8 +127,52 @@ function kartYap(k) {
   if (yoneticiMi()) {
     el.type = 'button';
     el.addEventListener('click', () => duzenleAc(k));
+  } else {
+    const ekle = document.createElement('button');
+    ekle.className = 'sepet-ekle';
+    ekle.type = 'button';
+    ekle.textContent = sepet.some(x => x.id === k.id) ? 'Sepette' : 'Sepete ekle';
+    ekle.disabled = sepet.some(x => x.id === k.id);
+    ekle.addEventListener('click', () => sepeteEkle(k));
+    el.appendChild(ekle);
   }
   return el;
+}
+
+function sepeteEkle(k) {
+  if (sepet.some(x => x.id === k.id)) return;
+  sepet.push({ id: k.id, ad: k.ad, yazar: k.yazar, fiyat: k.fiyat, raf: k.raf, foto_url: k.foto_url || null });
+  sepetKaydet(); sepetRozetiniYaz();
+  bildir(`✓ «${k.ad}» sepete eklendi`);
+  listeyiTazele();
+}
+
+function sepetiCiz() {
+  const kap = $('#sepet-kalemleri');
+  kap.replaceChildren();
+  $('#sepet-bos').hidden = sepet.length !== 0;
+  $('#sepet-ozet').hidden = sepet.length === 0;
+  $('#btn-whatsapp').hidden = sepet.length === 0;
+  const toplam = sepet.reduce((t, k) => t + (Number(k.fiyat) || 0), 0);
+  $('#sepet-toplam').textContent = paraYaz(toplam);
+  sepet.forEach(k => {
+    const el = document.createElement('div'); el.className = 'sepet-kalem';
+    el.innerHTML = `${k.foto_url ? `<img class="sepet-kapak" src="${escapeHtml(k.foto_url)}" alt="">` : ''}
+      <span class="kart-orta"><span class="kart-ad">${escapeHtml(k.ad)}</span>${k.yazar ? `<span class="kart-yazar">${escapeHtml(k.yazar)}</span>` : ''}<span class="sepet-raf">Raf ${escapeHtml(k.raf)}</span></span>
+      <span class="kart-fiyat">${paraYaz(k.fiyat)}</span>`;
+    const sil = document.createElement('button'); sil.className = 'btn sade kucuk'; sil.type = 'button'; sil.textContent = 'Çıkar';
+    sil.addEventListener('click', () => { sepet = sepet.filter(x => x.id !== k.id); sepetKaydet(); sepetRozetiniYaz(); sepetiCiz(); });
+    el.appendChild(sil); kap.appendChild(el);
+  });
+}
+
+function sepetiAc() { sepetiCiz(); git('sepet'); }
+
+function whatsappRezervasyon() {
+  const satirlar = sepet.map(k => `• ${k.ad}${k.yazar ? ` — ${k.yazar}` : ''}${k.fiyat == null ? '' : ` (${paraYaz(k.fiyat)})`}`);
+  const toplam = sepet.reduce((t, k) => t + (Number(k.fiyat) || 0), 0);
+  const mesaj = `Merhaba, aşağıdaki kitaplar için rezervasyon talep ediyorum:\n\n${satirlar.join('\n')}\n\nToplam: ${paraYaz(toplam)}\nStok durumunu teyit edebilir misiniz?`;
+  window.open(`https://wa.me/${WHATSAPP_NUMARASI}?text=${encodeURIComponent(mesaj)}`, '_blank', 'noopener');
 }
 
 function listeYaz(sonuc, terimVarMi) {
@@ -254,6 +310,43 @@ async function raflariTazele() {
   } catch { /* öneri yoksa sorun değil */ }
 }
 
+// --- Kapak fotoğrafları -------------------------------------------------
+function kapakOnizlemeYaz(alan) {
+  const taslak = fotoTaslak[alan];
+  const img = $(`#${alan}-kapak-onizleme`);
+  const kaynak = taslak.dosya ? URL.createObjectURL(taslak.dosya) : taslak.url;
+  img.hidden = !kaynak;
+  if (kaynak) img.src = kaynak;
+}
+
+function kapakTaslaginiSifirla(alan, url = null) {
+  fotoTaslak[alan] = { dosya: null, url };
+  $(`#${alan}-foto`).value = '';
+  kapakOnizlemeYaz(alan);
+}
+
+async function internettenKapakBul(alan) {
+  const ad = $(`#${alan}-ad`).value.trim();
+  const yazar = $(`#${alan}-yazar`).value.trim();
+  if (!ad) throw new Error('Önce kitap adını yaz.');
+  const sorgu = new URLSearchParams({ title: ad, limit: '1', fields: 'cover_i,title,author_name' });
+  if (yazar) sorgu.set('author', yazar);
+  const cevap = await fetch(`https://openlibrary.org/search.json?${sorgu}`);
+  if (!cevap.ok) throw new Error('Kapak servisine şu an ulaşılamadı.');
+  const veri = await cevap.json();
+  const kayit = veri.docs && veri.docs[0];
+  if (!kayit || !kayit.cover_i) throw new Error('Bu kitap için kapak önerisi bulunamadı. Fotoğraf çekebilirsin.');
+  fotoTaslak[alan] = { dosya: null, url: `https://covers.openlibrary.org/b/id/${kayit.cover_i}-L.jpg` };
+  $(`#${alan}-foto`).value = '';
+  kapakOnizlemeYaz(alan);
+  bildir('Kapak önerisi geldi — baskıyla eşleştiğini kontrol et.');
+}
+
+async function kapakUrlHazirla(alan) {
+  const taslak = fotoTaslak[alan];
+  return taslak.dosya ? db.kapakYukle(taslak.dosya) : taslak.url;
+}
+
 // --- Ekle ---------------------------------------------------------------
 function ekleAc(onDolguAd = '') {
   if (!yoneticiMi()) return; // Ziyaretçi bu ekrana hiç giremez.
@@ -262,6 +355,7 @@ function ekleAc(onDolguAd = '') {
   $('#ekle-yazar').value = '';
   $('#ekle-fiyat').value = '';
   $('#ekle-notlar').value = '';
+  kapakTaslaginiSifirla('ekle');
   raflariTazele();
   git('ekle');
   $('#ekle-ad').focus();
@@ -270,20 +364,22 @@ function ekleAc(onDolguAd = '') {
 $('#ekle-form').addEventListener('submit', async (ev) => {
   ev.preventDefault();
   hataGizle('#ekle-hata');
-  const kitap = {
-    ad: $('#ekle-ad').value,
-    yazar: $('#ekle-yazar').value,
-    raf: $('#ekle-raf').value,
-    fiyat: $('#ekle-fiyat').value,
-    notlar: $('#ekle-notlar').value,
-  };
   try {
+    const kitap = {
+      ad: $('#ekle-ad').value,
+      yazar: $('#ekle-yazar').value,
+      raf: $('#ekle-raf').value,
+      fiyat: $('#ekle-fiyat').value,
+      notlar: $('#ekle-notlar').value,
+      foto_url: await kapakUrlHazirla('ekle'),
+    };
     await db.ekle(kitap);
     // Raf DOLU kalır: aynı rafa arka arkaya giriş için.
     $('#ekle-ad').value = '';
     $('#ekle-yazar').value = '';
     $('#ekle-fiyat').value = '';
     $('#ekle-notlar').value = '';
+    kapakTaslaginiSifirla('ekle');
     $('#ekle-ad').focus();
     bildir('✓ Kitap eklendi');
     raflariTazele();
@@ -302,6 +398,7 @@ function duzenleAc(k) {
   $('#duz-raf').value = k.raf || '';
   $('#duz-fiyat').value = k.fiyat == null ? '' : k.fiyat;
   $('#duz-notlar').value = k.notlar || '';
+  kapakTaslaginiSifirla('duz', k.foto_url || null);
   raflariTazele();
   git('duzenle');
 }
@@ -316,6 +413,7 @@ $('#duzenle-form').addEventListener('submit', async (ev) => {
       raf: $('#duz-raf').value,
       fiyat: $('#duz-fiyat').value,
       notlar: $('#duz-notlar').value,
+      foto_url: await kapakUrlHazirla('duz'),
     });
     bildir('✓ Güncellendi');
     history.back();
@@ -402,6 +500,19 @@ $('#arama').addEventListener('input', () => {
 });
 $('#btn-ekle-ac').addEventListener('click', () => ekleAc());
 $('#btn-bunu-ekle').addEventListener('click', () => ekleAc($('#arama').value.trim()));
+['ekle', 'duz'].forEach(alan => {
+  $(`#${alan}-foto`).addEventListener('change', (ev) => {
+    fotoTaslak[alan] = { dosya: ev.target.files && ev.target.files[0], url: null };
+    kapakOnizlemeYaz(alan);
+  });
+  $(`#btn-${alan}-kapak-bul`).addEventListener('click', async () => {
+    hataGizle(`#${alan}-hata`);
+    try { await internettenKapakBul(alan); }
+    catch (e) { hataGoster(`#${alan}-hata`, e); }
+  });
+});
+$('#btn-sepet').addEventListener('click', sepetiAc);
+$('#btn-whatsapp').addEventListener('click', whatsappRezervasyon);
 document.querySelectorAll('[data-geri]').forEach(function (b) {
   b.addEventListener('click', function () {
     history.back();
@@ -413,6 +524,7 @@ function roluUygula() {
   const yonetici = yoneticiMi();
   $('#btn-ekle-ac').hidden = !yonetici;          // "+" düğmesi
   $('#btn-bunu-ekle').hidden = !yonetici;        // boş sonuçtaki "Bunu ekle"
+  $('#btn-sepet').hidden = yonetici;
   $('#rol-rozet').hidden = yonetici;
   $('#yama-serit').hidden = !db.durum.yamaEksik;
   // Boş sonuç metni role göre değişir: ziyaretçiye "ekle" demek anlamsız.
@@ -433,6 +545,7 @@ async function araEkraniAc() {
 }
 
 (async function baslat() {
+  sepetRozetiniYaz();
   $('#deneme-serit').hidden = !db.denemeModu;
   $('#ziyaretci-alani').hidden = !db.ziyaretciGirisiVar;
   siralamaKutusunuKur();

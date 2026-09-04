@@ -10,6 +10,8 @@ bilgisayardan aynı linkle açılır.
 - **Ekle** — kitap adı, yazar, raf, fiyat, not
 - **Düzenle** — fiyat ve raf güncellenir
 - **Sil** — kitap satılınca listeden kaldırılır (15 saniye "Geri al" hakkı var)
+- **Kapak** — personel telefondan fotoğraf çeker veya Open Library’den kapak önerisi alır
+- **Ziyaretçi sepeti** — seçilen kitapları WhatsApp üzerinden rezervasyon talebi olarak yollar
 
 Türkçe arama harf duyarsızdır: "cigdem" yazınca "Çiğdem" bulunur.
 Fiyatı girilmemiş kitaplar, fiyata göre sıralamada her iki yönde de en sonda kalır.
@@ -22,7 +24,9 @@ Fiyatı girilmemiş kitaplar, fiyata göre sıralamada her iki yönde de en sond
 | **Ziyaretçi** (müşteri) | ✅ | ❌ |
 
 Ziyaretçi giriş ekranındaki **"Ziyaretçi olarak gir"** butonuyla, şifre yazmadan
-girer. Ziyaretçide "+" düğmesi ve düzenleme ekranı yoktur; kartlar tıklanmaz.
+girer. Ziyaretçide "+" düğmesi ve düzenleme ekranı yoktur; bunun yerine kitapları
+sepete ekleyip satıcıya hazır WhatsApp mesajı gönderebilir. Sepet yalnız ziyaretçinin
+cihazında saklanır; stok ayırmaz ve ödeme almaz.
 
 **Bu bir arayüz süsü değildir.** Butonu gizlemek güvenlik sağlamaz — anon anahtar
 herkese açıktır. Asıl kilit veritabanındadır: `kitaplar` tablosunda yazma
@@ -74,6 +78,17 @@ await db.ekle({ ad: 'TEST', raf: 'X1' });
 Beklenen sonuç: **"Ziyaretçi hesabı değişiklik yapamaz."** hatası.
 Kitap gerçekten eklenirse yama uygulanmamıştır veya ziyaretçi hesabına
 `roller` tablosunda yanlışlıkla `'yonetici'` satırı açılmıştır.
+
+### Kapak fotoğraflarını açmak
+
+SQL Editor’de `supabase/yama-003-kapak-ve-sepet.sql` dosyasını bir kez çalıştır.
+Bu yama `foto_url` alanını ve en fazla 6 MB JPG/PNG/WEBP kabul eden
+`kitap-kapaklari` Storage bucket’ını açar. Yalnız yöneticiler fotoğraf yükleyebilir;
+kapaklar ziyaretçilerin katalogda görmesi için açıktır.
+
+"İnternetten kapak öner" Open Library’ye kitap adı ve varsa yazar bilgisini sorgular.
+Bulunan kapak baskıyla farklı olabilir; uygulama bu yüzden otomatik kaydetmez,
+personelin önizleyip Kaydet’e basmasını bekler.
 
 ## Yerelde çalıştırmak
 ```

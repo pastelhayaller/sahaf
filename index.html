@@ -47,6 +47,7 @@
   <header class="baslik">
     <span id="rol-rozet" class="rozet" hidden>Ziyaretçi</span>
     <h1 class="marka kucuk">Pastelhayaller<span>Sahaf</span></h1>
+    <button id="btn-sepet" class="btn sepet-dugme" type="button" hidden>Sepet <span id="sepet-sayi">0</span></button>
     <button id="btn-cikis" class="btn sade" type="button" hidden>Çıkış</button>
   </header>
 
@@ -100,6 +101,14 @@
     <label for="ekle-notlar">Not</label>
     <input id="ekle-notlar" name="notlar" autocomplete="off" placeholder="örn. kapağı yıpranmış">
 
+    <fieldset class="foto-alani">
+      <legend>Kapak fotoğrafı</legend>
+      <img id="ekle-kapak-onizleme" class="kapak-onizleme" alt="Kapak önizlemesi" hidden>
+      <input id="ekle-foto" type="file" accept="image/jpeg,image/png,image/webp" capture="environment">
+      <button id="btn-ekle-kapak-bul" class="btn ikincil" type="button">İnternetten kapak öner</button>
+      <p class="ipucu">Telefonla çekebilir veya başlık/yazara göre öneri alabilirsin. Öneriyi kaydetmeden önce kontrol et.</p>
+    </fieldset>
+
     <button class="btn birincil" type="submit">Kaydet</button>
     <p id="ekle-hata" class="hata" hidden></p>
   </form>
@@ -129,10 +138,33 @@
     <label for="duz-notlar">Not</label>
     <input id="duz-notlar" name="notlar" autocomplete="off">
 
+    <fieldset class="foto-alani">
+      <legend>Kapak fotoğrafı</legend>
+      <img id="duz-kapak-onizleme" class="kapak-onizleme" alt="Kapak önizlemesi" hidden>
+      <input id="duz-foto" type="file" accept="image/jpeg,image/png,image/webp" capture="environment">
+      <button id="btn-duz-kapak-bul" class="btn ikincil" type="button">İnternetten kapak öner</button>
+      <p class="ipucu">Öneriler baskıyla birebir aynı olmayabilir; kaydetmeden önce kapağı doğrula.</p>
+    </fieldset>
+
     <button class="btn birincil" type="submit">Kaydet</button>
     <button id="btn-satildi" class="btn tehlike" type="button">Satıldı — sil</button>
     <p id="duzenle-hata" class="hata" hidden></p>
   </form>
+</section>
+
+<!-- ZİYARETÇİ SEPETİ -->
+<section id="ekran-sepet" class="ekran" hidden>
+  <header class="baslik">
+    <button class="btn sade" type="button" data-geri>‹ Geri</button>
+    <h2>Rezervasyon sepeti</h2>
+  </header>
+  <p class="ipucu">Kitaplar henüz ayrılmadı. Satıcı stok durumunu WhatsApp’tan teyit eder.</p>
+  <div id="sepet-kalemleri" class="sepet-liste"></div>
+  <div id="sepet-bos" class="bos" hidden><p>Sepetin boş.</p></div>
+  <div id="sepet-ozet" class="sepet-ozet" hidden>
+    <strong>Toplam</strong><strong id="sepet-toplam"></strong>
+  </div>
+  <button id="btn-whatsapp" class="btn whatsapp" type="button">WhatsApp’tan rezervasyon iste</button>
 </section>
 
 <!-- ONAY -->

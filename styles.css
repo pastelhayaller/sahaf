@@ -72,6 +72,8 @@ body::before {
   padding-bottom: 14px; border-bottom: 1px solid var(--cizgi-ince); margin-bottom: 4px;
 }
 #btn-cikis { position: absolute; right: -8px; top: 0; }
+.sepet-dugme { position: absolute; right: 62px; top: 0; min-height: 36px; padding: 0 12px; font-size: 13px; color: var(--vurgu-koyu); background: var(--vurgu-acik); border-color: transparent; }
+.sepet-dugme span { display: inline-grid; place-items: center; min-width: 20px; height: 20px; margin-left: 4px; border-radius: var(--r-hap); color: #fff; background: var(--vurgu); font-size: 12px; }
 
 /* Form ekranlarının tepesi: başlık ortada, geri solda */
 #ekran-ekle .baslik, #ekran-duzenle .baslik { position: relative; justify-content: center; }
@@ -137,6 +139,10 @@ body::before {
   flex: 0 0 auto; font-family: "Playfair Display", Inter, Georgia, serif; font-size: 19px;
   font-weight: 600; color: var(--vurgu); white-space: nowrap;
 }
+.kart-kapak { flex: 0 0 auto; width: 46px; height: 62px; object-fit: cover; border-radius: .35rem; background: var(--kart-alt); border: 1px solid var(--cizgi-ince); }
+.kart-kapak.yok { display: grid; place-items: center; color: var(--cizgi); font-size: 22px; }
+.sepet-ekle { flex: 0 0 auto; min-height: 36px; padding: 0 10px; border: 1px solid var(--vurgu-acik); border-radius: .6rem; background: rgba(204,234,207,.28); color: var(--vurgu-koyu); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.sepet-ekle:disabled { opacity: .65; cursor: default; }
 
 /* Boş sonuç */
 .bos { text-align: center; padding: 36px 12px; color: var(--soluk); }
@@ -162,6 +168,11 @@ body::before {
 .form input:focus, .giris-kutu input:focus {
   outline: none; border-bottom-color: var(--vurgu); background: var(--kart);
 }
+.foto-alani { margin: 24px 0 0; padding: 16px; border: 1px solid var(--cizgi-ince); border-radius: var(--r); background: var(--kart); }
+.foto-alani legend { padding: 0 6px; color: var(--soluk); font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+.foto-alani input[type="file"] { height: auto; padding: 10px 0; border: 0; background: transparent; font-size: 14px; }
+.foto-alani .btn { width: 100%; min-height: 44px; margin-top: 8px; }
+.kapak-onizleme { display: block; width: 116px; height: 164px; object-fit: cover; margin: 4px auto 12px; border: 1px solid var(--cizgi); border-radius: .4rem; box-shadow: var(--golge-1); }
 .ipucu { font-size: 13px; color: var(--soluk); margin: 8px 0 0; font-style: italic; }
 
 /* Butonlar */
@@ -306,6 +317,15 @@ body::before {
 .sayfa-btn:disabled { opacity: .35; cursor: default; box-shadow: none; }
 .sayfa-btn.ok { font-size: 19px; line-height: 1; }
 .sayfa-bosluk { color: var(--soluk); padding: 0 2px; user-select: none; }
+
+/* --- Ziyaretçi sepeti -------------------------------------------------- */
+.sepet-liste { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+.sepet-kalem { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--kart); border: 1px solid var(--cizgi-ince); border-radius: var(--r); box-shadow: var(--golge-1); }
+.sepet-kapak { width: 38px; height: 54px; object-fit: cover; border-radius: .3rem; }
+.sepet-raf { display: block; margin-top: 4px; color: var(--mavi); font-size: 12px; font-weight: 600; }
+.sepet-ozet { display: flex; justify-content: space-between; margin: 24px 0 10px; padding: 16px 2px; border-top: 1px solid var(--cizgi); font-family: var(--baslik-yazi); font-size: 20px; }
+.btn.whatsapp { width: 100%; background: #246b4a; color: #fff; margin-top: 12px; }
+.btn.whatsapp:active { background: #174a33; transform: translateY(1px); }
 
 /* Dar telefonda 9 öğe tek satıra sığmıyordu (375px'te üç satıra sarıyordu).
    Yükseklik korunuyor — dokunma hedefi küçülmesin; daralan sadece genişlik. */
