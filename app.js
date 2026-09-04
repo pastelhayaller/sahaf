@@ -1,7 +1,7 @@
 import * as db from './db.js';
 
 const $ = (s) => document.querySelector(s);
-const ekranlar = ['giris', 'ara', 'ekle', 'duzenle', 'sepet'];
+const ekranlar = ['giris', 'ara', 'ekle', 'duzenle', 'sepet', 'alim-teklif', 'teklifler'];
 let seciliKitap = null;
 let sonSilinen = null;
 let bildirimZaman = null;
@@ -174,6 +174,50 @@ function whatsappRezervasyon() {
   const mesaj = `Merhaba, aşağıdaki kitaplar için rezervasyon talep ediyorum:\n\n${satirlar.join('\n')}\n\nToplam: ${paraYaz(toplam)}\nStok durumunu teyit edebilir misiniz?`;
   window.open(`https://wa.me/${WHATSAPP_NUMARASI}?text=${encodeURIComponent(mesaj)}`, '_blank', 'noopener');
 }
+
+// --- Dükkâna kitap satmak isteyen ziyaretçi ----------------------------
+function alimTeklifAc() {
+  if (yoneticiMi()) return;
+  hataGizle('#alim-teklif-hata');
+  $('#alim-teklif-form').reset();
+  $('#teklif-foto-durum').textContent = 'En fazla 6 fotoğraf; her biri en çok 6 MB.';
+  git('alim-teklif');
+}
+
+function teklifFotoDurumuYaz() {
+  const n = $('#teklif-fotolar').files.length;
+  $('#teklif-foto-durum').textContent = n ? `${n} fotoğraf seçildi. Gönderdikten sonra yalnız personel görebilir.` : 'En fazla 6 fotoğraf; her biri en çok 6 MB.';
+}
+
+const DURUM_ETIKETI = {
+  yeni: 'Yeni', inceleniyor: 'İnceleniyor', teklif_verildi: 'Fiyat verildi', anlasildi: 'Anlaşıldı', uygun_degil: 'Uygun değil',
+};
+
+async function teklifleriYenile() {
+  const kap = $('#teklifler-listesi');
+  kap.replaceChildren();
+  try {
+    const teklifler = await db.alimTeklifleriniListele();
+    $('#teklifler-durum').textContent = teklifler.length ? `${teklifler.length} alım teklifi` : 'Henüz alım teklifi yok.';
+    teklifler.forEach(t => {
+      const el = document.createElement('article'); el.className = 'teklif-kart';
+      const tarih = new Date(t.created_at).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' });
+      el.innerHTML = `<div class="teklif-baslik"><strong>${escapeHtml(t.ad_soyad)}</strong><span>${escapeHtml(t.iletisim)}</span></div>
+        <p>${escapeHtml(t.kitap_aciklama)}</p><small>${tarih}</small>`;
+      if (t.foto_urlari.length) {
+        const fotograflar = document.createElement('div'); fotograflar.className = 'teklif-fotolar';
+        t.foto_urlari.forEach(url => { const img = document.createElement('img'); img.src = url; img.alt = 'Gönderilen kitap fotoğrafı'; fotograflar.appendChild(img); });
+        el.appendChild(fotograflar);
+      }
+      const sec = document.createElement('select'); sec.className = 'teklif-durum-sec';
+      Object.entries(DURUM_ETIKETI).forEach(([anahtar, etiket]) => { const o = document.createElement('option'); o.value = anahtar; o.textContent = etiket; o.selected = anahtar === t.durum; sec.appendChild(o); });
+      sec.addEventListener('change', async () => { try { await db.alimTeklifiDurumGuncelle(t.id, sec.value); bildir('✓ Teklif durumu güncellendi'); } catch (e) { bildir(e.message); sec.value = t.durum; } });
+      el.appendChild(sec); kap.appendChild(el);
+    });
+  } catch (e) { $('#teklifler-durum').textContent = e.message; }
+}
+
+async function teklifleriAc() { if (!yoneticiMi()) return; git('teklifler'); await teklifleriYenile(); }
 
 function listeYaz(sonuc, terimVarMi) {
   const kap = $('#sonuclar');
@@ -513,6 +557,27 @@ $('#btn-bunu-ekle').addEventListener('click', () => ekleAc($('#arama').value.tri
 });
 $('#btn-sepet').addEventListener('click', sepetiAc);
 $('#btn-whatsapp').addEventListener('click', whatsappRezervasyon);
+$('#btn-alim-teklif-ac').addEventListener('click', alimTeklifAc);
+$('#btn-teklifler').addEventListener('click', teklifleriAc);
+$('#teklif-fotolar').addEventListener('change', teklifFotoDurumuYaz);
+$('#alim-teklif-form').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  hataGizle('#alim-teklif-hata');
+  const btn = $('#alim-teklif-form button[type="submit"]');
+  btn.disabled = true;
+  try {
+    const foto_yollari = await db.teklifFotograflariYukle($('#teklif-fotolar').files);
+    await db.alimTeklifiGonder({
+      ad_soyad: $('#teklif-ad').value,
+      iletisim: $('#teklif-iletisim').value,
+      kitap_aciklama: $('#teklif-aciklama').value,
+      foto_yollari,
+    });
+    bildir('✓ Teklifin geldi. İnceleyip WhatsApp’tan döneceğiz.');
+    history.back();
+  } catch (e) { hataGoster('#alim-teklif-hata', e); }
+  finally { btn.disabled = false; }
+});
 document.querySelectorAll('[data-geri]').forEach(function (b) {
   b.addEventListener('click', function () {
     history.back();
@@ -525,6 +590,8 @@ function roluUygula() {
   $('#btn-ekle-ac').hidden = !yonetici;          // "+" düğmesi
   $('#btn-bunu-ekle').hidden = !yonetici;        // boş sonuçtaki "Bunu ekle"
   $('#btn-sepet').hidden = yonetici;
+  $('#btn-alim-teklif-ac').hidden = yonetici;
+  $('#btn-teklifler').hidden = !yonetici;
   $('#rol-rozet').hidden = yonetici;
   $('#yama-serit').hidden = !db.durum.yamaEksik;
   // Boş sonuç metni role göre değişir: ziyaretçiye "ekle" demek anlamsız.

@@ -12,6 +12,7 @@ export const ziyaretciGirisiVar = !denemeModu && !!ZIYARETCI_EPOSTA && !!ZIYARET
 const TABLO = 'kitaplar';
 const YEREL_ANAHTAR = 'pastelhayaller_kitaplar';
 const KAPAK_BUCKET = 'kitap-kapaklari';
+const TEKLIF_BUCKET = 'alim-teklifleri';
 
 export const SAYFA_BOYU = 20;
 
@@ -305,6 +306,78 @@ export async function kapakYukle(dosya) {
   if (error) throw hata(yetkiHatasi(error));
   const { data } = istemci.storage.from(KAPAK_BUCKET).getPublicUrl(yol);
   return data.publicUrl;
+}
+
+function fotografDogrula(dosya) {
+  if (!/^image\/(jpeg|png|webp)$/.test(dosya.type)) throw new Error('Yalnız JPG, PNG veya WEBP fotoğraf yüklenebilir.');
+  if (dosya.size > 6 * 1024 * 1024) throw new Error('Her fotoğraf 6 MB’dan küçük olmalı.');
+}
+
+// Alım teklifi fotoğrafları özel bucket'a gider. Ziyaretçi yükler ama geri
+// okuyamaz; sadece yönetici imzalı URL ile görür.
+export async function teklifFotograflariYukle(dosyalar) {
+  const liste = Array.from(dosyalar || []);
+  if (!liste.length) throw new Error('En az bir kitap fotoğrafı ekle.');
+  if (liste.length > 6) throw new Error('Bir teklife en fazla 6 fotoğraf eklenebilir.');
+  liste.forEach(fotografDogrula);
+  if (denemeModu) {
+    return Promise.all(liste.map(dosya => new Promise((resolve, reject) => {
+      const okuyucu = new FileReader();
+      okuyucu.onload = () => resolve(okuyucu.result);
+      okuyucu.onerror = () => reject(new Error('Fotoğraf okunamadı.'));
+      okuyucu.readAsDataURL(dosya);
+    })));
+  }
+  const istemci = await sb();
+  const sonuc = [];
+  for (const dosya of liste) {
+    const uzanti = dosya.type === 'image/png' ? 'png' : dosya.type === 'image/webp' ? 'webp' : 'jpg';
+    const yol = `teklifler/${crypto.randomUUID()}.${uzanti}`;
+    const { error } = await istemci.storage.from(TEKLIF_BUCKET).upload(yol, dosya, {
+      contentType: dosya.type, cacheControl: '31536000',
+    });
+    if (error) throw hata(yetkiHatasi(error));
+    sonuc.push(yol);
+  }
+  return sonuc;
+}
+
+export async function alimTeklifiGonder(teklif) {
+  const kayit = {
+    ad_soyad: (teklif.ad_soyad || '').trim(),
+    iletisim: (teklif.iletisim || '').trim(),
+    kitap_aciklama: (teklif.kitap_aciklama || '').trim(),
+    foto_yollari: teklif.foto_yollari || [],
+  };
+  if (!kayit.ad_soyad || !kayit.iletisim || !kayit.kitap_aciklama) throw new Error('Adın, iletişim bilgin ve kitap açıklaması gerekli.');
+  if (denemeModu) return { id: yeniId(), ...kayit, durum: 'yeni' };
+  const { data, error } = await (await sb()).from('alim_teklifleri').insert(kayit).select('id').single();
+  if (error) throw hata(yetkiHatasi(error));
+  return data;
+}
+
+export async function alimTeklifleriniListele() {
+  if (denemeModu) return [];
+  const istemci = await sb();
+  const { data, error } = await istemci.from('alim_teklifleri')
+    .select('id,ad_soyad,iletisim,kitap_aciklama,foto_yollari,durum,created_at')
+    .order('created_at', { ascending: false });
+  if (error) throw hata(yetkiHatasi(error));
+  return Promise.all((data || []).map(async teklif => {
+    const urls = await Promise.all((teklif.foto_yollari || []).map(async yol => {
+      const { data: imza } = await istemci.storage.from(TEKLIF_BUCKET).createSignedUrl(yol, 3600);
+      return imza && imza.signedUrl;
+    }));
+    return { ...teklif, foto_urlari: urls.filter(Boolean) };
+  }));
+}
+
+export async function alimTeklifiDurumGuncelle(id, durum) {
+  const gecerli = ['yeni', 'inceleniyor', 'teklif_verildi', 'anlasildi', 'uygun_degil'];
+  if (!gecerli.includes(durum)) throw new Error('Geçersiz teklif durumu.');
+  if (denemeModu) return;
+  const { error } = await (await sb()).from('alim_teklifleri').update({ durum }).eq('id', id);
+  if (error) throw hata(yetkiHatasi(error));
 }
 
 export async function raflar() {

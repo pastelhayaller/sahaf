@@ -47,6 +47,7 @@
   <header class="baslik">
     <span id="rol-rozet" class="rozet" hidden>Ziyaretçi</span>
     <h1 class="marka kucuk">Pastelhayaller<span>Sahaf</span></h1>
+    <button id="btn-teklifler" class="btn sade teklifler-dugme" type="button" hidden>Alım teklifleri</button>
     <button id="btn-sepet" class="btn sepet-dugme" type="button" hidden>Sepet <span id="sepet-sayi">0</span></button>
     <button id="btn-cikis" class="btn sade" type="button" hidden>Çıkış</button>
   </header>
@@ -61,6 +62,10 @@
     <select id="siralama"></select>
   </div>
 
+  <button id="btn-alim-teklif-ac" class="alim-cagri" type="button" hidden>
+    <span>Elindeki kitapları satmak mı istiyorsun?</span><strong>Fotoğraf gönder, fiyat iste ›</strong>
+  </button>
+
   <p id="ara-durum" class="durum"></p>
 
   <div id="sonuclar" class="liste"></div>
@@ -73,6 +78,39 @@
   </div>
 
   <button id="btn-ekle-ac" class="fab" type="button" aria-label="Yeni kitap ekle">+</button>
+</section>
+
+<!-- ZİYARETÇİDEN ALIM TEKLİFİ -->
+<section id="ekran-alim-teklif" class="ekran" hidden>
+  <header class="baslik">
+    <button class="btn sade" type="button" data-geri>‹ Geri</button>
+    <h2>Kitapların için fiyat iste</h2>
+  </header>
+  <p class="ipucu">Fotoğrafları gönder; inceleyip WhatsApp’tan sana dönüş yapalım. Kesin fiyat, kitaplar dükkâna geldiğinde verilir.</p>
+  <form id="alim-teklif-form" class="form" novalidate>
+    <label for="teklif-ad">Adın soyadın *</label>
+    <input id="teklif-ad" required autocomplete="name">
+    <label for="teklif-iletisim">WhatsApp numaran *</label>
+    <input id="teklif-iletisim" required type="tel" inputmode="tel" placeholder="05xx xxx xx xx" autocomplete="tel">
+    <label for="teklif-aciklama">Kitaplar hakkında *</label>
+    <textarea id="teklif-aciklama" required maxlength="3000" placeholder="Kitap adları, yaklaşık adet, kondisyon ve varsa yayınevi…"></textarea>
+    <label for="teklif-fotolar">Kitap fotoğrafları *</label>
+    <input id="teklif-fotolar" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" multiple required>
+    <p id="teklif-foto-durum" class="ipucu">En fazla 6 fotoğraf; her biri en çok 6 MB.</p>
+    <label class="onay-kutusu"><input id="teklif-onay" type="checkbox" required> Fotoğraflarımın ve iletişim bilgilerimin fiyat teklifi için Pastelhayaller Sahaf tarafından incelenmesine onay veriyorum.</label>
+    <button class="btn birincil" type="submit">Fotoğrafları gönder, fiyat iste</button>
+    <p id="alim-teklif-hata" class="hata" hidden></p>
+  </form>
+</section>
+
+<!-- PERSONEL: GELEN ALIM TEKLİFLERİ -->
+<section id="ekran-teklifler" class="ekran" hidden>
+  <header class="baslik">
+    <button class="btn sade" type="button" data-geri>‹ Geri</button>
+    <h2>Alım teklifleri</h2>
+  </header>
+  <p id="teklifler-durum" class="durum"></p>
+  <div id="teklifler-listesi" class="teklifler-liste"></div>
 </section>
 
 <!-- EKLE -->

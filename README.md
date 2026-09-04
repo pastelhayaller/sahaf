@@ -12,6 +12,7 @@ bilgisayardan aynı linkle açılır.
 - **Sil** — kitap satılınca listeden kaldırılır (15 saniye "Geri al" hakkı var)
 - **Kapak** — personel telefondan fotoğraf çeker veya Open Library’den kapak önerisi alır
 - **Ziyaretçi sepeti** — seçilen kitapları WhatsApp üzerinden rezervasyon talebi olarak yollar
+- **Kitap satma teklifi** — ziyaretçi fotoğraf gönderip kitapları için fiyat ister
 
 Türkçe arama harf duyarsızdır: "cigdem" yazınca "Çiğdem" bulunur.
 Fiyatı girilmemiş kitaplar, fiyata göre sıralamada her iki yönde de en sonda kalır.
@@ -89,6 +90,18 @@ kapaklar ziyaretçilerin katalogda görmesi için açıktır.
 "İnternetten kapak öner" Open Library’ye kitap adı ve varsa yazar bilgisini sorgular.
 Bulunan kapak baskıyla farklı olabilir; uygulama bu yüzden otomatik kaydetmez,
 personelin önizleyip Kaydet’e basmasını bekler.
+
+### Ziyaretçiden kitap alım teklifleri
+
+Ziyaretçi "Fotoğraf gönder, fiyat iste" akışında adını, WhatsApp numarasını,
+kitap açıklamasını ve en fazla altı fotoğrafı gönderir. Teklifler katalogdan ayrı
+ve özeldir: ziyaretçi geri okuyamaz, yalnız yönetici "Alım teklifleri" ekranında
+görür ve durumunu günceller. Fiyat talebi bağlayıcı değildir; kesin fiyat, kitaplar
+dükkâna geldiğinde verilir.
+
+Bu akışı açmak için SQL Editor’de `supabase/yama-004-alim-teklifleri.sql`
+dosyasını çalıştır. Fotoğraflar public olmayan Storage bucket’a gider; yalnız
+yöneticinin imzalı bağlantıyla görüntülemesine izin verilir.
 
 ## Yerelde çalıştırmak
 ```

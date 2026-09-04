@@ -72,6 +72,7 @@ body::before {
   padding-bottom: 14px; border-bottom: 1px solid var(--cizgi-ince); margin-bottom: 4px;
 }
 #btn-cikis { position: absolute; right: -8px; top: 0; }
+.teklifler-dugme { position: absolute; right: 58px; top: 0; min-height: 36px; font-size: 13px; color: var(--vurgu-koyu); }
 .sepet-dugme { position: absolute; right: 62px; top: 0; min-height: 36px; padding: 0 12px; font-size: 13px; color: var(--vurgu-koyu); background: var(--vurgu-acik); border-color: transparent; }
 .sepet-dugme span { display: inline-grid; place-items: center; min-width: 20px; height: 20px; margin-left: 4px; border-radius: var(--r-hap); color: #fff; background: var(--vurgu); font-size: 12px; }
 
@@ -165,6 +166,12 @@ body::before {
   background: var(--kart-alt); color: var(--metin); width: 100%;
   transition: border-color .15s, background .15s;
 }
+.form textarea {
+  min-height: 120px; resize: vertical; font: inherit; font-size: 16px; padding: 12px 14px;
+  border: 1px solid var(--cizgi-ince); border-bottom: 2px solid var(--cizgi);
+  border-radius: .5rem .5rem 0 0; background: var(--kart-alt); color: var(--metin); width: 100%;
+}
+.form textarea:focus { outline: none; border-bottom-color: var(--vurgu); background: var(--kart); }
 .form input:focus, .giris-kutu input:focus {
   outline: none; border-bottom-color: var(--vurgu); background: var(--kart);
 }
@@ -317,6 +324,28 @@ body::before {
 .sayfa-btn:disabled { opacity: .35; cursor: default; box-shadow: none; }
 .sayfa-btn.ok { font-size: 19px; line-height: 1; }
 .sayfa-bosluk { color: var(--soluk); padding: 0 2px; user-select: none; }
+
+/* --- Ziyaretçiden ikinci el kitap alımı -------------------------------- */
+.alim-cagri {
+  display: flex; flex-direction: column; gap: 2px; width: 100%; margin: 12px 0 6px; padding: 15px 16px;
+  text-align: left; border: 1px solid var(--vurgu-acik); border-radius: var(--r); color: var(--vurgu-koyu);
+  background: linear-gradient(120deg, rgba(204,234,207,.45), rgba(255,255,255,.8)); cursor: pointer; font: inherit;
+}
+.alim-cagri span { font-size: 13px; color: var(--soluk); }
+.alim-cagri strong { font-family: var(--baslik-yazi); font-size: 18px; }
+.alim-cagri:active { transform: translateY(1px); background: var(--vurgu-acik); }
+.teklifler-liste { display: flex; flex-direction: column; gap: 14px; }
+.teklif-kart { padding: 16px; background: var(--kart); border: 1px solid var(--cizgi-ince); border-radius: var(--r); box-shadow: var(--golge-1); }
+.teklif-baslik { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.teklif-baslik strong { font-family: var(--baslik-yazi); font-size: 20px; }
+.teklif-baslik span { color: var(--mavi); font-size: 14px; overflow-wrap: anywhere; text-align: right; }
+.teklif-kart p { margin: 12px 0 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.teklif-kart small { color: var(--soluk); }
+.teklif-fotolar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0; }
+.teklif-fotolar img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: .45rem; border: 1px solid var(--cizgi-ince); }
+.teklif-durum-sec { width: 100%; height: 42px; padding: 0 12px; margin-top: 12px; font: inherit; border: 1px solid var(--cizgi); border-radius: .5rem; background: var(--kart-alt); color: var(--metin); }
+.onay-kutusu { display: flex; align-items: flex-start; gap: 9px; margin-top: 18px !important; font-size: 13px !important; line-height: 1.45; letter-spacing: 0 !important; text-transform: none !important; }
+.onay-kutusu input { flex: 0 0 auto; width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--vurgu); }
 
 /* --- Ziyaretçi sepeti -------------------------------------------------- */
 .sepet-liste { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
