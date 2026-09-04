@@ -359,6 +359,17 @@ body::before {
 /* Dar telefonda 9 öğe tek satıra sığmıyordu (375px'te üç satıra sarıyordu).
    Yükseklik korunuyor — dokunma hedefi küçülmesin; daralan sadece genişlik. */
 @media (max-width: 430px) {
+  /* 375–430px'te kapak + raf + fiyat + sepet aynı satırda kalınca kitap adı
+     birkaç piksele sıkışıyordu. Kimlik bilgileri ilk iki kolonda sabit;
+     başlık kendi geniş satırında, eylem altta. */
+  .kart { display: grid; grid-template-columns: 46px 74px minmax(0, 1fr); gap: 8px; align-items: center; padding: 12px; }
+  .kart-kapak { grid-column: 1; grid-row: 1 / span 2; }
+  .raf-rozet { grid-column: 2; grid-row: 1 / span 2; min-width: 0; padding: 9px 5px; font-size: 22px; }
+  .kart-orta { grid-column: 3; grid-row: 1; }
+  .kart-ad { font-size: 18px; }
+  .kart-fiyat { grid-column: 3; grid-row: 2; font-size: 18px; }
+  .sepet-ekle { grid-column: 1 / -1; width: 100%; min-height: 40px; }
+  .kart:not(:has(.sepet-ekle)) .kart-fiyat { grid-column: 3; grid-row: 2; }
   .sayfalama { gap: 4px; }
   .sayfa-btn { min-width: 34px; padding: 0 5px; font-size: 14.5px; }
   .sayfa-btn.ok { font-size: 17px; }

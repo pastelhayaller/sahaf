@@ -373,14 +373,27 @@ async function internettenKapakBul(alan) {
   const ad = $(`#${alan}-ad`).value.trim();
   const yazar = $(`#${alan}-yazar`).value.trim();
   if (!ad) throw new Error('Önce kitap adını yaz.');
-  const sorgu = new URLSearchParams({ title: ad, limit: '1', fields: 'cover_i,title,author_name' });
-  if (yazar) sorgu.set('author', yazar);
-  const cevap = await fetch(`https://openlibrary.org/search.json?${sorgu}`);
-  if (!cevap.ok) throw new Error('Kapak servisine şu an ulaşılamadı.');
-  const veri = await cevap.json();
-  const kayit = veri.docs && veri.docs[0];
-  if (!kayit || !kayit.cover_i) throw new Error('Bu kitap için kapak önerisi bulunamadı. Fotoğraf çekebilirsin.');
-  fotoTaslak[alan] = { dosya: null, url: `https://covers.openlibrary.org/b/id/${kayit.cover_i}-L.jpg` };
+  // Google Books mobil tarayıcılarda daha tutarlı CORS ve kapak dönüşü veriyor.
+  // Open Library ikinci kaynak: Google'ın tanımadığı eski/yerel baskılarda şansımız sürer.
+  let url = null;
+  try {
+    const q = `intitle:${ad}${yazar ? ` inauthor:${yazar}` : ''}`;
+    const cevap = await fetch(`https://www.googleapis.com/books/v1/volumes?maxResults=1&q=${encodeURIComponent(q)}`);
+    const veri = cevap.ok && await cevap.json();
+    const baglar = veri && veri.items && veri.items[0] && veri.items[0].volumeInfo && veri.items[0].volumeInfo.imageLinks;
+    url = baglar && (baglar.thumbnail || baglar.smallThumbnail);
+  } catch { /* ikinci kaynağı dene */ }
+  if (!url) {
+    try {
+      const sorgu = new URLSearchParams({ title: ad, limit: '1', fields: 'cover_i' });
+      if (yazar) sorgu.set('author', yazar);
+      const cevap = await fetch(`https://openlibrary.org/search.json?${sorgu}`);
+      const veri = cevap.ok && await cevap.json();
+      if (veri && veri.docs && veri.docs[0] && veri.docs[0].cover_i) url = `https://covers.openlibrary.org/b/id/${veri.docs[0].cover_i}-L.jpg`;
+    } catch { /* aşağıdaki anlaşılır hata gösterilir */ }
+  }
+  if (!url) throw new Error('Kapak önerisi bulunamadı. Fotoğraf çekebilirsin.');
+  fotoTaslak[alan] = { dosya: null, url: url.replace(/^http:/, 'https:') };
   $(`#${alan}-foto`).value = '';
   kapakOnizlemeYaz(alan);
   bildir('Kapak önerisi geldi — baskıyla eşleştiğini kontrol et.');
