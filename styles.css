@@ -358,7 +358,7 @@ body::before {
 
 /* Dar telefonda 9 öğe tek satıra sığmıyordu (375px'te üç satıra sarıyordu).
    Yükseklik korunuyor — dokunma hedefi küçülmesin; daralan sadece genişlik. */
-@media (max-width: 430px) {
+@media (max-width: 600px) {
   /* 375–430px'te kapak + raf + fiyat + sepet aynı satırda kalınca kitap adı
      birkaç piksele sıkışıyordu. Kimlik bilgileri ilk iki kolonda sabit;
      başlık kendi geniş satırında, eylem altta. */
