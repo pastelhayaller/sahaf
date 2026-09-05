@@ -10,6 +10,8 @@ const SEPET_ANAHTAR = 'pastelhayaller_ziyaretci_sepeti';
 const WHATSAPP_NUMARASI = '905369782758';
 let sepet = sepetOku();
 const fotoTaslak = { ekle: { dosya: null, url: null }, duz: { dosya: null, url: null } };
+const KAPAK_HATA_SECICILERI = { ekle: '#ekle-hata', duz: '#duzenle-hata' };
+let teklifFotograflari = [];
 
 // Liste durumu tek yerde: arama, sıralama ve sayfa birbirine bağlı.
 // Terim ya da sıralama değişince sayfa 1'e döner — 7. sayfada arama yapıp
@@ -49,6 +51,7 @@ function koku(ekran) {
 
 window.addEventListener('popstate', async (ev) => {
   const d = ev.state || { ekran: 'ara', onay: false };
+  if (d.ekran !== 'alim-teklif' && teklifFotograflari.length) teklifFotograflariTemizle();
   durumUygula(d);
   if (d.ekran === 'ara' && !d.onay) await listeyiTazele();
 });
@@ -180,13 +183,82 @@ function alimTeklifAc() {
   if (yoneticiMi()) return;
   hataGizle('#alim-teklif-hata');
   $('#alim-teklif-form').reset();
-  $('#teklif-foto-durum').textContent = 'En fazla 6 fotoğraf; her biri en çok 6 MB.';
+  teklifFotograflariTemizle();
   git('alim-teklif');
 }
 
+function fotoBoyutuYaz(byte) {
+  if (byte < 1024 * 1024) return `${Math.ceil(byte / 1024)} KB`;
+  return `${(byte / (1024 * 1024)).toLocaleString('tr-TR', { maximumFractionDigits: 1 })} MB`;
+}
+
 function teklifFotoDurumuYaz() {
-  const n = $('#teklif-fotolar').files.length;
-  $('#teklif-foto-durum').textContent = n ? `${n} fotoğraf seçildi. Gönderdikten sonra yalnız personel görebilir.` : 'En fazla 6 fotoğraf; her biri en çok 6 MB.';
+  const n = teklifFotograflari.length;
+  const toplam = teklifFotograflari.reduce((byte, fotograf) => byte + fotograf.dosya.size, 0);
+  $('#teklif-foto-durum').textContent = n
+    ? `${n} fotoğraf seçildi (${fotoBoyutuYaz(toplam)}). Gönderdikten sonra yalnız personel görebilir.`
+    : `En fazla ${db.TEKLIF_FOTO_SINIRI} fotoğraf; gönderilmeden önce küçültülür.`;
+}
+
+function teklifFotoOnizlemeleriYaz() {
+  const kap = $('#teklif-foto-onizlemeler');
+  kap.replaceChildren();
+  teklifFotograflari.forEach(fotograf => {
+    const kart = document.createElement('article');
+    kart.className = 'teklif-foto-onizleme';
+
+    const img = document.createElement('img');
+    img.src = fotograf.url;
+    img.alt = `${fotograf.dosya.name} önizlemesi`;
+
+    const bilgi = document.createElement('span');
+    bilgi.className = 'teklif-foto-bilgi';
+    bilgi.textContent = `${fotograf.dosya.name} · ${fotoBoyutuYaz(fotograf.dosya.size)}`;
+
+    const kaldir = document.createElement('button');
+    kaldir.className = 'teklif-foto-kaldir';
+    kaldir.type = 'button';
+    kaldir.textContent = '×';
+    kaldir.setAttribute('aria-label', `${fotograf.dosya.name} fotoğrafını kaldır`);
+    kaldir.addEventListener('click', () => {
+      const sira = teklifFotograflari.indexOf(fotograf);
+      if (sira < 0) return;
+      URL.revokeObjectURL(teklifFotograflari[sira].url);
+      teklifFotograflari.splice(sira, 1);
+      teklifFotoOnizlemeleriYaz();
+      teklifFotoDurumuYaz();
+    });
+
+    kart.append(img, bilgi, kaldir);
+    kap.appendChild(kart);
+  });
+}
+
+function teklifFotograflariTemizle() {
+  teklifFotograflari.forEach(fotograf => URL.revokeObjectURL(fotograf.url));
+  teklifFotograflari = [];
+  $('#teklif-fotolar').value = '';
+  $('#teklif-foto-onizlemeler').replaceChildren();
+  teklifFotoDurumuYaz();
+}
+
+function teklifFotograflariEkle(dosyalar) {
+  const mevcut = new Set(teklifFotograflari.map(fotograf => `${fotograf.dosya.name}\u0000${fotograf.dosya.size}`));
+  const yeni = Array.from(dosyalar || []).filter(dosya => {
+    const kimlik = `${dosya.name}\u0000${dosya.size}`;
+    if (mevcut.has(kimlik)) return false;
+    mevcut.add(kimlik);
+    return true;
+  });
+  const bosYer = db.TEKLIF_FOTO_SINIRI - teklifFotograflari.length;
+  const eklenecek = yeni.slice(0, Math.max(0, bosYer));
+  eklenecek.forEach(dosya => teklifFotograflari.push({ dosya, url: URL.createObjectURL(dosya) }));
+  $('#teklif-fotolar').value = '';
+  teklifFotoOnizlemeleriYaz();
+  teklifFotoDurumuYaz();
+  if (yeni.length > eklenecek.length) {
+    hataGoster('#alim-teklif-hata', new Error(`Bir teklife en fazla ${db.TEKLIF_FOTO_SINIRI} fotoğraf eklenebilir.`));
+  }
 }
 
 const DURUM_ETIKETI = {
@@ -377,11 +449,27 @@ async function internettenKapakBul(alan) {
   // Open Library ikinci kaynak: Google'ın tanımadığı eski/yerel baskılarda şansımız sürer.
   let url = null;
   try {
-    const q = `intitle:${ad}${yazar ? ` inauthor:${yazar}` : ''}`;
-    const cevap = await fetch(`https://www.googleapis.com/books/v1/volumes?maxResults=1&q=${encodeURIComponent(q)}`);
-    const veri = cevap.ok && await cevap.json();
-    const baglar = veri && veri.items && veri.items[0] && veri.items[0].volumeInfo && veri.items[0].volumeInfo.imageLinks;
-    url = baglar && (baglar.thumbnail || baglar.smallThumbnail);
+    const sorgular = [
+      [ad, yazar].filter(Boolean).join(' '),
+      `intitle:${ad}${yazar ? ` inauthor:${yazar}` : ''}`,
+    ];
+    for (const q of sorgular) {
+      const cevap = await fetch(`https://www.googleapis.com/books/v1/volumes?maxResults=5&q=${encodeURIComponent(q)}`);
+      const veri = cevap.ok && await cevap.json();
+      const kayit = veri && veri.items && veri.items.find(item => {
+        const baglar = item && item.volumeInfo && item.volumeInfo.imageLinks;
+        return baglar && (baglar.thumbnail || baglar.smallThumbnail);
+      });
+      const baglar = kayit && kayit.volumeInfo.imageLinks;
+      url = baglar && (baglar.thumbnail || baglar.smallThumbnail);
+      if (url) {
+        const kapakUrl = new URL(url.replace(/^http:/, 'https:'));
+        kapakUrl.searchParams.delete('edge');
+        kapakUrl.searchParams.set('zoom', '1');
+        url = kapakUrl.toString();
+        break;
+      }
+    }
   } catch { /* ikinci kaynağı dene */ }
   if (!url) {
     try {
@@ -563,29 +651,33 @@ $('#btn-bunu-ekle').addEventListener('click', () => ekleAc($('#arama').value.tri
     kapakOnizlemeYaz(alan);
   });
   $(`#btn-${alan}-kapak-bul`).addEventListener('click', async () => {
-    hataGizle(`#${alan}-hata`);
+    const hataSecici = KAPAK_HATA_SECICILERI[alan];
+    hataGizle(hataSecici);
     try { await internettenKapakBul(alan); }
-    catch (e) { hataGoster(`#${alan}-hata`, e); }
+    catch (e) { hataGoster(hataSecici, e); }
   });
 });
 $('#btn-sepet').addEventListener('click', sepetiAc);
 $('#btn-whatsapp').addEventListener('click', whatsappRezervasyon);
 $('#btn-alim-teklif-ac').addEventListener('click', alimTeklifAc);
 $('#btn-teklifler').addEventListener('click', teklifleriAc);
-$('#teklif-fotolar').addEventListener('change', teklifFotoDurumuYaz);
+$('#teklif-fotolar').addEventListener('change', (ev) => teklifFotograflariEkle(ev.target.files));
 $('#alim-teklif-form').addEventListener('submit', async (ev) => {
   ev.preventDefault();
   hataGizle('#alim-teklif-hata');
   const btn = $('#alim-teklif-form button[type="submit"]');
   btn.disabled = true;
   try {
-    const foto_yollari = await db.teklifFotograflariYukle($('#teklif-fotolar').files);
+    const foto_yollari = await db.teklifFotograflariYukle(teklifFotograflari.map(fotograf => fotograf.dosya), (sira, toplam) => {
+      $('#teklif-foto-durum').textContent = `${sira}/${toplam} gönderiliyor…`;
+    });
     await db.alimTeklifiGonder({
       ad_soyad: $('#teklif-ad').value,
       iletisim: $('#teklif-iletisim').value,
       kitap_aciklama: $('#teklif-aciklama').value,
       foto_yollari,
     });
+    teklifFotograflariTemizle();
     bildir('✓ Teklifin geldi. İnceleyip WhatsApp’tan döneceğiz.');
     history.back();
   } catch (e) { hataGoster('#alim-teklif-hata', e); }

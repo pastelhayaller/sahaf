@@ -13,6 +13,8 @@ const TABLO = 'kitaplar';
 const YEREL_ANAHTAR = 'pastelhayaller_kitaplar';
 const KAPAK_BUCKET = 'kitap-kapaklari';
 const TEKLIF_BUCKET = 'alim-teklifleri';
+export const TEKLIF_FOTO_SINIRI = 20;
+const AZAMI_FOTO_BOYUTU = 6 * 1024 * 1024;
 
 export const SAYFA_BOYU = 20;
 
@@ -310,29 +312,78 @@ export async function kapakYukle(dosya) {
 
 function fotografDogrula(dosya) {
   if (!/^image\/(jpeg|png|webp)$/.test(dosya.type)) throw new Error('Yalnız JPG, PNG veya WEBP fotoğraf yüklenebilir.');
-  if (dosya.size > 6 * 1024 * 1024) throw new Error('Her fotoğraf 6 MB’dan küçük olmalı.');
+}
+
+export async function fotografiKucult(dosya) {
+  const bitmap = await createImageBitmap(dosya, { imageOrientation: 'from-image' });
+  try {
+    const uzunKenar = Math.max(bitmap.width, bitmap.height);
+    const oran = Math.min(1, 1600 / uzunKenar);
+    const genislik = Math.max(1, Math.round(bitmap.width * oran));
+    const yukseklik = Math.max(1, Math.round(bitmap.height * oran));
+    const canvas = typeof OffscreenCanvas !== 'undefined'
+      ? new OffscreenCanvas(genislik, yukseklik)
+      : Object.assign(document.createElement('canvas'), { width: genislik, height: yukseklik });
+    const baglam = canvas.getContext('2d');
+    if (!baglam) throw new Error('Fotoğraf küçültülemedi.');
+    baglam.drawImage(bitmap, 0, 0, genislik, yukseklik);
+
+    const blob = 'convertToBlob' in canvas
+      ? await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.82 })
+      : await new Promise((resolve, reject) => canvas.toBlob(sonuc => {
+        if (sonuc) resolve(sonuc);
+        else reject(new Error('Fotoğraf küçültülemedi.'));
+      }, 'image/jpeg', 0.82));
+    if (blob.size >= dosya.size) return dosya;
+    const ad = dosya.name.replace(/\.[^.]+$/, '') || 'fotograf';
+    return new File([blob], `${ad}.jpg`, { type: 'image/jpeg', lastModified: dosya.lastModified });
+  } finally {
+    bitmap.close();
+  }
+}
+
+async function yuklemeyeHazirla(dosya) {
+  let hazir = dosya;
+  try {
+    hazir = await fotografiKucult(dosya);
+  } catch { /* küçültme tutmadıysa orijinali dene */ }
+  // Küçültme başarısız olabilir ya da dosyayı büyüttüğü için orijinal geri dönmüş
+  // olabilir. Bucket 6 MB üstünü reddediyor; ham depo hatası yerine anlaşılır cümle.
+  if (hazir.size > AZAMI_FOTO_BOYUTU) {
+    throw new Error(`“${dosya.name}” çok büyük, küçültülemedi.`);
+  }
+  return hazir;
 }
 
 // Alım teklifi fotoğrafları özel bucket'a gider. Ziyaretçi yükler ama geri
 // okuyamaz; sadece yönetici imzalı URL ile görür.
-export async function teklifFotograflariYukle(dosyalar) {
+export async function teklifFotograflariYukle(dosyalar, ilerlemeYaz) {
   const liste = Array.from(dosyalar || []);
   if (!liste.length) throw new Error('En az bir kitap fotoğrafı ekle.');
-  if (liste.length > 6) throw new Error('Bir teklife en fazla 6 fotoğraf eklenebilir.');
+  if (liste.length > TEKLIF_FOTO_SINIRI) throw new Error(`Bir teklife en fazla ${TEKLIF_FOTO_SINIRI} fotoğraf eklenebilir.`);
   liste.forEach(fotografDogrula);
   if (denemeModu) {
-    return Promise.all(liste.map(dosya => new Promise((resolve, reject) => {
+    const sonuc = [];
+    for (let i = 0; i < liste.length; i += 1) {
+      const dosya = await yuklemeyeHazirla(liste[i]);
+      if (ilerlemeYaz) ilerlemeYaz(i + 1, liste.length);
+      const veri = await new Promise((resolve, reject) => {
       const okuyucu = new FileReader();
       okuyucu.onload = () => resolve(okuyucu.result);
       okuyucu.onerror = () => reject(new Error('Fotoğraf okunamadı.'));
       okuyucu.readAsDataURL(dosya);
-    })));
+      });
+      sonuc.push(veri);
+    }
+    return sonuc;
   }
   const istemci = await sb();
   const sonuc = [];
-  for (const dosya of liste) {
+  for (let i = 0; i < liste.length; i += 1) {
+    const dosya = await yuklemeyeHazirla(liste[i]);
     const uzanti = dosya.type === 'image/png' ? 'png' : dosya.type === 'image/webp' ? 'webp' : 'jpg';
     const yol = `teklifler/${crypto.randomUUID()}.${uzanti}`;
+    if (ilerlemeYaz) ilerlemeYaz(i + 1, liste.length);
     const { error } = await istemci.storage.from(TEKLIF_BUCKET).upload(yol, dosya, {
       contentType: dosya.type, cacheControl: '31536000',
     });
@@ -350,10 +401,10 @@ export async function alimTeklifiGonder(teklif) {
     foto_yollari: teklif.foto_yollari || [],
   };
   if (!kayit.ad_soyad || !kayit.iletisim || !kayit.kitap_aciklama) throw new Error('Adın, iletişim bilgin ve kitap açıklaması gerekli.');
-  if (denemeModu) return { id: yeniId(), ...kayit, durum: 'yeni' };
-  const { data, error } = await (await sb()).from('alim_teklifleri').insert(kayit).select('id').single();
+  if (denemeModu) return { ok: true };
+  const { error } = await (await sb()).from('alim_teklifleri').insert(kayit);
   if (error) throw hata(yetkiHatasi(error));
-  return data;
+  return { ok: true };
 }
 
 export async function alimTeklifleriniListele() {

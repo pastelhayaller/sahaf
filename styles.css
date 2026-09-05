@@ -66,14 +66,17 @@ body::before {
 .marka span { color: var(--vurgu); margin-left: .35em; font-weight: 500; font-style: italic; }
 .marka.kucuk { font-size: 22px; margin: 0; }
 
-/* Arama ekranının tepesi: marka ortada, çıkış sağda, altında ince çizgi */
+/* Arama ekranının tepesi: sol rozet, esneyen marka, sağda tek eylem grubu. */
 #ekran-ara .baslik {
-  position: relative; justify-content: center;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px;
   padding-bottom: 14px; border-bottom: 1px solid var(--cizgi-ince); margin-bottom: 4px;
 }
-#btn-cikis { position: absolute; right: -8px; top: 0; }
-.teklifler-dugme { position: absolute; right: 58px; top: 0; min-height: 36px; font-size: 13px; color: var(--vurgu-koyu); }
-.sepet-dugme { position: absolute; right: 62px; top: 0; min-height: 36px; padding: 0 12px; font-size: 13px; color: var(--vurgu-koyu); background: var(--vurgu-acik); border-color: transparent; }
+#ekran-ara .rozet { position: static; grid-column: 1; }
+#ekran-ara .marka { grid-column: 2; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+#ekran-ara .baslik-eylemler { grid-column: 3; display: flex; align-items: center; gap: 4px; min-width: 0; }
+#ekran-ara .baslik-eylemler .btn { position: static; flex: 0 0 auto; margin: 0; }
+.teklifler-dugme { min-height: 36px; font-size: 13px; color: var(--vurgu-koyu); }
+.sepet-dugme { min-height: 36px; padding: 0 12px; font-size: 13px; color: var(--vurgu-koyu); background: var(--vurgu-acik); border-color: transparent; }
 .sepet-dugme span { display: inline-grid; place-items: center; min-width: 20px; height: 20px; margin-left: 4px; border-radius: var(--r-hap); color: #fff; background: var(--vurgu); font-size: 12px; }
 
 /* Form ekranlarının tepesi: başlık ortada, geri solda */
@@ -280,7 +283,7 @@ body::before {
 
 /* Rol rozeti — personelin bir bakışta hangi hesapta olduğunu görmesi için */
 .rozet {
-  position: absolute; left: -2px; top: 6px;
+  position: static;
   background: var(--vurgu-acik); color: var(--vurgu-koyu);
   font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
   padding: 4px 10px; border-radius: var(--r-hap);
@@ -349,6 +352,12 @@ body::before {
 .teklif-durum-sec { width: 100%; height: 42px; padding: 0 12px; margin-top: 12px; font: inherit; border: 1px solid var(--cizgi); border-radius: .5rem; background: var(--kart-alt); color: var(--metin); }
 .onay-kutusu { display: flex; align-items: flex-start; gap: 9px; margin-top: 18px !important; font-size: 13px !important; line-height: 1.45; letter-spacing: 0 !important; text-transform: none !important; }
 .onay-kutusu input { flex: 0 0 auto; width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--vurgu); }
+.teklif-foto-onizlemeler { display: grid; gap: 8px; margin-top: 10px; }
+.teklif-foto-onizleme { display: grid; grid-template-columns: 58px minmax(0, 1fr) 44px; align-items: center; gap: 10px; padding: 8px; background: var(--kart); border: 1px solid var(--cizgi-ince); border-radius: .5rem; }
+.teklif-foto-onizleme img { width: 58px; height: 58px; object-fit: cover; border-radius: .35rem; }
+.teklif-foto-bilgi { min-width: 0; overflow-wrap: anywhere; font-size: 13px; color: var(--soluk); }
+.teklif-foto-kaldir { width: 44px; height: 44px; padding: 0; border: 1px solid var(--cizgi); border-radius: .5rem; background: var(--kart-alt); color: var(--gul); font: 28px/1 var(--govde-yazi); cursor: pointer; }
+.teklif-foto-kaldir:active { background: var(--gul-acik); transform: translateY(1px); }
 
 /* --- Ziyaretçi sepeti -------------------------------------------------- */
 .sepet-liste { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
@@ -377,4 +386,27 @@ body::before {
   .sayfa-btn { min-width: 34px; padding: 0 5px; font-size: 14.5px; }
   .sayfa-btn.ok { font-size: 17px; }
   .sayfa-bosluk { padding: 0; font-size: 13px; }
+}
+
+/* Dar ekranda tek satır yetmiyor: 320px'te markaya 112px kalıyor, "Sahaf"
+   tamamen kırpılıyordu. Çakışma yoktu ama dükkânın adı okunmuyordu — iki
+   satıra ayırıyoruz: üstte marka, altta rozet + eylemler. */
+@media (max-width: 480px) {
+  #ekran-ara .baslik {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "marka marka" "rozet eylemler";
+    row-gap: 10px;
+  }
+  #ekran-ara .marka {
+    grid-area: marka; text-align: center;
+    white-space: normal; overflow: visible; text-overflow: clip;
+  }
+  #ekran-ara .rozet { grid-area: rozet; justify-self: start; }
+  #ekran-ara .baslik-eylemler { grid-area: eylemler; justify-self: end; }
+}
+
+@media (max-width: 360px) {
+  #ekran-ara .marka.kucuk { font-size: 20px; }
+  #ekran-ara .rozet { padding: 4px 8px; font-size: 9px; }
+  #ekran-ara .teklifler-dugme, #ekran-ara .sepet-dugme { padding: 0 10px; }
 }
