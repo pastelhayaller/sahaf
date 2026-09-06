@@ -382,6 +382,9 @@ async function sayfayaGit(no) {
 let istekSayaci = 0;
 async function listeyiTazele() {
   const benim = ++istekSayaci;
+  // Liste boşken bekleme boş ekran demek; kılcal iskelet satırlar basıyoruz.
+  // Doluysa eski satırlar durur — yazarken her tuşta ekran titremesin.
+  if (!$('#sonuclar').firstChild) iskeletYaz();
   try {
     const sonuc = await db.listele(liste);
     if (benim !== istekSayaci) return;
@@ -389,9 +392,24 @@ async function listeyiTazele() {
     listeYaz(sonuc, !!liste.terim);
   } catch (e) {
     if (benim !== istekSayaci) return;
+    $('#sonuclar').replaceChildren(); // iskelet kalmasın
     $('#ara-durum').textContent = e.message;
     $('#sayfalama').hidden = true;
   }
+}
+
+// Yükleniyor iskeleti — gerçek satırla aynı ölçüde, sadece boş. Sonuç
+// gelince listeYaz() zaten replaceChildren ile üstüne yazıyor.
+function iskeletYaz(adet = 4) {
+  const parca = document.createDocumentFragment();
+  for (let i = 0; i < adet; i++) {
+    const s = document.createElement('div');
+    s.className = 'iskelet';
+    s.setAttribute('aria-hidden', 'true');
+    s.innerHTML = '<i class="is-kapak"></i><i class="is-ad"></i><i class="is-raf"></i><i class="is-fiyat"></i>';
+    parca.appendChild(s);
+  }
+  $('#sonuclar').replaceChildren(parca);
 }
 
 // --- Sıralama kutusu ----------------------------------------------------
