@@ -431,6 +431,17 @@ export async function alimTeklifiDurumGuncelle(id, durum) {
   if (error) throw hata(yetkiHatasi(error));
 }
 
+// Once kayit, sonra dosyalar. Ters sirada olsa kayit silinemezse teklif
+// fotografsiz kalirdi; boyle en kotu ihtimalde bucket'ta oksuz dosya kalir.
+export async function alimTeklifiSil(id, fotoYollari) {
+  if (denemeModu) return;
+  const istemci = await sb();
+  const { error } = await istemci.from('alim_teklifleri').delete().eq('id', id);
+  if (error) throw hata(yetkiHatasi(error));
+  const yollar = (fotoYollari || []).filter(Boolean);
+  if (yollar.length) await istemci.storage.from(TEKLIF_BUCKET).remove(yollar);
+}
+
 export async function raflar() {
   if (denemeModu) {
     return [...new Set(yerelOku().map(k => k.raf).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'tr'));

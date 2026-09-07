@@ -23,9 +23,11 @@ const liste = { terim: '', sirala: db.VARSAYILAN_SIRALAMA, sayfa: 1 };
 let rol = 'ziyaretci';
 const yoneticiMi = () => rol === 'yonetici';
 
+let acikEkran = null;
 function ekranCiz(ad) {
   ekranlar.forEach(e => { $('#ekran-' + e).hidden = (e !== ad); });
-  window.scrollTo(0, 0);
+  // Perde acilip kapanirken listenin okundugu yer korunur.
+  if (ad !== acikEkran) { acikEkran = ad; window.scrollTo(0, 0); }
 }
 
 // --- Gezinme -------------------------------------------------------------
@@ -34,6 +36,7 @@ function ekranCiz(ad) {
 function durumUygula(d) {
   ekranCiz(d.ekran);
   $('#onay').hidden = !d.onay;
+  $('#foto-buyut').hidden = !d.buyut;
 }
 
 function git(ekran) {
@@ -104,6 +107,63 @@ function hataGoster(secici, e) {
 }
 function hataGizle(secici) { $(secici).hidden = true; }
 
+// --- Fotograf buyutme ----------------------------------------------------
+// Tam ekran perde. Gecmise girdi olarak yazilir: telefonun geri tusu
+// uygulamadan cikmak yerine sadece fotografi kapatir.
+let buyutListesi = [];
+let buyutSira = 0;
+
+function fotoBuyut(urller, sira) {
+  buyutListesi = (urller || []).filter(Boolean);
+  if (!buyutListesi.length) return;
+  buyutSira = Math.max(0, Math.min(sira || 0, buyutListesi.length - 1));
+  buyutCiz();
+  const d = { ekran: (history.state && history.state.ekran) || 'ara', onay: false, buyut: true };
+  history.pushState(d, '');
+  durumUygula(d);
+}
+
+function buyutCiz() {
+  const cok = buyutListesi.length > 1;
+  $('#buyut-resim').src = buyutListesi[buyutSira] || '';
+  $('#buyut-sayac').textContent = cok ? `${buyutSira + 1} / ${buyutListesi.length}` : '';
+  $('#buyut-onceki').hidden = !cok;
+  $('#buyut-sonraki').hidden = !cok;
+}
+
+function buyutKaydir(yon) {
+  if (buyutListesi.length < 2) return;
+  buyutSira = (buyutSira + yon + buyutListesi.length) % buyutListesi.length;
+  buyutCiz();
+}
+
+// Bir <img> yerine tiklanabilir bir dugme uretir; ayni listenin tamami
+// buyutmeye gecer, boylece pencerede ileri-geri gezilebilir.
+function fotoDugmesi(urller, sira, alt) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'foto-dugme';
+  btn.setAttribute('aria-label', `${alt} — büyüt`);
+  const img = document.createElement('img');
+  img.src = urller[sira];
+  img.alt = alt;
+  img.loading = 'lazy';
+  btn.appendChild(img);
+  btn.addEventListener('click', (ev) => { ev.stopPropagation(); fotoBuyut(urller, sira); });
+  return btn;
+}
+
+$('#buyut-kapat').addEventListener('click', () => history.back());
+$('#buyut-onceki').addEventListener('click', (ev) => { ev.stopPropagation(); buyutKaydir(-1); });
+$('#buyut-sonraki').addEventListener('click', (ev) => { ev.stopPropagation(); buyutKaydir(1); });
+$('#foto-buyut').addEventListener('click', (ev) => { if (ev.target === ev.currentTarget) history.back(); });
+document.addEventListener('keydown', (ev) => {
+  if ($('#foto-buyut').hidden) return;
+  if (ev.key === 'Escape') history.back();
+  if (ev.key === 'ArrowLeft') buyutKaydir(-1);
+  if (ev.key === 'ArrowRight') buyutKaydir(1);
+});
+
 // --- Sonuç listesi ------------------------------------------------------
 function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
@@ -131,6 +191,9 @@ function kartYap(k) {
     el.type = 'button';
     el.addEventListener('click', () => duzenleAc(k));
   } else {
+    // Kart ziyaretcide bir sey acmiyor; bostaki tek dogal hedef kapagin kendisi.
+    const kapak = el.querySelector('img.kart-kapak');
+    if (kapak) kapak.addEventListener('click', () => fotoBuyut([kapak.src], 0));
     const ekle = document.createElement('button');
     ekle.className = 'sepet-ekle';
     ekle.type = 'button';
@@ -210,6 +273,8 @@ function teklifFotoOnizlemeleriYaz() {
     const img = document.createElement('img');
     img.src = fotograf.url;
     img.alt = `${fotograf.dosya.name} önizlemesi`;
+    img.style.cursor = 'zoom-in';
+    img.addEventListener('click', () => fotoBuyut(teklifFotograflari.map(f => f.url), teklifFotograflari.indexOf(fotograf)));
 
     const bilgi = document.createElement('span');
     bilgi.className = 'teklif-foto-bilgi';
@@ -271,22 +336,85 @@ async function teklifleriYenile() {
   try {
     const teklifler = await db.alimTeklifleriniListele();
     $('#teklifler-durum').textContent = teklifler.length ? `${teklifler.length} alım teklifi` : 'Henüz alım teklifi yok.';
-    teklifler.forEach(t => {
-      const el = document.createElement('article'); el.className = 'teklif-kart';
-      const tarih = new Date(t.created_at).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' });
-      el.innerHTML = `<div class="teklif-baslik"><strong>${escapeHtml(t.ad_soyad)}</strong><span>${escapeHtml(t.iletisim)}</span></div>
-        <p>${escapeHtml(t.kitap_aciklama)}</p><small>${tarih}</small>`;
-      if (t.foto_urlari.length) {
-        const fotograflar = document.createElement('div'); fotograflar.className = 'teklif-fotolar';
-        t.foto_urlari.forEach(url => { const img = document.createElement('img'); img.src = url; img.alt = 'Gönderilen kitap fotoğrafı'; fotograflar.appendChild(img); });
-        el.appendChild(fotograflar);
-      }
-      const sec = document.createElement('select'); sec.className = 'teklif-durum-sec';
-      Object.entries(DURUM_ETIKETI).forEach(([anahtar, etiket]) => { const o = document.createElement('option'); o.value = anahtar; o.textContent = etiket; o.selected = anahtar === t.durum; sec.appendChild(o); });
-      sec.addEventListener('change', async () => { try { await db.alimTeklifiDurumGuncelle(t.id, sec.value); bildir('✓ Teklif durumu güncellendi'); } catch (e) { bildir(e.message); sec.value = t.durum; } });
-      el.appendChild(sec); kap.appendChild(el);
-    });
+    teklifler.forEach(t => kap.appendChild(teklifKarti(t)));
   } catch (e) { $('#teklifler-durum').textContent = e.message; }
+}
+
+// Durum artik acilir listede saklanmiyor: kartin tepesinde renkli bir muhur.
+// Yeni = hardal (bekliyor), fiyat verildi = muhur, anlasildi = yesil.
+function teklifKarti(t) {
+  const el = document.createElement('article');
+  el.className = 'teklif-kart';
+  const tarih = new Date(t.created_at).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' });
+
+  const rozet = document.createElement('span');
+  const rozetiYaz = (durum) => {
+    rozet.className = `teklif-durum-rozet d-${durum}`;
+    rozet.textContent = DURUM_ETIKETI[durum] || durum;
+  };
+  rozetiYaz(t.durum);
+
+  const ust = document.createElement('div');
+  ust.className = 'teklif-ust';
+  const tarihEl = document.createElement('span');
+  tarihEl.className = 'teklif-tarih';
+  tarihEl.textContent = tarih;
+  ust.append(rozet, tarihEl);
+  el.appendChild(ust);
+
+  const govde = document.createElement('div');
+  govde.innerHTML = `<div class="teklif-baslik"><strong>${escapeHtml(t.ad_soyad)}</strong><span>${escapeHtml(t.iletisim)}</span></div>
+    <p>${escapeHtml(t.kitap_aciklama)}</p>`;
+  el.appendChild(govde);
+
+  if (t.foto_urlari.length) {
+    const fotograflar = document.createElement('div');
+    fotograflar.className = 'teklif-fotolar';
+    t.foto_urlari.forEach((url, i) => {
+      fotograflar.appendChild(fotoDugmesi(t.foto_urlari, i, `${t.ad_soyad} — gönderilen kitap fotoğrafı ${i + 1}`));
+    });
+    el.appendChild(fotograflar);
+  }
+
+  const sec = document.createElement('select');
+  sec.className = 'teklif-durum-sec';
+  sec.setAttribute('aria-label', 'Teklif durumu');
+  Object.entries(DURUM_ETIKETI).forEach(([anahtar, etiket]) => {
+    const o = document.createElement('option');
+    o.value = anahtar; o.textContent = etiket; o.selected = anahtar === t.durum;
+    sec.appendChild(o);
+  });
+  sec.addEventListener('change', async () => {
+    try {
+      await db.alimTeklifiDurumGuncelle(t.id, sec.value);
+      t.durum = sec.value;
+      rozetiYaz(t.durum);
+      bildir('✓ Teklif durumu güncellendi');
+    } catch (e) { bildir(e.message); sec.value = t.durum; }
+  });
+
+  // Silme kalicidir: fotograflar da bucket'tan gider, geri alma yok.
+  // Bu yuzden kitap silmenin aksine onay penceresine bagli.
+  const sil = document.createElement('button');
+  sil.type = 'button';
+  sil.className = 'teklif-sil';
+  sil.textContent = 'Sil';
+  sil.setAttribute('aria-label', `${t.ad_soyad} teklifini sil`);
+  sil.addEventListener('click', () => {
+    onaySor(`«${t.ad_soyad}» teklifi ve ${t.foto_urlari.length} fotoğrafı kalıcı olarak silinecek. Geri alınamaz.`, async () => {
+      try {
+        await db.alimTeklifiSil(t.id, t.foto_yollari);
+        bildir('✓ Teklif silindi');
+        await teklifleriYenile();
+      } catch (e) { bildir(e.message); }
+    });
+  });
+
+  const eylemler = document.createElement('div');
+  eylemler.className = 'teklif-eylemler';
+  eylemler.append(sec, sil);
+  el.appendChild(eylemler);
+  return el;
 }
 
 async function teklifleriAc() { if (!yoneticiMi()) return; git('teklifler'); await teklifleriYenile(); }
