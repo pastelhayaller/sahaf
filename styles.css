@@ -14,17 +14,20 @@
   --kilcal:      #ded4bf;  /* satır ayracı */
   --cizgi:       #c6b99c;  /* alan kenarı */
 
-  /* Üç mürekkep. Kırmızı marka ve eylem; yeşil yer/yerleşim (raf, anlaşıldı);
-     hardal dikkat (yeni teklif, satış çağrısı). Sönüklük buradan kırıldı —
-     gravür dili bozulmadan bir renk tabakası eklendi. */
-  --muhur:       #b0362a;  /* birincil eylem, marka, odak */
-  --muhur-koyu:  #8a2820;
-  --muhur-soluk: #f7ddd7;
-  --yesil:       #3f5240;  /* raf etiketi, "anlaşıldı" */
+  /* İki mürekkep, ikisi de sıcak: yeşil ve pastel turuncu. Kırmızı 2026-09-07'de
+     kaldırıldı — kâğıt zeminde fazla sert duruyordu, "sahaf" değil "uyarı"
+     okunuyordu. Yeşil taşıyıcı (marka, eylem, raf), turuncu ise sadece dikkat
+     çekmesi gereken iki yerde (yeni teklif, alım çağrısı). Zemin aynı kaldı. */
+  --muhur:       #4a6e51;  /* birincil: marka, eylem, odak, mühür */
+  --muhur-koyu:  #3a5740;
+  --muhur-soluk: #dde8de;
+  --yesil:       #3f5240;  /* koyu zeytin: raf etiketi, "anlaşıldı" */
   --yesil-soluk: #e0e7dd;
-  --hardal:      #b8862f;  /* "yeni" teklif, alım çağrısı */
-  --hardal-soluk:#f8e9cc;
-  --tehlike:     #b0362a;
+  --turuncu:     #d18a52;  /* pastel turuncu: zemin ve dolu rozet */
+  --turuncu-koyu:#9d5f33;  /* aynı rengin metin/kenar hâli — kâğıtta okunur */
+  --turuncu-soluk:#f8e7d4;
+  /* Silme artık kırmızı değil mürekkep: "Satıldı — sil" ile aynı dil. */
+  --tehlike:     #9d5f33;
 
   /* Keskin kenar bilinçli: 2px'i geçen köşe bu dili bozar. */
   --r:      2px;
@@ -168,7 +171,7 @@ body::before {
   border: 1px solid var(--murekkep); border-radius: 0;
   background-color: var(--kagit-2); color: var(--murekkep); box-shadow: var(--baski);
   background-repeat: no-repeat; background-position: 15px center;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23b0362a' stroke-width='1.6' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.8-3.8'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%234a6e51' stroke-width='1.6' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.8-3.8'/%3E%3C/svg%3E");
   transition: box-shadow .14s, background-color .14s;
   -webkit-appearance: none; appearance: none;
 }
@@ -253,7 +256,7 @@ body::before {
 .kart-fiyat {
   grid-column: 3; grid-row: 1; align-self: end; flex: 0 0 auto;
   font-family: var(--baslik-yazi); font-size: 20px; font-weight: 600;
-  color: var(--muhur); white-space: nowrap;
+  color: var(--turuncu-koyu); white-space: nowrap;
 }
 /* Personelde sepet düğmesi yok: fiyat iki satırın ortasına yerleşir. */
 .kart:not(:has(.sepet-ekle)) .kart-fiyat { grid-row: 1 / span 2; align-self: center; }
@@ -292,7 +295,7 @@ body::before {
 .bos { text-align: center; padding: 40px 12px; color: var(--murekkep-2); }
 .bos::before {
   content: ''; display: block; width: 48px; height: 48px; margin: 0 auto 16px; opacity: .55;
-  background: no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b0362a' stroke-width='1.1' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 6.5C10.5 5.2 8.4 4.6 6 4.6H3v13h3c2.4 0 4.5.6 6 1.9'/%3E%3Cpath d='M12 6.5c1.5-1.3 3.6-1.9 6-1.9h3v13h-3c-2.4 0-4.5.6-6 1.9'/%3E%3Cpath d='M12 6.5v13'/%3E%3C/svg%3E");
+  background: no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a6e51' stroke-width='1.1' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 6.5C10.5 5.2 8.4 4.6 6 4.6H3v13h3c2.4 0 4.5.6 6 1.9'/%3E%3Cpath d='M12 6.5c1.5-1.3 3.6-1.9 6-1.9h3v13h-3c-2.4 0-4.5.6-6 1.9'/%3E%3Cpath d='M12 6.5v13'/%3E%3C/svg%3E");
 }
 .bos p { font-family: var(--baslik-yazi); font-size: 22px; font-weight: 600; color: var(--murekkep); margin: 0 0 24px; }
 
@@ -380,8 +383,8 @@ body::before {
 .fab:active { transform: translate(4px, 4px); box-shadow: none; }
 
 .hata {
-  color: var(--muhur); font-size: 14px; margin: 18px 0 0;
-  padding-left: 12px; border-left: 2px solid var(--muhur);
+  color: var(--turuncu-koyu); font-size: 14px; margin: 18px 0 0;
+  padding-left: 12px; border-left: 2px solid var(--turuncu);
 }
 
 /* --- Giriş — çift cetvelli kapak sayfası -------------------------------- */
@@ -394,7 +397,7 @@ body::before {
 }
 .giris-kutu::before {
   content: ''; display: block; width: 76px; height: 76px; margin: 0 auto 24px;
-  background: no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none' stroke='%23b0362a' stroke-width='.8'%3E%3Ccircle cx='16' cy='16' r='15.2'/%3E%3Ccircle cx='16' cy='16' r='13.2' stroke-dasharray='1.2 1.9'/%3E%3Ccircle cx='16' cy='16' r='11.4'/%3E%3Cpath d='M16 10c-1.6-1.2-3.5-1.6-5.8-1.6v14.2c2.3 0 4.2.4 5.8 1.6' stroke-linejoin='round'/%3E%3Cpath d='M16 10c1.6-1.2 3.5-1.6 5.8-1.6v14.2c-2.3 0-4.2.4-5.8 1.6' stroke-linejoin='round'/%3E%3Cpath d='M16 10v14.2'/%3E%3C/svg%3E");
+  background: no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none' stroke='%234a6e51' stroke-width='.8'%3E%3Ccircle cx='16' cy='16' r='15.2'/%3E%3Ccircle cx='16' cy='16' r='13.2' stroke-dasharray='1.2 1.9'/%3E%3Ccircle cx='16' cy='16' r='11.4'/%3E%3Cpath d='M16 10c-1.6-1.2-3.5-1.6-5.8-1.6v14.2c2.3 0 4.2.4 5.8 1.6' stroke-linejoin='round'/%3E%3Cpath d='M16 10c1.6-1.2 3.5-1.6 5.8-1.6v14.2c-2.3 0-4.2.4-5.8 1.6' stroke-linejoin='round'/%3E%3Cpath d='M16 10v14.2'/%3E%3C/svg%3E");
   border-radius: 0; box-shadow: none;
 }
 .giris-kutu .marka { align-items: center; text-align: center; font-size: 34px; margin: 0 0 14px; gap: 8px; }
@@ -477,7 +480,7 @@ body::before {
   background-color: var(--kagit-2); box-shadow: none;
   appearance: none; -webkit-appearance: none;
   background-repeat: no-repeat; background-position: right 13px center;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%23b0362a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%234a6e51' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   transition: box-shadow .14s;
 }
 #siralama:focus { outline: none; box-shadow: 1px 1px 0 var(--muhur); border-color: var(--murekkep); }
@@ -514,20 +517,20 @@ body::before {
 .alim-cagri {
   display: flex; flex-direction: column; gap: 4px; width: 100%; margin: 18px 0 6px;
   padding: 15px 17px; text-align: left;
-  border: 1px solid var(--muhur); border-left-width: 4px; border-radius: 0;
-  color: var(--murekkep); background: var(--hardal-soluk);
+  border: 1px solid var(--turuncu); border-left-width: 4px; border-radius: 0;
+  color: var(--murekkep); background: var(--turuncu-soluk);
   cursor: pointer; font: inherit; box-shadow: var(--baski);
   transition: transform .1s, background-color .14s, box-shadow .12s;
 }
 .alim-cagri strong {
   font-family: var(--baslik-yazi); font-size: 19px; font-weight: 600;
-  line-height: 1.2; color: var(--muhur);
+  line-height: 1.2; color: var(--turuncu-koyu);
 }
 .alim-cagri span {
   font-family: var(--kod-yazi); font-size: 9.5px; letter-spacing: .18em;
   text-transform: uppercase; color: var(--murekkep-2);
 }
-.alim-cagri:active { transform: translate(3px, 3px); box-shadow: none; background: #f3dfba; }
+.alim-cagri:active { transform: translate(3px, 3px); box-shadow: none; background: #f2dcc2; }
 
 .teklifler-liste { display: flex; flex-direction: column; gap: 14px; }
 .teklif-kart {
@@ -561,9 +564,9 @@ body::before {
 .teklif-foto-bilgi { min-width: 0; overflow-wrap: anywhere; font-size: 12.5px; color: var(--murekkep-2); }
 .teklif-foto-kaldir {
   width: 44px; height: 44px; padding: 0; border: 1px solid var(--cizgi); border-radius: 0;
-  background: transparent; color: var(--muhur); font: 26px/1 var(--govde-yazi); cursor: pointer;
+  background: transparent; color: var(--turuncu-koyu); font: 26px/1 var(--govde-yazi); cursor: pointer;
 }
-.teklif-foto-kaldir:active { background: var(--muhur); color: var(--kagit); }
+.teklif-foto-kaldir:active { background: var(--turuncu-koyu); color: var(--kagit); }
 
 /* --- Ziyaretçi sepeti -------------------------------------------------- */
 .sepet-liste { display: flex; flex-direction: column; margin-top: 20px; }
@@ -642,11 +645,11 @@ body::before {
   font-family: var(--kod-yazi); font-size: 9.5px; font-weight: 700;
   letter-spacing: .14em; text-transform: uppercase; white-space: nowrap;
 }
-.teklif-durum-rozet.d-yeni          { background: var(--hardal); border-color: var(--hardal); color: #fdf6e6; }
-.teklif-durum-rozet.d-inceleniyor   { background: var(--kraft);  border-color: var(--cizgi);  color: var(--murekkep); }
-.teklif-durum-rozet.d-teklif_verildi{ background: var(--muhur);  border-color: var(--muhur);  color: #f7f2e7; }
-.teklif-durum-rozet.d-anlasildi     { background: var(--yesil);  border-color: var(--yesil);  color: #f2f0e6; }
-.teklif-durum-rozet.d-uygun_degil   { background: transparent;   border-color: var(--cizgi);  color: var(--soluk); }
+.teklif-durum-rozet.d-yeni          { background: var(--turuncu);       border-color: var(--turuncu);      color: #2a1c0e; }
+.teklif-durum-rozet.d-inceleniyor   { background: var(--turuncu-soluk); border-color: var(--turuncu);      color: var(--turuncu-koyu); }
+.teklif-durum-rozet.d-teklif_verildi{ background: var(--muhur-soluk);   border-color: var(--muhur);        color: var(--muhur-koyu); }
+.teklif-durum-rozet.d-anlasildi     { background: var(--yesil);         border-color: var(--yesil);        color: #f2f0e6; }
+.teklif-durum-rozet.d-uygun_degil   { background: transparent;          border-color: var(--cizgi);        color: var(--soluk); }
 
 .teklif-tarih { font-family: var(--kod-yazi); font-size: 10px; letter-spacing: .1em; color: var(--soluk); }
 
@@ -667,13 +670,13 @@ body::before {
 .teklif-eylemler .teklif-durum-sec { margin-top: 0; }
 .teklif-sil {
   min-width: 44px; height: 44px; padding: 0 12px;
-  border: 1px solid var(--muhur); border-radius: 0;
-  background: transparent; color: var(--muhur); cursor: pointer;
+  border: 1px solid var(--murekkep); border-radius: 0;
+  background: transparent; color: var(--murekkep); cursor: pointer;
   font-family: var(--kod-yazi); font-size: 10px; font-weight: 700;
   letter-spacing: .12em; text-transform: uppercase;
   transition: background-color .14s, color .14s;
 }
-.teklif-sil:hover, .teklif-sil:active { background: var(--muhur); color: #f7f2e7; }
+.teklif-sil:hover, .teklif-sil:active { background: var(--murekkep); color: var(--kagit); }
 
 /* --- Fotoğraf büyütme ---------------------------------------------------
    Tam ekran, koyu mürekkep perdesi. Telefonun geri tuşu da kapatır
