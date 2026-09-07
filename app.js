@@ -330,21 +330,50 @@ const DURUM_ETIKETI = {
   yeni: 'Yeni', inceleniyor: 'İnceleniyor', teklif_verildi: 'Fiyat verildi', anlasildi: 'Anlaşıldı', uygun_degil: 'Uygun değil',
 };
 
+// Kac saat kaldi: "23 saat" / "40 dakika" / "birazdan".
+function kalanSure(silindiAt) {
+  const biter = new Date(silindiAt).getTime() + db.TEKLIF_SAKLAMA_SAATI * 3600 * 1000;
+  const dakika = Math.round((biter - Date.now()) / 60000);
+  if (dakika <= 1) return 'birazdan';
+  if (dakika < 60) return `${dakika} dakika sonra`;
+  return `${Math.round(dakika / 60)} saat sonra`;
+}
+
 async function teklifleriYenile() {
   const kap = $('#teklifler-listesi');
+  const cop = $('#cop-listesi');
   kap.replaceChildren();
+  cop.replaceChildren();
   try {
-    const teklifler = await db.alimTeklifleriniListele();
-    $('#teklifler-durum').textContent = teklifler.length ? `${teklifler.length} alım teklifi` : 'Henüz alım teklifi yok.';
-    teklifler.forEach(t => kap.appendChild(teklifKarti(t)));
+    let teklifler = await db.alimTeklifleriniListele();
+
+    // Suresi dolanlari once gercekten yok et, sonra ekrani ciz -- yoksa
+    // "0 dakika sonra silinecek" diyen olu kartlar gorunurdu.
+    if (await db.alimTeklifleriniTemizle(teklifler)) {
+      teklifler = await db.alimTeklifleriniListele();
+    }
+
+    const aktif = teklifler.filter(t => !t.silindi_at);
+    const silinen = teklifler.filter(t => t.silindi_at);
+
+    $('#teklifler-durum').textContent = aktif.length ? `${aktif.length} alım teklifi` : 'Henüz alım teklifi yok.';
+    aktif.forEach(t => kap.appendChild(teklifKarti(t)));
+
+    $('#cop-durum').hidden = !silinen.length;
+    $('#cop-ipucu').hidden = !silinen.length;
+    $('#cop-durum').textContent = `Silinen teklifler (${silinen.length})`;
+    silinen.forEach(t => cop.appendChild(teklifKarti(t)));
   } catch (e) { $('#teklifler-durum').textContent = e.message; }
 }
 
 // Durum artik acilir listede saklanmiyor: kartin tepesinde renkli bir muhur.
-// Yeni = hardal (bekliyor), fiyat verildi = muhur, anlasildi = yesil.
+// Cop kutusundaki kart ayni bilesen -- sadece rozeti, tarihi ve alt satiri
+// degisiyor. Ayri bir "silinmis kart" bileseni yazmak ikisini zamanla
+// birbirinden ayirirdi.
 function teklifKarti(t) {
+  const silinmis = !!t.silindi_at;
   const el = document.createElement('article');
-  el.className = 'teklif-kart';
+  el.className = 'teklif-kart' + (silinmis ? ' silinmis' : '');
   const tarih = new Date(t.created_at).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' });
 
   const rozet = document.createElement('span');
@@ -352,13 +381,19 @@ function teklifKarti(t) {
     rozet.className = `teklif-durum-rozet d-${durum}`;
     rozet.textContent = DURUM_ETIKETI[durum] || durum;
   };
-  rozetiYaz(t.durum);
+  if (silinmis) {
+    rozet.className = 'teklif-durum-rozet d-silinmis';
+    rozet.textContent = 'Silindi';
+  } else {
+    rozetiYaz(t.durum);
+  }
 
   const ust = document.createElement('div');
   ust.className = 'teklif-ust';
   const tarihEl = document.createElement('span');
   tarihEl.className = 'teklif-tarih';
-  tarihEl.textContent = tarih;
+  // Cop kutusunda gelis tarihi degil kalan sure onemli.
+  tarihEl.textContent = silinmis ? `${kalanSure(t.silindi_at)} silinir` : tarih;
   ust.append(rozet, tarihEl);
   el.appendChild(ust);
 
@@ -374,6 +409,34 @@ function teklifKarti(t) {
       fotograflar.appendChild(fotoDugmesi(t.foto_urlari, i, `${t.ad_soyad} — gönderilen kitap fotoğrafı ${i + 1}`));
     });
     el.appendChild(fotograflar);
+  }
+
+  const eylemler = document.createElement('div');
+  eylemler.className = 'teklif-eylemler';
+
+  if (silinmis) {
+    // Cop kutusunda durum degistirilmez -- teklif zaten islem disi.
+    // Tek eylem geri getirmek; kalici yok etme sureye birakildi ki
+    // "sil" dedigin an bir dugme daha basip pisman olamayasin.
+    const aciklama = document.createElement('span');
+    aciklama.className = 'cop-aciklama';
+    aciklama.textContent = `${t.foto_urlari.length} fotoğrafıyla birlikte`;
+
+    const geri = document.createElement('button');
+    geri.type = 'button';
+    geri.className = 'teklif-geri';
+    geri.textContent = 'Geri al';
+    geri.setAttribute('aria-label', `${t.ad_soyad} teklifini geri al`);
+    geri.addEventListener('click', async () => {
+      try {
+        await db.alimTeklifiGeriAl(t.id);
+        bildir('✓ Teklif geri alındı');
+        await teklifleriYenile();
+      } catch (e) { bildir(e.message); }
+    });
+    eylemler.append(aciklama, geri);
+    el.appendChild(eylemler);
+    return el;
   }
 
   const sec = document.createElement('select');
@@ -393,25 +456,23 @@ function teklifKarti(t) {
     } catch (e) { bildir(e.message); sec.value = t.durum; }
   });
 
-  // Silme kalicidir: fotograflar da bucket'tan gider, geri alma yok.
-  // Bu yuzden kitap silmenin aksine onay penceresine bagli.
+  // Silme artik iki adimli: kart cop kutusuna duser, 24 saat sonra gercekten
+  // gider. Onay penceresi yine duruyor ama artik "geri alinamaz" demiyor.
   const sil = document.createElement('button');
   sil.type = 'button';
   sil.className = 'teklif-sil';
   sil.textContent = 'Sil';
   sil.setAttribute('aria-label', `${t.ad_soyad} teklifini sil`);
   sil.addEventListener('click', () => {
-    onaySor(`«${t.ad_soyad}» teklifi ve ${t.foto_urlari.length} fotoğrafı kalıcı olarak silinecek. Geri alınamaz.`, async () => {
+    onaySor(`«${t.ad_soyad}» teklifi silinsin mi? ${db.TEKLIF_SAKLAMA_SAATI} saat boyunca «Silinen teklifler» altında durur, geri alabilirsin.`, async () => {
       try {
-        await db.alimTeklifiSil(t.id, t.foto_yollari);
-        bildir('✓ Teklif silindi');
+        await db.alimTeklifiSil(t.id);
+        bildir('✓ Teklif silinenlere taşındı');
         await teklifleriYenile();
       } catch (e) { bildir(e.message); }
     });
   });
 
-  const eylemler = document.createElement('div');
-  eylemler.className = 'teklif-eylemler';
   eylemler.append(sec, sil);
   el.appendChild(eylemler);
   return el;

@@ -651,7 +651,7 @@ body::before {
 .teklif-durum-rozet.d-anlasildi     { background: var(--yesil);         border-color: var(--yesil);        color: #f2f0e6; }
 .teklif-durum-rozet.d-uygun_degil   { background: transparent;          border-color: var(--cizgi);        color: var(--soluk); }
 
-.teklif-tarih { font-family: var(--kod-yazi); font-size: 10px; letter-spacing: .1em; color: var(--soluk); }
+.teklif-tarih { flex: 0 1 auto; text-align: right; font-family: var(--kod-yazi); font-size: 10px; letter-spacing: .1em; color: var(--soluk); }
 
 /* Fotoğraf ızgarası: her kare artık bir düğme. */
 .teklif-fotolar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -720,3 +720,35 @@ body::before {
    boşta duran en doğal dokunma hedefi kapağın kendisi. */
 .kart.salt-okunur .kart-kapak { cursor: zoom-in; }
 .kart.salt-okunur .kart-kapak:hover { border-color: var(--muhur); }
+
+/* --- Çöp kutusu: silinen teklifler 24 saat burada bekler ----------------
+   Aktif kartla aynı iskelet, ama okunurluğu bilerek geride: soluk zemin,
+   kesikli kenar, gri rozet. Göz önce çalışan listeyi görsün. */
+.teklif-kart.silinmis {
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--cizgi);
+  opacity: .82;
+}
+.teklif-kart.silinmis .teklif-baslik strong { color: var(--murekkep-2); }
+.teklif-kart.silinmis .teklif-tarih { color: var(--turuncu-koyu); letter-spacing: .06em; }
+.teklif-durum-rozet.d-silinmis {
+  background: transparent; border-color: var(--murekkep-2); color: var(--murekkep-2);
+  text-decoration: line-through; text-decoration-thickness: 1px;
+}
+.cop-aciklama {
+  align-self: center; min-width: 0;
+  font-family: var(--kod-yazi); font-size: 10px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--soluk);
+}
+.teklif-geri {
+  min-width: 44px; height: 44px; padding: 0 14px;
+  border: 1px solid var(--muhur); border-radius: 0;
+  background: transparent; color: var(--muhur); cursor: pointer;
+  font-family: var(--kod-yazi); font-size: 10px; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+  transition: background-color .14s, color .14s;
+}
+.teklif-geri:hover, .teklif-geri:active { background: var(--muhur); color: #f7f2e7; }
+/* Çöp kutusu başlığı ile üstteki liste arasına nefes payı */
+#cop-durum { margin-top: 34px; }

@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..700,0..100,0..1&family=Inter+Tight:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=009">
+<link rel="stylesheet" href="styles.css?v=010">
 </head>
 <body>
 
@@ -121,6 +121,14 @@
   </header>
   <p id="teklifler-durum" class="durum"></p>
   <div id="teklifler-listesi" class="teklifler-liste"></div>
+
+  <!-- Çöp kutusu: silinen teklif 24 saat burada bekler, sonra gerçekten gider -->
+  <p id="cop-durum" class="durum" hidden></p>
+  <div id="cop-listesi" class="teklifler-liste"></div>
+  <p id="cop-ipucu" class="ipucu" hidden>
+    Silinen teklifler burada 24 saat bekler, sonra fotoğraflarıyla birlikte
+    kalıcı olarak silinir. Bu süre içinde geri alabilirsin.
+  </p>
 </section>
 
 <!-- EKLE -->

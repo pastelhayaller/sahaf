@@ -90,7 +90,7 @@ function yeniId() {
 let _rol = null;
 
 // Yama-002 çalıştırılmamışsa arayüz bunu uyarı olarak gösterir.
-export const durum = { yamaEksik: false };
+export const durum = { yamaEksik: false, copKutusuYok: false };
 
 export async function oturumVarMi() {
   if (denemeModu) return true;
@@ -418,14 +418,44 @@ export async function alimTeklifiGonder(teklif) {
   return { ok: true };
 }
 
+// Silinen teklif hemen yok olmuyor: bu kadar saat çöp kutusunda bekliyor.
+export const TEKLIF_SAKLAMA_SAATI = 24;
+
+const TEKLIF_ALANLARI = 'id,ad_soyad,iletisim,kitap_aciklama,foto_yollari,durum,created_at';
+
 export async function alimTeklifleriniListele() {
   if (denemeModu) return [];
   const istemci = await sb();
-  const { data, error } = await istemci.from('alim_teklifleri')
-    .select('id,ad_soyad,iletisim,kitap_aciklama,foto_yollari,durum,created_at')
-    .order('created_at', { ascending: false });
-  if (error) throw hata(yetkiHatasi(error));
-  return Promise.all((data || []).map(async teklif => {
+
+  // yama-006 çalıştırılmadıysa `silindi_at` sütunu yoktur ve sorgu komple
+  // patlar — teklifler ekranı hiç açılmaz. Sütunsuz sürüme düşüp çöp
+  // kutusunu kapatıyoruz: eski davranış çalışmaya devam eder.
+  let veri = null;
+  let sutunVar = true;
+  {
+    const { data, error } = await istemci.from('alim_teklifleri')
+      .select(`${TEKLIF_ALANLARI},silindi_at`)
+      .order('created_at', { ascending: false });
+    if (error) {
+      const sutunYok = error.code === '42703' ||
+        /silindi_at/i.test(error.message || '') ||
+        /column .* does not exist/i.test(error.message || '');
+      if (!sutunYok) throw hata(yetkiHatasi(error));
+      sutunVar = false;
+    } else {
+      veri = data;
+    }
+  }
+  if (!sutunVar) {
+    durum.copKutusuYok = true;
+    const { data, error } = await istemci.from('alim_teklifleri')
+      .select(TEKLIF_ALANLARI)
+      .order('created_at', { ascending: false });
+    if (error) throw hata(yetkiHatasi(error));
+    veri = (data || []).map(t => ({ ...t, silindi_at: null }));
+  }
+
+  return Promise.all((veri || []).map(async teklif => {
     const urls = await Promise.all((teklif.foto_yollari || []).map(async yol => {
       const { data: imza } = await istemci.storage.from(TEKLIF_BUCKET).createSignedUrl(yol, 3600);
       return imza && imza.signedUrl;
@@ -442,15 +472,56 @@ export async function alimTeklifiDurumGuncelle(id, durum) {
   if (error) throw hata(yetkiHatasi(error));
 }
 
+// --- Çöp kutusu ---------------------------------------------------------
+// Silme iki adımlı: önce damga (geri alınabilir), 24 saat sonra gerçek yok
+// etme. Yanlış karta basmanın bedeli bir dokunuş, kalıcı bir kayıp değil.
+
+export async function alimTeklifiSil(id) {
+  if (denemeModu) return;
+  const { error } = await (await sb()).from('alim_teklifleri')
+    .update({ silindi_at: new Date().toISOString() }).eq('id', id);
+  if (error) throw hata(yetkiHatasi(error));
+}
+
+export async function alimTeklifiGeriAl(id) {
+  if (denemeModu) return;
+  const { error } = await (await sb()).from('alim_teklifleri')
+    .update({ silindi_at: null }).eq('id', id);
+  if (error) throw hata(yetkiHatasi(error));
+}
+
 // Once kayit, sonra dosyalar. Ters sirada olsa kayit silinemezse teklif
 // fotografsiz kalirdi; boyle en kotu ihtimalde bucket'ta oksuz dosya kalir.
-export async function alimTeklifiSil(id, fotoYollari) {
+export async function alimTeklifiYokEt(id, fotoYollari) {
   if (denemeModu) return;
   const istemci = await sb();
   const { error } = await istemci.from('alim_teklifleri').delete().eq('id', id);
   if (error) throw hata(yetkiHatasi(error));
   const yollar = (fotoYollari || []).filter(Boolean);
   if (yollar.length) await istemci.storage.from(TEKLIF_BUCKET).remove(yollar);
+}
+
+/**
+ * Süresi dolmuş çöp kutusu kayıtlarını kalıcı olarak siler.
+ *
+ * Zamanlayıcı yok — bu, yönetici Teklifler ekranını her açtığında çalışır.
+ * Bilinçli bir seçim: pg_cron kurmak şemayı ve yetki yüzeyini büyütürdü,
+ * üstelik SQL'den silmek storage'daki asıl dosyaya dokunmaz, sadece kaydı
+ * siler ve bucket'ta öksüz dosya bırakırdı. Bedeli: ekran haftalarca
+ * açılmazsa kayıtlar 24 saatten uzun durabilir. Sahaf için kabul edilebilir.
+ */
+export async function alimTeklifleriniTemizle(teklifler) {
+  if (denemeModu) return 0;
+  const sinir = Date.now() - TEKLIF_SAKLAMA_SAATI * 3600 * 1000;
+  const suresiDolan = (teklifler || []).filter(
+    t => t.silindi_at && new Date(t.silindi_at).getTime() < sinir);
+  let sayi = 0;
+  for (const t of suresiDolan) {
+    // Biri patlarsa diğerleri denenmeye devam etsin: temizlik en iyi çabadır,
+    // teklifler ekranının açılmasını engellememeli.
+    try { await alimTeklifiYokEt(t.id, t.foto_yollari); sayi += 1; } catch { /* sonraki açılışta yine denenir */ }
+  }
+  return sayi;
 }
 
 export async function raflar() {
