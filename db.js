@@ -56,6 +56,17 @@ function hata(e) {
 // kişiye bir anlam ifade etmiyor. Sebebi söyleyen bir cümleye çeviriyoruz.
 function yetkiHatasi(e) {
   const m = (e && e.message) || '';
+  // 42501 iki ayrı şeyi birden anlatıyor ve ikisinin çaresi farklı:
+  //   (a) "permission denied for table X" — rolün o tabloda o işlem için
+  //       GRANT'i yok. Kurulum eksik, bir yama çalıştırılmamış.
+  //   (b) RLS satırı reddetti — hesabın gerçekten yetkisi yok.
+  // Ayırmazsak (a) durumunda yöneticiye "sen ziyaretçisin" diyoruz. 2026-09-07'de
+  // teklif silmede tam olarak bu oldu; personel hesabı yanlış yerde sebep aradı.
+  const eksikGrant = m.match(/permission denied for (?:table|relation) (\S+)/i);
+  if (eksikGrant) {
+    return new Error(`Veritabanı izni eksik (${eksikGrant[1]}). Hesabınla ilgisi yok — `
+      + 'supabase/ klasöründeki en son yama Supabase SQL Editor\'de çalıştırılmamış.');
+  }
   if (e && (e.code === '42501' || /row-level security/i.test(m))) {
     return new Error('Ziyaretçi hesabı değişiklik yapamaz. Personel hesabıyla giriş yap.');
   }
