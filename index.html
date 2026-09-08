@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..700,0..100,0..1&family=Inter+Tight:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=010">
+<link rel="stylesheet" href="styles.css?v=011">
 </head>
 <body>
 
@@ -76,6 +76,8 @@
   <button id="btn-alim-teklif-ac" class="alim-cagri" type="button" hidden>
     <span>Elindeki kitapları satmak mı istiyorsun?</span><strong>Fotoğraf gönder, fiyat iste ›</strong>
   </button>
+
+  <button id="btn-kuyruk-baslat" class="btn ikincil tamamla-dugme" type="button" hidden></button>
 
   <p id="ara-durum" class="durum"></p>
 
@@ -197,6 +199,13 @@
     <button class="btn sade" type="button" data-geri>‹ Geri</button>
     <h2>Kitabı düzenle</h2>
   </header>
+
+  <div id="kuyruk-serit" class="kuyruk-serit" hidden>
+    <span id="kuyruk-sayac"></span>
+    <span id="kuyruk-raf" class="kuyruk-raf"></span>
+    <button id="btn-kuyruk-atla" class="btn sade" type="button">Atla ›</button>
+    <button id="btn-kuyruk-bitir" class="btn sade" type="button">Bitir</button>
+  </div>
 
   <form id="duzenle-form" class="form" novalidate>
     <label for="duz-ad">Kitap adı *</label>

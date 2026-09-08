@@ -55,6 +55,15 @@ function koku(ekran) {
 window.addEventListener('popstate', async (ev) => {
   const d = ev.state || { ekran: 'ara', onay: false };
   if (d.ekran !== 'alim-teklif' && teklifFotograflari.length) teklifFotograflariTemizle();
+  // Düzenle'den çıkıldıysa kuyruk da kapanır; açık kalırsa sonraki tekil
+  // düzenlemede şerit yanlışlıkla görünür ve "sonraki" beklenmedik yere atlar.
+  if (d.ekran !== 'duzenle' && kuyruk.length) {
+    kuyruk = [];
+    kuyrukSira = 0;
+    $('#kuyruk-serit').hidden = true;
+    $('#duzenle-form').querySelector('button[type="submit"]').textContent = 'Kaydet';
+    kuyrukSayisiniTazele();
+  }
   durumUygula(d);
   if (d.ekran === 'ara' && !d.onay) await listeyiTazele();
 });
@@ -755,6 +764,78 @@ $('#ekle-form').addEventListener('submit', async (ev) => {
   }
 });
 
+// --- Eksik tamamlama kuyruğu --------------------------------------------
+// 1500 kitaba dört alan girilecek. Tek kitaplık Düzenle akışında her kitap
+// "kaydet → listeye dön → sonrakini bul → aç" demek; kuyruk o üç adımı siliyor.
+// Yeni ekran YOK — aynı Düzenle formu, sadece kaydetme sonrası davranış farklı.
+let kuyruk = [];
+let kuyrukSira = 0;
+
+function kuyruktaMi() { return kuyruk.length > 0; }
+
+async function kuyrukBaslat() {
+  if (!yoneticiMi()) return;
+  try {
+    kuyruk = await db.eksikKuyrugu();
+  } catch (e) {
+    hataGoster('#ara-durum', e);
+    return;
+  }
+  if (!kuyruk.length) { bildir('✓ Eksik bilgi kalmadı'); return; }
+  kuyrukSira = 0;
+  kuyruktakiniAc();
+}
+
+function kuyruktakiniAc() {
+  if (kuyrukSira >= kuyruk.length) {
+    const bitenSayi = kuyruk.length;
+    kuyrukBitir();
+    bildir(`✓ Kuyruk bitti — ${bitenSayi} kitap gözden geçirildi`);
+    return;
+  }
+  duzenleAc(kuyruk[kuyrukSira]);
+}
+
+function kuyrukSeridiniYaz() {
+  const serit = $('#kuyruk-serit');
+  serit.hidden = !kuyruktaMi();
+  if (!kuyruktaMi()) return;
+  $('#kuyruk-sayac').textContent = `${kuyrukSira + 1} / ${kuyruk.length}`;
+  const raf = kuyruk[kuyrukSira] && kuyruk[kuyrukSira].raf;
+  $('#kuyruk-raf').textContent = raf ? `Raf ${raf}` : '';
+}
+
+function kuyrukBitir() {
+  kuyruk = [];
+  kuyrukSira = 0;
+  $('#kuyruk-serit').hidden = true;
+  $('#duzenle-form').querySelector('button[type="submit"]').textContent = 'Kaydet';
+  git('ara');
+  listeyiTazele();
+  kuyrukSayisiniTazele();
+}
+
+$('#btn-kuyruk-baslat').addEventListener('click', kuyrukBaslat);
+$('#btn-kuyruk-bitir').addEventListener('click', kuyrukBitir);
+$('#btn-kuyruk-atla').addEventListener('click', () => {
+  // Atlanan kitap kaydedilmez; elde olmayan kitabı beklemesin diye.
+  kuyrukSira++;
+  kuyruktakiniAc();
+});
+
+// Kaç kitapta eksik var — düğmenin üstünde yazsın ki iş görünür olsun.
+async function kuyrukSayisiniTazele() {
+  const dugme = $('#btn-kuyruk-baslat');
+  if (!yoneticiMi()) { dugme.hidden = true; return; }
+  try {
+    const eksikler = await db.eksikKuyrugu();
+    dugme.hidden = eksikler.length === 0;
+    dugme.textContent = `Eksikleri tamamla (${eksikler.length})`;
+  } catch {
+    dugme.hidden = true; // sayaç alınamadıysa düğmeyi hiç gösterme
+  }
+}
+
 // --- Düzenle ------------------------------------------------------------
 function duzenleAc(k) {
   if (!yoneticiMi()) return;
@@ -770,6 +851,9 @@ function duzenleAc(k) {
   $('#duz-durum').value = k.durum || '';
   kapakTaslaginiSifirla('duz', k.foto_url || null);
   raflariTazele();
+  kuyrukSeridiniYaz();
+  $('#duzenle-form').querySelector('button[type="submit"]').textContent =
+    kuyruktaMi() ? 'Kaydet ve sonraki ›' : 'Kaydet';
   git('duzenle');
 }
 
@@ -788,6 +872,12 @@ $('#duzenle-form').addEventListener('submit', async (ev) => {
       durum: $('#duz-durum').value,
       foto_url: await kapakUrlHazirla('duz'),
     });
+    if (kuyruktaMi()) {
+      bildir('✓ Kaydedildi');
+      kuyrukSira++;
+      kuyruktakiniAc();
+      return;
+    }
     bildir('✓ Güncellendi');
     history.back();
   } catch (e) {
@@ -941,6 +1031,7 @@ async function araEkraniAc() {
   roluUygula();
   if (yoneticiMi()) await raflariTazele();
   await listeyiTazele();
+  kuyrukSayisiniTazele();
   $('#arama').focus();
 }
 

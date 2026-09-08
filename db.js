@@ -528,6 +528,33 @@ export async function alimTeklifleriniTemizle(teklifler) {
   return sayi;
 }
 
+// Eksik bilgisi olan kitaplar, RAF SIRASINDA. Sıra kasıtlı: personel rafın
+// önünde durup soldan sağa ilerliyor, ekran onu takip ediyor.
+// Kapak ayrı tutuldu — fotoğraf çekmek metin girmekten yavaş, ikisi tek turda
+// zorunlu olursa tur hiç bitmiyor.
+export async function eksikKuyrugu({ kapakDahil = false } = {}) {
+  const eksikMi = k => !k.durum || !k.yayinevi || !k.basim_yili || (kapakDahil && !k.foto_url);
+  if (denemeModu) {
+    return yerelOku().filter(eksikMi)
+      .sort((a, b) => (a.raf || '').localeCompare(b.raf || '', 'tr') || String(a.id).localeCompare(String(b.id)));
+  }
+  const kolonlar = 'id,ad,yazar,raf,fiyat,notlar,foto_url,yayinevi,basim_yili,durum';
+  const istemci = await sb();
+  // PostgREST tek istekte 1000 satır veriyor ve fazlasını SESSİZCE kesiyor.
+  const ADIM = 1000;
+  const hepsi = [];
+  for (let bas = 0; ; bas += ADIM) {
+    const { data, error } = await istemci.from(TABLO).select(kolonlar)
+      .order('raf', { ascending: true, nullsFirst: false })
+      .order('id', { ascending: true })
+      .range(bas, bas + ADIM - 1);
+    if (error) throw hata(error);
+    hepsi.push(...(data || []));
+    if (!data || data.length < ADIM) break;
+  }
+  return hepsi.filter(eksikMi);
+}
+
 export async function yayinevleri() {
   if (denemeModu) {
     return [...new Set(yerelOku().map(k => k.yayinevi).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'tr'));

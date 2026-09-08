@@ -752,3 +752,25 @@ body::before {
 .teklif-geri:hover, .teklif-geri:active { background: var(--muhur); color: #f7f2e7; }
 /* Çöp kutusu başlığı ile üstteki liste arasına nefes payı */
 #cop-durum { margin-top: 34px; }
+
+
+/* --- Eksik tamamlama kuyruğu ------------------------------------------- */
+/* Rafın önünde ayakta, telefonla kullanılıyor: hedefler büyük, sayaç sabit. */
+.tamamla-dugme { width: 100%; margin: 0 0 10px; }
+
+.kuyruk-serit {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: var(--kraft); border: 1px solid var(--cizgi);
+  padding: 8px 12px; margin: 0 0 14px;
+}
+.kuyruk-serit #kuyruk-sayac {
+  font-family: var(--kod-yazi); font-size: 12px; font-weight: 700;
+  letter-spacing: .08em; color: var(--murekkep);
+}
+.kuyruk-serit .kuyruk-raf {
+  font-family: var(--kod-yazi); font-size: 11px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--murekkep-2);
+}
+/* Atla ve Bitir sağa: yanlışlıkla basılması en zor yer. */
+.kuyruk-serit #btn-kuyruk-atla { margin-left: auto; }
