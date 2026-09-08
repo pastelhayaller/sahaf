@@ -801,6 +801,7 @@ function kuyrukSeridiniYaz() {
   serit.hidden = !kuyruktaMi();
   if (!kuyruktaMi()) return;
   $('#kuyruk-sayac').textContent = `${kuyrukSira + 1} / ${kuyruk.length}`;
+  // Raf yine de yazılıyor: kitabı fiziksel olarak bulmak gereken tek bilgi bu.
   const raf = kuyruk[kuyrukSira] && kuyruk[kuyrukSira].raf;
   $('#kuyruk-raf').textContent = raf ? `Raf ${raf}` : '';
 }

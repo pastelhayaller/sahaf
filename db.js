@@ -528,15 +528,18 @@ export async function alimTeklifleriniTemizle(teklifler) {
   return sayi;
 }
 
-// Eksik bilgisi olan kitaplar, RAF SIRASINDA. Sıra kasıtlı: personel rafın
-// önünde durup soldan sağa ilerliyor, ekran onu takip ediyor.
-// Kapak ayrı tutuldu — fotoğraf çekmek metin girmekten yavaş, ikisi tek turda
-// zorunlu olursa tur hiç bitmiyor.
-export async function eksikKuyrugu({ kapakDahil = false } = {}) {
-  const eksikMi = k => !k.durum || !k.yayinevi || !k.basim_yili || (kapakDahil && !k.foto_url);
+// Eksik bilgisi olan kitaplar, GİRİŞ SIRASINDA (Berkay, 2026-09-08).
+// Sıra kasıtlı: kitaplar rafa girildikleri sırayla duruyor, personel listede
+// sırayla ilerliyor. Raf sırası denendi ve gereksizdi.
+//
+// ⭐ Kapak da ölçüte DAHİL: dört alan tek turda. Kapak ayrı tur olarak
+// tasarlanmıştı; Berkay reddetti — "yoksa iki kez aynı kitabı bulmak zorunda
+// olur". Kitabı fiziksel olarak bulmak, veri girmekten pahalı olan kısım.
+export async function eksikKuyrugu() {
+  const eksikMi = k => !k.durum || !k.yayinevi || !k.basim_yili || !k.foto_url;
   if (denemeModu) {
-    return yerelOku().filter(eksikMi)
-      .sort((a, b) => (a.raf || '').localeCompare(b.raf || '', 'tr') || String(a.id).localeCompare(String(b.id)));
+    // Yerel kayıtta created_at yok; eklenme sırası dizinin kendi sırasıdır.
+    return yerelOku().filter(eksikMi);
   }
   const kolonlar = 'id,ad,yazar,raf,fiyat,notlar,foto_url,yayinevi,basim_yili,durum';
   const istemci = await sb();
@@ -545,7 +548,7 @@ export async function eksikKuyrugu({ kapakDahil = false } = {}) {
   const hepsi = [];
   for (let bas = 0; ; bas += ADIM) {
     const { data, error } = await istemci.from(TABLO).select(kolonlar)
-      .order('raf', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: true })
       .order('id', { ascending: true })
       .range(bas, bas + ADIM - 1);
     if (error) throw hata(error);
