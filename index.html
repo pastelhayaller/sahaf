@@ -149,10 +149,29 @@
     <input id="ekle-raf" name="raf" list="raf-listesi" required autocomplete="off"
            autocapitalize="characters">
     <datalist id="raf-listesi"></datalist>
+    <datalist id="yayinevi-listesi"></datalist>
     <p class="ipucu">Raf, kaydettikten sonra silinmez — aynı rafa arka arkaya kitap girebilirsin.</p>
 
     <label for="ekle-fiyat">Fiyat (₺)</label>
     <input id="ekle-fiyat" name="fiyat" type="number" inputmode="decimal" step="0.01" min="0">
+
+    <label for="ekle-yayinevi">Yayınevi</label>
+    <input id="ekle-yayinevi" name="yayinevi" list="yayinevi-listesi" autocomplete="off">
+
+    <label for="ekle-basim-yili">Basım yılı</label>
+    <input id="ekle-basim-yili" name="basim_yili" type="number" inputmode="numeric"
+           step="1" min="1400" max="2100" placeholder="örn. 1998">
+
+    <label for="ekle-durum">Durum</label>
+    <select id="ekle-durum" name="durum">
+      <option value="">— seçilmedi —</option>
+      <option>Sıfır</option>
+      <option>Yeni gibi</option>
+      <option>Çok iyi</option>
+      <option>İyi</option>
+      <option>Orta</option>
+      <option>Yıpranmış</option>
+    </select>
 
     <label for="ekle-notlar">Not</label>
     <input id="ekle-notlar" name="notlar" autocomplete="off" placeholder="örn. kapağı yıpranmış">
@@ -190,6 +209,24 @@
 
     <label for="duz-fiyat">Fiyat (₺)</label>
     <input id="duz-fiyat" name="fiyat" type="number" inputmode="decimal" step="0.01" min="0">
+
+    <label for="duz-yayinevi">Yayınevi</label>
+    <input id="duz-yayinevi" name="yayinevi" list="yayinevi-listesi" autocomplete="off">
+
+    <label for="duz-basim-yili">Basım yılı</label>
+    <input id="duz-basim-yili" name="basim_yili" type="number" inputmode="numeric"
+           step="1" min="1400" max="2100" placeholder="örn. 1998">
+
+    <label for="duz-durum">Durum</label>
+    <select id="duz-durum" name="durum">
+      <option value="">— seçilmedi —</option>
+      <option>Sıfır</option>
+      <option>Yeni gibi</option>
+      <option>Çok iyi</option>
+      <option>İyi</option>
+      <option>Orta</option>
+      <option>Yıpranmış</option>
+    </select>
 
     <label for="duz-notlar">Not</label>
     <input id="duz-notlar" name="notlar" autocomplete="off">

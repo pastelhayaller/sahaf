@@ -631,6 +631,16 @@ async function raflariTazele() {
       dl.appendChild(o);
     });
   } catch { /* öneri yoksa sorun değil */ }
+  try {
+    const liste = await db.yayinevleri();
+    const dl = $('#yayinevi-listesi');
+    dl.replaceChildren();
+    liste.forEach(y => {
+      const o = document.createElement('option');
+      o.value = y;
+      dl.appendChild(o);
+    });
+  } catch { /* öneri yoksa sorun değil */ }
 }
 
 // --- Kapak fotoğrafları -------------------------------------------------
@@ -707,6 +717,7 @@ function ekleAc(onDolguAd = '') {
   $('#ekle-yazar').value = '';
   $('#ekle-fiyat').value = '';
   $('#ekle-notlar').value = '';
+  $('#ekle-basim-yili').value = '';
   kapakTaslaginiSifirla('ekle');
   raflariTazele();
   git('ekle');
@@ -723,6 +734,9 @@ $('#ekle-form').addEventListener('submit', async (ev) => {
       raf: $('#ekle-raf').value,
       fiyat: $('#ekle-fiyat').value,
       notlar: $('#ekle-notlar').value,
+      yayinevi: $('#ekle-yayinevi').value,
+      basim_yili: $('#ekle-basim-yili').value,
+      durum: $('#ekle-durum').value,
       foto_url: await kapakUrlHazirla('ekle'),
     };
     await db.ekle(kitap);
@@ -731,6 +745,7 @@ $('#ekle-form').addEventListener('submit', async (ev) => {
     $('#ekle-yazar').value = '';
     $('#ekle-fiyat').value = '';
     $('#ekle-notlar').value = '';
+    $('#ekle-basim-yili').value = '';
     kapakTaslaginiSifirla('ekle');
     $('#ekle-ad').focus();
     bildir('✓ Kitap eklendi');
@@ -750,6 +765,9 @@ function duzenleAc(k) {
   $('#duz-raf').value = k.raf || '';
   $('#duz-fiyat').value = k.fiyat == null ? '' : k.fiyat;
   $('#duz-notlar').value = k.notlar || '';
+  $('#duz-yayinevi').value = k.yayinevi || '';
+  $('#duz-basim-yili').value = k.basim_yili == null ? '' : k.basim_yili;
+  $('#duz-durum').value = k.durum || '';
   kapakTaslaginiSifirla('duz', k.foto_url || null);
   raflariTazele();
   git('duzenle');
@@ -765,6 +783,9 @@ $('#duzenle-form').addEventListener('submit', async (ev) => {
       raf: $('#duz-raf').value,
       fiyat: $('#duz-fiyat').value,
       notlar: $('#duz-notlar').value,
+      yayinevi: $('#duz-yayinevi').value,
+      basim_yili: $('#duz-basim-yili').value,
+      durum: $('#duz-durum').value,
       foto_url: await kapakUrlHazirla('duz'),
     });
     bildir('✓ Güncellendi');

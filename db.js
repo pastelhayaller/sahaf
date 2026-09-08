@@ -170,6 +170,10 @@ function kayitTemizle(k) {
     fiyat: k.fiyat === '' || k.fiyat == null ? null : Number(k.fiyat),
     notlar: (k.notlar || '').trim() || null,
     foto_url: (k.foto_url || '').trim() || null,
+    yayinevi: (k.yayinevi || '').trim() || null,
+    // Boş yıl null olmalı: Number('') === 0 kaydı sessizce 0 yılına yazardı.
+    basim_yili: k.basim_yili === '' || k.basim_yili == null ? null : Number(k.basim_yili),
+    durum: (k.durum || '').trim() || null,
   };
 }
 
@@ -214,7 +218,7 @@ export async function listele({ terim = '', sirala = VARSAYILAN_SIRALAMA, sayfa 
 
   const istemci = await sb();
   const sorgula = (sayfaNo) => {
-    let q = istemci.from(TABLO).select('id,ad,yazar,raf,fiyat,notlar,foto_url', { count: 'exact' });
+    let q = istemci.from(TABLO).select('id,ad,yazar,raf,fiyat,notlar,foto_url,yayinevi,basim_yili,durum', { count: 'exact' });
     if (t) q = q.ilike('arama', `%${t}%`);
     // nullsFirst:false — fiyatı girilmemiş kitap her iki yönde de en sonda.
     q = q.order(s.kolon, { ascending: s.artan, nullsFirst: false });
@@ -522,6 +526,15 @@ export async function alimTeklifleriniTemizle(teklifler) {
     try { await alimTeklifiYokEt(t.id, t.foto_yollari); sayi += 1; } catch { /* sonraki açılışta yine denenir */ }
   }
   return sayi;
+}
+
+export async function yayinevleri() {
+  if (denemeModu) {
+    return [...new Set(yerelOku().map(k => k.yayinevi).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'tr'));
+  }
+  const { data, error } = await (await sb()).from('yayinevleri').select('yayinevi');
+  if (error) return [];
+  return (data || []).map(r => r.yayinevi);
 }
 
 export async function raflar() {
