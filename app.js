@@ -674,6 +674,9 @@ async function internettenKapakBul(alan) {
   // Google Books mobil tarayıcılarda daha tutarlı CORS ve kapak dönüşü veriyor.
   // Open Library ikinci kaynak: Google'ın tanımadığı eski/yerel baskılarda şansımız sürer.
   let url = null;
+  // Google Books zaten yayınevi ve basım yılını döndürüyordu; atılıyordu.
+  // Girişte kitap başına iki alan eksilsin diye tutuluyor.
+  let kunye = null;
   try {
     const sorgular = [
       [ad, yazar].filter(Boolean).join(' '),
@@ -689,6 +692,7 @@ async function internettenKapakBul(alan) {
       const baglar = kayit && kayit.volumeInfo.imageLinks;
       url = baglar && (baglar.thumbnail || baglar.smallThumbnail);
       if (url) {
+        kunye = kayit.volumeInfo;
         const kapakUrl = new URL(url.replace(/^http:/, 'https:'));
         kapakUrl.searchParams.delete('edge');
         kapakUrl.searchParams.set('zoom', '1');
@@ -699,18 +703,47 @@ async function internettenKapakBul(alan) {
   } catch { /* ikinci kaynağı dene */ }
   if (!url) {
     try {
-      const sorgu = new URLSearchParams({ title: ad, limit: '1', fields: 'cover_i' });
+      const sorgu = new URLSearchParams({ title: ad, limit: '1', fields: 'cover_i,publisher,first_publish_year' });
       if (yazar) sorgu.set('author', yazar);
       const cevap = await fetch(`https://openlibrary.org/search.json?${sorgu}`);
       const veri = cevap.ok && await cevap.json();
-      if (veri && veri.docs && veri.docs[0] && veri.docs[0].cover_i) url = `https://covers.openlibrary.org/b/id/${veri.docs[0].cover_i}-L.jpg`;
+      const belge = veri && veri.docs && veri.docs[0];
+      if (belge && belge.cover_i) {
+        url = `https://covers.openlibrary.org/b/id/${belge.cover_i}-L.jpg`;
+        kunye = {
+          publisher: Array.isArray(belge.publisher) ? belge.publisher[0] : belge.publisher,
+          publishedDate: belge.first_publish_year ? String(belge.first_publish_year) : null,
+        };
+      }
     } catch { /* aşağıdaki anlaşılır hata gösterilir */ }
   }
   if (!url) throw new Error('Kapak önerisi bulunamadı. Fotoğraf çekebilirsin.');
   fotoTaslak[alan] = { dosya: null, url: url.replace(/^http:/, 'https:') };
   $(`#${alan}-foto`).value = '';
   kapakOnizlemeYaz(alan);
-  bildir('Kapak önerisi geldi — baskıyla eşleştiğini kontrol et.');
+  bildir(`Öneri geldi${kunyeDoldur(alan, kunye)} — baskıyla eşleştiğini kontrol et.`);
+}
+
+// Öneriden gelen yayınevi/yılı YALNIZ boş alana yazar. Personelin elle girdiği
+// değer bir tahminle ezilmez; öneri yanlış baskıyı tutmuş olabilir.
+function kunyeDoldur(alan, kunye) {
+  if (!kunye) return '';
+  const dolanlar = [];
+  const yayinevi = $(`#${alan}-yayinevi`);
+  if (yayinevi && !yayinevi.value.trim() && kunye.publisher) {
+    yayinevi.value = String(kunye.publisher).trim();
+    dolanlar.push('yayınevi');
+  }
+  const yil = $(`#${alan}-basim-yili`);
+  // publishedDate "1998", "1998-04" veya "1998-04-01" gelebiliyor; yılı ayıkla.
+  // Rakam sınırları şart: aksi halde bozuk bir "20026" sessizce 2002 olurdu.
+  const eslesme = kunye.publishedDate && String(kunye.publishedDate).match(/(?<!\d)\d{4}(?!\d)/);
+  const sayi = eslesme && Number(eslesme[0]);
+  if (yil && !yil.value.trim() && sayi >= 1400 && sayi <= 2100) {
+    yil.value = String(sayi);
+    dolanlar.push('basım yılı');
+  }
+  return dolanlar.length ? ` (${dolanlar.join(' + ')} dolduruldu)` : '';
 }
 
 async function kapakUrlHazirla(alan) {
