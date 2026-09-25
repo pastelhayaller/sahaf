@@ -83,7 +83,7 @@ const fiyatYaz = f =>
 
 const STIL = `
 :root{--kagit:#f5eee0;--kagit-2:#fdfaf3;--kraft:#e9dcc0;--murekkep:#1b1913;
---murekkep-2:#554e3d;--soluk:#877e6d;--kilcal:#ded4bf;--cizgi:#c6b99c;
+--murekkep-2:#554e3d;--soluk:#6b6353;--kilcal:#ded4bf;--cizgi:#c6b99c;
 --muhur:#4a6e51;--muhur-koyu:#3a5740;--baski:3px 3px 0 rgba(28,26,21,.16)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--kagit);color:var(--murekkep);
