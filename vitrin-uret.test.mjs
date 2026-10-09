@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { slugla } from './vitrin-uret.mjs';
+import { slugla, slugHaritasi } from './vitrin-uret.mjs';
 
 const KOK = dirname(fileURLToPath(import.meta.url));
 
@@ -34,3 +34,20 @@ if (dosyalar.length) {
 }
 
 console.log('Tamam.');
+
+// Renaming authors/titles must not orphan an indexed URL.
+const renamed = { id: 'aaaa1111-1234', ad: 'Yeni başlık', yazar: 'Düzeltilmiş yazar' };
+assert.equal(slugHaritasi([renamed], ['eski-baslik-eski-yazar-aaaa1111.html']).get(renamed.id), 'eski-baslik-eski-yazar-aaaa1111');
+assert.equal(slugHaritasi([renamed]).get(renamed.id), slugla(`${renamed.ad} ${renamed.yazar}`, renamed.id));
+assert.throws(() => slugHaritasi([renamed], ['biri-aaaa1111.html', 'digeri-aaaa1111.html']), /Birden çok/);
+assert.throws(() => slugHaritasi([renamed, { ...renamed, id: 'aaaa1111-9999' }], ['eski-aaaa1111.html']), /belirsiz/);
+assert.throws(() => slugHaritasi([renamed, renamed]), /Tekrarlanan/);
+assert.equal(slugHaritasi([renamed], ['ilgisisiz-bbbb2222.html']).get(renamed.id), slugla(`${renamed.ad} ${renamed.yazar}`, renamed.id));
+
+if (dosyalar.length) {
+  const current = dosyalar.filter(name => /-[a-z0-9]{8}\.html$/.test(name));
+  const records = current.map(name => ({ id: name.slice(-13, -5) + '-full-id', ad: 'Yeni temizlenmiş başlık', yazar: 'Yeni yazar' }));
+  const stable = slugHaritasi(records, current);
+  assert.deepEqual([...stable.values()].map(slug => slug + '.html').sort(), current.sort(), 'Every existing URL survives metadata cleanup');
+  console.log(`URL koruması: ${stable.size} mevcut yol değişmedi.`);
+}

@@ -10,7 +10,7 @@
 //
 // Bağımlılık yok (Node 18+ yerleşik fetch). Uygulamaya hiç dokunmaz.
 
-import { writeFile, mkdir, rm } from 'node:fs/promises';
+import { writeFile, mkdir, rm, readdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -96,6 +96,29 @@ export function slugla(metin, id) {
     .slice(0, 60);
   // id son eki çakışmayı imkânsız kılar: aynı adlı iki kitap birbirini ezmez.
   return `${govde || 'kitap'}-${String(id).slice(0, 8)}`;
+}
+
+// Mevcut kitap URL'si başlık/yazar temizliğinde değişmez. Eşleştirme belirsizse
+// eski çıktıyı silmeden dururuz; kısa ID'yi yanlış kitaba bağlamayız.
+export function slugHaritasi(kitaplar, dosyalar = []) {
+  const eskiler = new Map();
+  for (const dosya of dosyalar) {
+    const m = /^(.+)-([a-z0-9]{8})\.html$/.exec(dosya);
+    if (!m) continue;
+    if (eskiler.has(m[2])) throw new Error(`Birden çok eski URL aynı kısa ID'ye bağlı: ${m[2]}`);
+    eskiler.set(m[2], dosya.slice(0, -5));
+  }
+  const kisaIdler = new Set(), kullanilan = new Set(), sonuc = new Map();
+  for (const k of kitaplar) {
+    const id = String(k.id), kisa = id.slice(0, 8);
+    if (sonuc.has(id)) throw new Error(`Tekrarlanan kitap ID: ${id}`);
+    if (kisaIdler.has(kisa)) throw new Error(`Eski URL için belirsiz kısa ID: ${kisa}`);
+    kisaIdler.add(kisa);
+    const slug = eskiler.get(kisa) || slugla(`${k.ad} ${k.yazar ?? ''}`, id);
+    if (kullanilan.has(slug)) throw new Error(`Kitap URL çakışması: ${slug}`);
+    kullanilan.add(slug); sonuc.set(id, slug);
+  }
+  return sonuc;
 }
 
 const kac = s => String(s ?? '').replace(/[&<>"']/g, h =>
@@ -200,8 +223,7 @@ function kunye(k) {
     .map(([b, d]) => `<dt>${kac(b)}</dt><dd>${kac(d)}</dd>`).join('')}</dl>`;
 }
 
-function kitapSayfasi(k) {
-  const slug = slugla(`${k.ad} ${k.yazar ?? ''}`, k.id);
+function kitapSayfasi(k, slug) {
   const kanonik = `${SITE}/vitrin/kitap/${slug}.html`;
   const fiyat = fiyatYaz(k.fiyat);
   const yazar = k.yazar ? `${k.yazar}` : null;
@@ -226,7 +248,7 @@ Bu kitap Çorum'daki dükkânımızda bulunuyor; gelip alabilir ya da WhatsApp't
   // ponytail: fiyat yoksa offers yazmıyoruz — uydurma fiyat structured data'da yalan olur.
   const jsonld = {
     '@context': 'https://schema.org', '@type': 'Book',
-    name: k.ad, url: kanonik,
+    name: k.ad, url: kanonik, identifier: String(k.id),
     ...(yazar ? { author: { '@type': 'Person', name: yazar } } : {}),
     ...(k.foto_url ? { image: k.foto_url } : {}),
     ...(k.yayinevi ? { publisher: { '@type': 'Organization', name: k.yayinevi } } : {}),
@@ -272,12 +294,15 @@ async function uret() {
   const kitaplar = await kitaplariGetir();
   if (!kitaplar.length) throw new Error('Hiç kitap gelmedi — üretim durduruldu (boş vitrin basmıyoruz).');
 
+  const dosyalar = await readdir(join(CIKTI, 'kitap')).catch(e => { if (e.code === 'ENOENT') return []; throw e; });
+  const sluglar = slugHaritasi(kitaplar, dosyalar);
+
   await rm(CIKTI, { recursive: true, force: true });
   await mkdir(join(CIKTI, 'kitap'), { recursive: true });
 
   const kayitlar = [];
   for (const k of kitaplar) {
-    const { slug, kanonik, html } = kitapSayfasi(k);
+    const { slug, kanonik, html } = kitapSayfasi(k, sluglar.get(String(k.id)));
     await writeFile(join(CIKTI, 'kitap', `${slug}.html`), html, 'utf8');
     kayitlar.push({ k, slug, kanonik });
   }

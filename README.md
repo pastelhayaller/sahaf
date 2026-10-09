@@ -103,6 +103,16 @@ Bu akışı açmak için SQL Editor’de `supabase/yama-004-alim-teklifleri.sql`
 dosyasını çalıştır. Fotoğraflar public olmayan Storage bucket’a gider; yalnız
 yöneticinin imzalı bağlantıyla görüntülemesine izin verilir.
 
+### Kategori sürümünü yayınlama sırası
+
+1. Mevcut katalog ve kitap URL eşlemesini yedekle; mevcut `vitrin/kitap/` dosyalarını koru.
+2. Önce `supabase/yama-008-kategoriler.sql` dosyasını uygula; `kategori` alanının ve izinli değer kontrolünün varlığını doğrula. Bu dosya yalnız hazırlanmış yamadır, depoda bulunması uygulanmış olduğu anlamına gelmez.
+3. Onaylanmış katalog temizliği/sınıflandırmasını alan bazlı ve `updated_at` koşuluyla uygula; belirsiz kategoriler `NULL` kalır. Kategori ekleme, personel düzenleme ve ziyaretçi filtrelerini doğrula.
+4. Sonra uygulama dosyalarını birlikte yayınla (`kategori.js` dahil). Eski veritabanına yeni arayüzü yönlendirmek liste sorgusunu bozabilir; şema hazır olmadan bu çalışma dalını önizleme/yayın olarak kullanma.
+5. Gerekirse vitrini mevcut çıktının bulunduğu dizinde yeniden üret. Üretici mevcut kitap URL'lerini korur; kısa ID eşlemesi belirsizse çıktı silmeden durur. CNAME, Google doğrulama dosyası, işletme künyesi ve sitemap doğrulanır.
+
+Bu sürümün yerel kontrolleri: `node --test katalog-ui.test.mjs katalog-data.test.mjs vitrin-uret.test.mjs`.
+
 ## Yerelde çalıştırmak
 ```
 python -m http.server 8765

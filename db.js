@@ -1,3 +1,4 @@
+import { kategoriGecerli } from './kategori.js';
 // Veri katmanı. İki mod, tek sözleşme:
 //   config.js doluysa  -> Supabase
 //   boşsa              -> localStorage (deneme modu)
@@ -164,7 +165,9 @@ export async function rolGetir() {
 
 // --- Kitaplar -----------------------------------------------------------
 function kayitTemizle(k) {
+  if (k.kategori != null && k.kategori !== '' && !kategoriGecerli(k.kategori)) throw new Error('Geçersiz kategori.');
   return {
+    ...(Object.hasOwn(k, 'kategori') ? { kategori: k.kategori || null } : {}),
     ad: (k.ad || '').trim(),
     yazar: (k.yazar || '').trim() || null,
     raf: (k.raf || '').trim(),
@@ -201,7 +204,8 @@ function yerelSirala(liste, sirala) {
  * envanter listelenir — eskiden ana ekranda yalnız "son 20" görünüyordu.
  * Döner: { kayitlar, toplam, sayfa, sayfaSayisi }
  */
-export async function listele({ terim = '', sirala = VARSAYILAN_SIRALAMA, sayfa = 1, yazar = '', yayinevi = '', basimVar = false } = {}) {
+export async function listele({ terim = '', sirala = VARSAYILAN_SIRALAMA, sayfa = 1, yazar = '', yayinevi = '', basimVar = false, kategori = null } = {}) {
+  if (kategori !== null && !kategoriGecerli(kategori)) return { kayitlar: [], toplam: 0, sayfa: 1, sayfaSayisi: 1 };
   const s = SIRALAMALAR[sirala] || SIRALAMALAR[VARSAYILAN_SIRALAMA];
   const t = normalize(terim);
   const istenen = Math.max(1, Math.floor(sayfa) || 1);
@@ -209,7 +213,7 @@ export async function listele({ terim = '', sirala = VARSAYILAN_SIRALAMA, sayfa 
   if (denemeModu) {
     const tumu = yerelOku().filter(k => (!t || normalize(`${k.ad} ${k.yazar || ''} ${k.raf}`).includes(t))
       && (!yazar || k.yazar === yazar) && (!yayinevi || k.yayinevi === yayinevi)
-      && (!basimVar || k.basim_yili != null));
+      && (kategori === null || k.kategori === kategori) && (!basimVar || k.basim_yili != null));
     const sirali = yerelSirala(tumu, sirala);
     const toplam = sirali.length;
     const sayfaSayisi = Math.max(1, Math.ceil(toplam / SAYFA_BOYU));
@@ -220,8 +224,9 @@ export async function listele({ terim = '', sirala = VARSAYILAN_SIRALAMA, sayfa 
 
   const istemci = await sb();
   const sorgula = (sayfaNo) => {
-    let q = istemci.from(TABLO).select('id,ad,yazar,raf,fiyat,notlar,foto_url,yayinevi,basim_yili,durum', { count: 'exact' });
+    let q = istemci.from(TABLO).select('id,ad,yazar,raf,fiyat,notlar,foto_url,yayinevi,basim_yili,durum,kategori', { count: 'exact' });
     if (t) q = q.ilike('arama', `%${t}%`);
+    if (kategori !== null) q = q.eq('kategori', kategori);
     if (yazar) q = q.eq('yazar', yazar);
     if (yayinevi) q = q.eq('yayinevi', yayinevi);
     if (basimVar) q = q.not('basim_yili', 'is', null);
@@ -285,6 +290,7 @@ export async function dizin(alan) {
 }
 
 export async function ekle(kitap) {
+  dizinOnbellegi.clear();
   const k = kayitTemizle(kitap);
   if (!k.ad) throw new Error('Kitap adı boş olamaz.');
   if (!k.raf) throw new Error('Raf boş olamaz.');
@@ -300,6 +306,7 @@ export async function ekle(kitap) {
 }
 
 export async function guncelle(id, kitap) {
+  dizinOnbellegi.clear();
   const k = kayitTemizle(kitap);
   if (!k.ad) throw new Error('Kitap adı boş olamaz.');
   if (!k.raf) throw new Error('Raf boş olamaz.');
@@ -316,6 +323,7 @@ export async function guncelle(id, kitap) {
 }
 
 export async function sil(id) {
+  dizinOnbellegi.clear();
   if (denemeModu) {
     yerelYaz(yerelOku().filter(k => k.id !== id));
     return;
@@ -326,6 +334,7 @@ export async function sil(id) {
 
 // Silmeyi geri almak için: aynı kaydı geri koyar.
 export async function geriKoy(kitap) {
+  dizinOnbellegi.clear();
   if (denemeModu) {
     const liste = yerelOku();
     if (!liste.some(k => k.id === kitap.id)) liste.push(kitap);
@@ -578,12 +587,12 @@ export async function alimTeklifleriniTemizle(teklifler) {
 // tasarlanmıştı; Berkay reddetti — "yoksa iki kez aynı kitabı bulmak zorunda
 // olur". Kitabı fiziksel olarak bulmak, veri girmekten pahalı olan kısım.
 export async function eksikKuyrugu() {
-  const eksikMi = k => !k.durum || !k.yayinevi || !k.basim_yili || !k.foto_url;
+  const eksikMi = k => !k.kategori || !k.durum || !k.yayinevi || !k.basim_yili || !k.foto_url;
   if (denemeModu) {
     // Yerel kayıtta created_at yok; eklenme sırası dizinin kendi sırasıdır.
     return yerelOku().filter(eksikMi);
   }
-  const kolonlar = 'id,ad,yazar,raf,fiyat,notlar,foto_url,yayinevi,basim_yili,durum';
+  const kolonlar = 'id,ad,yazar,raf,fiyat,notlar,foto_url,yayinevi,basim_yili,durum,kategori';
   const istemci = await sb();
   // PostgREST tek istekte 1000 satır veriyor ve fazlasını SESSİZCE kesiyor.
   const ADIM = 1000;

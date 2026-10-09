@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
+import { kategoriGecerli, KATEGORILER } from './kategori.js';
 
-const rows = Array.from({ length: 1501 }, (_, i) => ({ id: i, ad: `Kitap ${i}`, yazar: i === 1500 ? 'Son Yazar' : `Yazar ${i % 7}`, yayinevi: i % 2 ? 'Bir Yayın' : 'İki Yayın', basim_yili: i % 2 ? 2020 : null }));
+const rows = Array.from({ length: 1501 }, (_, i) => ({ id: i, ad: `Kitap ${i}`, yazar: i === 1500 ? 'Son Yazar' : `Yazar ${i % 7}`, yayinevi: i % 2 ? 'Bir Yayın' : 'İki Yayın', basim_yili: i % 2 ? 2020 : null, kategori: i % 3 ? 'roman' : null }));
 rows[0].yazar = '  ';
 rows[1].yazar = null;
 rows[2].yazar = "O'Connor, A & B";
@@ -29,8 +30,8 @@ const client = {
     return q;
   },
 };
-const source = (await readFile(new URL('db.js', import.meta.url), 'utf8')).replace(/import\s*\{[\s\S]*?\}\s*from '\.\/config.js';/, '').replace(/^export /gm, '');
-const ctx = vm.createContext({ SUPABASE_URL: 'https://example.test', SUPABASE_ANON_KEY: 'public-test', ZIYARETCI_EPOSTA: '', ZIYARETCI_SIFRE: '', client, console });
+const source = (await readFile(new URL('db.js', import.meta.url), 'utf8')).replace(/import\s*\{[\s\S]*?\}\s*from '\.\/config.js';/, '').replace(/^import .*;\r?\n/gm, '').replace(/^export /gm, '');
+const ctx = vm.createContext({ SUPABASE_URL: 'https://example.test', SUPABASE_ANON_KEY: 'public-test', ZIYARETCI_EPOSTA: '', ZIYARETCI_SIFRE: '', client, console, kategoriGecerli });
 vm.runInContext(source, ctx);
 vm.runInContext('_sb = client;', ctx);
 const run = code => vm.runInContext(code, ctx);
@@ -64,3 +65,44 @@ assert.equal(requests[0].start, 20);
 assert.equal(requests[0].end, 39);
 assert.equal(filtered.toplam, 750);
 console.log('Veri: 1501 kayıt, düşük API cap, tam dizin, exact filter/count/clamp ve hata tekrar denemesi geçti.');
+requests = [];
+const category = await run("listele({ kategori: 'roman', sayfa: 2 })");
+assert.equal(category.toplam, 1000);
+assert.equal(category.kayitlar.length, 20);
+assert(category.kayitlar.every(k => k.kategori === 'roman'));
+assert.equal(requests[0].start, 20);
+assert(requests[0].filters.some(f => f.column === 'kategori' && f.value === 'roman'));
+const priorRequests = requests.length;
+for (const kategori of ['', 'unknown', '__proto__', 'constructor']) {
+  const result = await run(`listele({ kategori: ${JSON.stringify(kategori)} })`);
+  assert.equal(result.toplam, 0);
+}
+assert.equal(requests.length, priorRequests, 'Invalid category must not query all books');
+assert.equal(run("kayitTemizle({ kategori: 'roman' }).kategori"), 'roman');
+assert.equal(run("kayitTemizle({ kategori: '' }).kategori"), null);
+assert.equal(run("Object.hasOwn(kayitTemizle({ ad: 'Legacy caller' }), 'kategori')"), false, 'Omitted category must preserve current category in update');
+assert.throws(() => run("kayitTemizle({ kategori: '__proto__' })"), /Geçersiz kategori/);
+const migration = await readFile(new URL('supabase/yama-008-kategoriler.sql', import.meta.url), 'utf8');
+assert.deepEqual([...migration.matchAll(/'([a-z-]+)'/g)].map(m => m[1]).sort(), Object.keys(KATEGORILER).sort());
+console.log('Kategori: exact count/paging, invalid filter, omitted-field preservation, whitelist/schema parity passed.');
+
+// Exercise the local path and edit/undo against actual stored rows.
+let localRows = Array.from({ length: 24 }, (_, i) => ({ id: `local-${i}`, ad: `Kitap ${i}`, raf: 'A1', kategori: i < 23 ? 'roman' : null, durum: 'İyi', yayinevi: 'Yayın', basim_yili: 2020, foto_url: 'cover.jpg' }));
+const local = vm.createContext({ SUPABASE_URL: '', SUPABASE_ANON_KEY: '', ZIYARETCI_EPOSTA: '', ZIYARETCI_SIFRE: '', console, kategoriGecerli,
+  localStorage: { getItem: () => JSON.stringify(localRows), setItem: (key, value) => { localRows = JSON.parse(value); } } });
+vm.runInContext(source, local);
+const localRun = code => vm.runInContext(code, local);
+const localPage = await localRun("listele({ kategori: 'roman', sayfa: 2 })");
+assert.equal(localPage.toplam, 23); assert.equal(localPage.kayitlar.length, 3);
+const complete = localRows[0];
+local.savedBook = structuredClone(complete);
+await localRun("guncelle(savedBook.id, { ad: savedBook.ad, raf: savedBook.raf })");
+assert.equal(localRows[0].kategori, 'roman', 'Legacy edit without category must preserve stored category');
+await localRun("sil(savedBook.id); geriKoy(savedBook);");
+assert.equal(localRows.find(k => k.id === complete.id).kategori, 'roman', 'Undo preserves category');
+const missing = await localRun('eksikKuyrugu()');
+assert.equal(missing.length, 1); assert.equal(missing[0].id, 'local-23');
+const html = await readFile(new URL('index.html', import.meta.url), 'utf8');
+const menuSlugs = [...html.matchAll(/href="\?bolum=kategori&amp;ad=([a-z-]+)"/g)].map(m => m[1]);
+assert.deepEqual([...new Set(menuSlugs)].sort(), Object.keys(KATEGORILER).sort(), 'All categories reachable from menu');
+console.log('Local category filter/edit/undo/queue and menu coverage passed.');

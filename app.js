@@ -1,5 +1,5 @@
-import * as db from './db.js?v=016';
-import { kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER } from './ui-helpers.js?v=016';
+import * as db from './db.js?v=017';
+import { kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER, kategoriGecerli } from './ui-helpers.js?v=017';
 
 const $ = (s) => document.querySelector(s);
 const ekranlar = ['giris', 'ara', 'detay', 'ekle', 'duzenle', 'sepet', 'alim-teklif', 'teklifler'];
@@ -296,6 +296,7 @@ function detayCiz() {
   if (!k) return;
   const kapak = '<p class="detay-kapak-yok">Bu kayıt için kapak görseli yok.</p>';
   const kunye = [
+    kategoriGecerli(k.kategori) && `<div><dt>Kategori</dt><dd>${escapeHtml(KATEGORILER[k.kategori])}</dd></div>`,
     k.yazar && `<div><dt>Yazar</dt><dd>${escapeHtml(k.yazar)}</dd></div>`,
     k.yayinevi && `<div><dt>Yayınevi</dt><dd>${escapeHtml(k.yayinevi)}</dd></div>`,
     k.basim_yili && `<div><dt>Basım yılı</dt><dd>${escapeHtml(k.basim_yili)}</dd></div>`,
@@ -686,13 +687,14 @@ function rotaBagla(a) {
 function magazaSayfasiCiz() {
   const dizinMi = ['yazarlar', 'yayinevleri'].includes(rota.bolum);
   const kategoriMi = rota.bolum === 'kategori';
+  const gecersizKategori = kategoriMi && !kategoriGecerli(rota.deger);
   const eksikSecim = ['yazar', 'yayinevi'].includes(rota.bolum) && !rota.deger;
   $('#dizin-sonuclar').hidden = !dizinMi;
-  $('#sonuclar').hidden = dizinMi || kategoriMi || eksikSecim;
+  $('#sonuclar').hidden = dizinMi || gecersizKategori || eksikSecim;
   $('#dizin-arama-form').hidden = !dizinMi;
   $('#dizin-arama-etiket').textContent = rota.bolum === 'yazarlar' ? 'Yazar adı ara' : 'Yayınevi ara';
-  $('#siralama').hidden = dizinMi || kategoriMi || eksikSecim;
-  $('label[for="siralama"]').hidden = dizinMi || kategoriMi || eksikSecim;
+  $('#siralama').hidden = dizinMi || gecersizKategori || eksikSecim;
+  $('label[for="siralama"]').hidden = dizinMi || gecersizKategori || eksikSecim;
   $('#katalog-baslik').textContent = rotaBasligi(rota);
   $('#katalog-aciklama').textContent = rota.bolum === 'yeni-basimlar'
     ? 'Kayıtlı basım yılına göre sıralanır. Yeni yayın tarihi anlamına gelmez.'
@@ -713,7 +715,7 @@ function magazaSayfasiCiz() {
     else a.removeAttribute('aria-current');
   });
   $('#sayfa-mesaj').hidden = true;
-  return { dizinMi, kategoriMi, eksikSecim };
+  return { dizinMi, gecersizKategori, eksikSecim };
 }
 
 function sayfaMesaji(metin, tekrar = false) {
@@ -819,13 +821,11 @@ async function listeyiTazele() {
   $('#sayfalama').hidden = true;
   try {
     if (!yoneticiMi()) {
-      const { dizinMi, kategoriMi, eksikSecim } = magazaSayfasiCiz();
-      if (kategoriMi || eksikSecim || (rota.bolum === 'arama' && !rota.terim)) {
+      const { dizinMi, gecersizKategori, eksikSecim } = magazaSayfasiCiz();
+      if (gecersizKategori || eksikSecim || (rota.bolum === 'arama' && !rota.terim)) {
         $('#sonuclar').replaceChildren();
         $('#ara-durum').textContent = '';
-        sayfaMesaji(kategoriMi ? (Object.hasOwn(KATEGORILER, rota.deger)
-          ? 'Bu raf hazırlanıyor. Kitaplarımızı doğru türlerine ayırdıktan sonra burada görebileceksin. Şimdilik tüm kitaplarda arama yapabilirsin.'
-          : 'Bu kategori bulunamadı. Kitap menüsünden bir kategori seçebilirsin.')
+        sayfaMesaji(gecersizKategori ? 'Bu kategori bulunamadı. Kitap menüsünden bir kategori seçebilirsin.'
           : eksikSecim ? 'Dizinden bir isim seçerek kitaplarına ulaşabilirsin.' : 'Aramaya başlamak için yukarıya bir kitap adı veya yazar yaz.');
         return;
       }
@@ -836,6 +836,7 @@ async function listeyiTazele() {
       yazar: rota.bolum === 'yazar' ? rota.deger : '',
       yayinevi: rota.bolum === 'yayinevi' ? rota.deger : '',
       basimVar: rota.bolum === 'yeni-basimlar',
+      kategori: rota.bolum === 'kategori' ? rota.deger : null,
     };
     const sonuc = await db.listele({ ...liste, ...filtre });
     if (benim !== istekSayaci) return;
@@ -867,6 +868,16 @@ function iskeletYaz(adet = 4) {
     parca.appendChild(s);
   }
   $('#sonuclar').replaceChildren(parca);
+}
+
+function kategoriKutulariniKur() {
+  ['ekle', 'duz'].forEach(alan => {
+    const sec = $(`#${alan}-kategori`);
+    sec.replaceChildren();
+    for (const [deger, ad] of [['', 'Henüz sınıflandırılmadı'], ...Object.entries(KATEGORILER)]) {
+      const o = document.createElement('option'); o.value = deger; o.textContent = ad; sec.appendChild(o);
+    }
+  });
 }
 
 // --- Sıralama kutusu ----------------------------------------------------
@@ -1017,6 +1028,7 @@ function ekleAc(onDolguAd = '') {
   hataGizle('#ekle-hata');
   $('#ekle-ad').value = onDolguAd;
   $('#ekle-yazar').value = '';
+  $('#ekle-kategori').value = '';
   $('#ekle-fiyat').value = '';
   $('#ekle-notlar').value = '';
   $('#ekle-basim-yili').value = '';
@@ -1039,12 +1051,14 @@ $('#ekle-form').addEventListener('submit', async (ev) => {
       yayinevi: $('#ekle-yayinevi').value,
       basim_yili: $('#ekle-basim-yili').value,
       durum: $('#ekle-durum').value,
+      kategori: $('#ekle-kategori').value,
       foto_url: await kapakUrlHazirla('ekle'),
     };
     await db.ekle(kitap);
     // Raf DOLU kalır: aynı rafa arka arkaya giriş için.
     $('#ekle-ad').value = '';
     $('#ekle-yazar').value = '';
+    $('#ekle-kategori').value = '';
     $('#ekle-fiyat').value = '';
     $('#ekle-notlar').value = '';
     $('#ekle-basim-yili').value = '';
@@ -1143,6 +1157,7 @@ function duzenleAc(k) {
   $('#duz-yayinevi').value = k.yayinevi || '';
   $('#duz-basim-yili').value = k.basim_yili == null ? '' : k.basim_yili;
   $('#duz-durum').value = k.durum || '';
+  $('#duz-kategori').value = kategoriGecerli(k.kategori) ? k.kategori : '';
   kapakTaslaginiSifirla('duz', k.foto_url || null);
   raflariTazele();
   kuyrukSeridiniYaz();
@@ -1164,6 +1179,7 @@ $('#duzenle-form').addEventListener('submit', async (ev) => {
       yayinevi: $('#duz-yayinevi').value,
       basim_yili: $('#duz-basim-yili').value,
       durum: $('#duz-durum').value,
+      kategori: $('#duz-kategori').value,
       foto_url: await kapakUrlHazirla('duz'),
     });
     if (kuyruktaMi()) {
@@ -1363,6 +1379,7 @@ async function araEkraniAc() {
   $('#deneme-serit').hidden = !db.denemeModu;
   $('#ziyaretci-alani').hidden = !db.ziyaretciGirisiVar;
   siralamaKutusunuKur();
+  kategoriKutulariniKur();
   if (await db.oturumVarMi()) return araEkraniAc();
   // Müşteri giriş ekranına değil kitaplara düşsün; personel çıkış düğmesinden girer.
   if (db.ziyaretciGirisiVar) {

@@ -1,3 +1,5 @@
+import { KATEGORILER } from './kategori.js';
+export { KATEGORILER, kategoriGecerli } from './kategori.js';
 // Customer cards and detail share these small display decisions.
 export function kitapKunye(k) {
   return [k.yayinevi, k.basim_yili, k.durum]
@@ -30,7 +32,6 @@ export function rezervasyonMetni(kitaplar, paraYaz) {
   return `Merhaba, aşağıdaki kitaplar için rezervasyon talep ediyorum:\n\n${satirlar.join('\n')}\n\n${tutar}\nStok durumunu ve kesin tutarı teyit edebilir misiniz?`;
 }
 
-export const KATEGORILER = { roman: 'Roman', 'cizgi-roman': 'Çizgi Roman', oyku: 'Öykü', siir: 'Şiir', tarih: 'Tarih', felsefe: 'Felsefe', cocuk: 'Çocuk Kitapları', bilim: 'Bilim', sanat: 'Sanat', psikoloji: 'Psikoloji' };
 
 const BOLUMLER = ['ana', 'kitaplar', 'yeni-gelenler', 'yeni-basimlar', 'arama', 'yazarlar', 'yayinevleri', 'yazar', 'yayinevi', 'kategori'];
 const SIRALAR = ['yeni', 'ad', 'fiyat_artan', 'fiyat_azalan', 'basim'];

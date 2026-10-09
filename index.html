@@ -119,9 +119,19 @@
           <a href="?bolum=kategori&amp;ad=bilim" data-rota>Bilim</a>
           <a href="?bolum=kategori&amp;ad=sanat" data-rota>Sanat</a>
         </div>
-        <div><h2>Çocuk kitapları</h2>
+        <div><h2>Diğer konular</h2>
           <a href="?bolum=kategori&amp;ad=cocuk" data-rota>Çocuk Kitapları</a>
-          <p>Tür raflarımız hazırlanıyor. Tüm kitaplara aramadan ulaşabilirsin.</p>
+          <a href="?bolum=kategori&amp;ad=edebiyat" data-rota>Edebiyat</a>
+          <a href="?bolum=kategori&amp;ad=biyografi-ani" data-rota>Biyografi ve Anı</a>
+          <a href="?bolum=kategori&amp;ad=din" data-rota>Din</a>
+          <a href="?bolum=kategori&amp;ad=egitim" data-rota>Eğitim</a>
+          <a href="?bolum=kategori&amp;ad=kisisel-gelisim" data-rota>Kişisel Gelişim</a>
+          <a href="?bolum=kategori&amp;ad=dil" data-rota>Dil</a>
+          <a href="?bolum=kategori&amp;ad=teknik" data-rota>Teknik</a>
+          <a href="?bolum=kategori&amp;ad=siyaset-toplum" data-rota>Siyaset ve Toplum</a>
+          <a href="?bolum=kategori&amp;ad=saglik-yasam" data-rota>Sağlık ve Yaşam</a>
+          <a href="?bolum=kategori&amp;ad=ekonomi-is" data-rota>Ekonomi ve İş</a>
+          <a href="?bolum=kategori&amp;ad=diger" data-rota>Diğer</a>
         </div>
       </div>
     </details>
@@ -268,6 +278,9 @@
     <input id="ekle-basim-yili" name="basim_yili" type="number" inputmode="numeric"
            step="1" min="1400" max="2100" placeholder="örn. 1998">
 
+    <label for="ekle-kategori">Kategori</label>
+    <select id="ekle-kategori" name="kategori"></select>
+
     <label for="ekle-durum">Durum</label>
     <select id="ekle-durum" name="durum">
       <option value="">— seçilmedi —</option>
@@ -329,6 +342,9 @@
     <label for="duz-basim-yili">Basım yılı</label>
     <input id="duz-basim-yili" name="basim_yili" type="number" inputmode="numeric"
            step="1" min="1400" max="2100" placeholder="örn. 1998">
+
+    <label for="duz-kategori">Kategori</label>
+    <select id="duz-kategori" name="kategori"></select>
 
     <label for="duz-durum">Durum</label>
     <select id="duz-durum" name="durum">
@@ -408,6 +424,6 @@
   <p><a href="vitrin/">Tüm kitapların listesi</a></p>
 </footer>
 
-<script type="module" src="app.js?v=016"></script>
+<script type="module" src="app.js?v=017"></script>
 </body>
 </html>
