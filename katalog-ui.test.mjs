@@ -1,3 +1,4 @@
+import { alimTeklifiDogrula } from './db.js';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
@@ -233,3 +234,26 @@ assert.equal(saved.value.aciklama, context.descriptionText);
 run('ekleAc();');
 assert.equal(get('#ekle-aciklama').value, '');
 console.log('Description detail escaping, multiline, separate copy notes and form roundtrip passed.');
+
+// An invalid offer must never upload photographs or insert a record.
+let offerUploads = 0, offerInserts = 0;
+context.db.alimTeklifiDogrula = alimTeklifiDogrula;
+context.db.teklifFotograflariYukle = async () => { offerUploads++; return []; };
+context.db.alimTeklifiGonder = async () => { offerInserts++; };
+get('#alim-teklif-form').reportValidity = () => true;
+get('#teklif-ad').value = '  ';
+get('#teklif-iletisim').value = '05361234567';
+get('#teklif-aciklama').value = 'Kitap açıklaması';
+await get('#alim-teklif-form').listeners.submit({ preventDefault() {} });
+assert.equal(offerUploads, 0, 'Whitespace-only name must fail before upload');
+assert.equal(offerInserts, 0);
+assert.equal(get('#alim-teklif-form button[type="submit"]').disabled, false);
+get('#teklif-ad').value = 'Geçerli Ad';
+get('#teklif-aciklama').value = 'a'.repeat(3001);
+await get('#alim-teklif-form').listeners.submit({ preventDefault() {} });
+assert.equal(offerUploads, 0, 'Overlong text must fail before upload');
+get('#teklif-aciklama').value = 'Kitap açıklaması';
+get('#alim-teklif-form').reportValidity = () => false;
+await get('#alim-teklif-form').listeners.submit({ preventDefault() {} });
+assert.equal(offerUploads, 0, 'Native validity failure must prevent upload');
+console.log('Alım formu: geçersiz alanlar fotoğraf yükleme ve kayıt ekleme öncesinde durduruldu.');

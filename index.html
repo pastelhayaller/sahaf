@@ -28,9 +28,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..700,0..100,0..1&family=Inter+Tight:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=018">
+<link rel="stylesheet" href="styles.css?v=019">
+<link rel="stylesheet" href="bilgilendirme.css?v=019">
 </head>
 <body>
+<aside id="depolama-bilgisi" class="depolama-bilgisi" aria-label="Tarayıcı depolaması hakkında" hidden>
+  <p>Sepet ve oturum için tarayıcı depolaması kullanıyoruz. Reklam ve analitik araçları çalıştırmıyoruz. <a href="/cerez-politikasi.html">Depolama hakkında</a></p>
+  <button id="depolama-bilgisi-kapat" type="button">Bilgilendirmeyi kapat</button>
+</aside>
 
 <div id="deneme-serit" class="serit" hidden>
   Deneme modu — veriler sadece bu cihazda saklanıyor.
@@ -212,18 +217,18 @@
     <h2>Kitapların için fiyat iste</h2>
   </header>
   <p class="ipucu">Fotoğrafları gönder; inceleyip WhatsApp’tan sana dönüş yapalım. Kesin fiyat, kitaplar dükkâna geldiğinde verilir.</p>
-  <form id="alim-teklif-form" class="form" novalidate>
+  <form id="alim-teklif-form" class="form">
+    <p class="ipucu teklif-bilgilendirme">Adın, WhatsApp numaran, kitap açıklaman ve fotoğrafların Supabase altyapısında saklanır; fiyat talebini incelemek ve sana dönüş yapmak için yetkili personel tarafından değerlendirilir. Fotoğraflarda yalnızca kitaplar bulunsun; kimlik, kart veya adres belgeleri gönderme. <a href="/gizlilik.html">Gizlilik ve kişisel veriler</a></p>
     <label for="teklif-ad">Adın soyadın *</label>
-    <input id="teklif-ad" required autocomplete="name">
+    <input id="teklif-ad" required minlength="2" maxlength="120" autocomplete="name">
     <label for="teklif-iletisim">WhatsApp numaran *</label>
-    <input id="teklif-iletisim" required type="tel" inputmode="tel" placeholder="05xx xxx xx xx" autocomplete="tel">
+    <input id="teklif-iletisim" required minlength="5" maxlength="160" type="tel" inputmode="tel" placeholder="05xx xxx xx xx" autocomplete="tel">
     <label for="teklif-aciklama">Kitaplar hakkında *</label>
-    <textarea id="teklif-aciklama" required maxlength="3000" placeholder="Kitap adları, yaklaşık adet, kondisyon ve varsa yayınevi…"></textarea>
+    <textarea id="teklif-aciklama" required minlength="3" maxlength="3000" placeholder="Kitap adları, yaklaşık adet, kondisyon ve varsa yayınevi…"></textarea>
     <label for="teklif-fotolar">Kitap fotoğrafları *</label>
     <input id="teklif-fotolar" type="file" accept="image/jpeg,image/png,image/webp" multiple>
     <p id="teklif-foto-durum" class="ipucu">En fazla 20 fotoğraf; gönderilmeden önce küçültülür.</p>
     <div id="teklif-foto-onizlemeler" class="teklif-foto-onizlemeler" aria-live="polite"></div>
-    <label class="onay-kutusu"><input id="teklif-onay" type="checkbox" required> Fotoğraflarımın ve iletişim bilgilerimin fiyat teklifi için Pastelhayaller Sahaf tarafından incelenmesine onay veriyorum.</label>
     <button class="btn birincil" type="submit">Fotoğrafları gönder, fiyat iste</button>
     <p id="alim-teklif-hata" class="hata" hidden></p>
   </form>
@@ -395,6 +400,7 @@
     <strong id="sepet-toplam-etiket">Toplam</strong><strong id="sepet-toplam"></strong>
   </div>
   <p id="sepet-fiyat-notu" class="ipucu fiyat-notu" hidden>Fiyatı bulunmayan kitaplar için WhatsApp’tan güncel fiyatı soracağız.</p>
+  <p class="ipucu">Hazırlanan mesaj WhatsApp’ta açılır; inceleyip kendin gönderirsin. <a href="/gizlilik.html">Gizlilik bilgisi</a> · <a href="/islem-rehberi.html">Ayırtma nasıl işler?</a></p>
   <button id="btn-whatsapp" class="btn whatsapp" type="button">WhatsApp’tan rezervasyon iste</button>
 </section>
 
@@ -430,8 +436,15 @@
   <p><a href="https://maps.google.com/?cid=4502818142900572789">Piribaba Çamlığı, Bahçelievler Mah., Sanat Sk. No:8, 19200 Çorum Merkez/Çorum</a></p>
   <p>Pazartesi–Cumartesi 10:00–17:00 · Pazar kapalı · <a href="https://wa.me/905369782758">0536 978 27 58 (WhatsApp)</a></p>
   <p><a href="vitrin/">Tüm kitapların listesi</a></p>
+<nav class="bilgi-baglantilari" aria-label="Bilgilendirme">
+  <a href="/gizlilik.html">Gizlilik ve kişisel veriler</a>
+  <a href="/cerez-politikasi.html">Çerezler ve tarayıcı depolaması</a>
+  <a href="/islem-rehberi.html">İşlem rehberi</a>
+  <a href="/iletisim.html">İletişim</a>
+</nav>
 </footer>
 
-<script type="module" src="app.js?v=018"></script>
+<script src="depolama-bilgisi.js?v=019" defer></script>
+<script type="module" src="app.js?v=019"></script>
 </body>
 </html>

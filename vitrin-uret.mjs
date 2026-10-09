@@ -194,6 +194,7 @@ function sayfa({ baslik, aciklama, govde, kanonik, jsonld }) {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Inter+Tight:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
 <style>${STIL}</style>
+<link rel="stylesheet" href="/bilgilendirme.css?v=019">
 ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, '\\u003c')}</script>` : ''}
 </head>
 <body>
@@ -208,6 +209,12 @@ ${govde}
   <a href="${HARITA}">${ADRES}</a><br>
   ${SAATLER} · <a href="https://wa.me/${WHATSAPP}">0536 978 27 58 (WhatsApp)</a><br>
   <a href="${SITE}/">Kitap ara ve sepete ekle</a> · <a href="${SITE}/vitrin/">Tüm kitaplar</a>
+<nav class="bilgi-baglantilari" aria-label="Bilgilendirme">
+  <a href="/gizlilik.html">Gizlilik ve kişisel veriler</a>
+  <a href="/cerez-politikasi.html">Çerezler ve tarayıcı depolaması</a>
+  <a href="/islem-rehberi.html">İşlem rehberi</a>
+  <a href="/iletisim.html">İletişim</a>
+</nav>
 </footer>
 </div>
 </body>
@@ -321,6 +328,10 @@ async function uret() {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url><loc>${SITE}/</loc><lastmod>${bugun}</lastmod></url>
 <url><loc>${SITE}/vitrin/</loc><lastmod>${bugun}</lastmod></url>
+<url><loc>${SITE}/gizlilik.html</loc><lastmod>${bugun}</lastmod></url>
+<url><loc>${SITE}/cerez-politikasi.html</loc><lastmod>${bugun}</lastmod></url>
+<url><loc>${SITE}/islem-rehberi.html</loc><lastmod>${bugun}</lastmod></url>
+<url><loc>${SITE}/iletisim.html</loc><lastmod>${bugun}</lastmod></url>
 ${kayitlar.map(r => `<url><loc>${r.kanonik}</loc><lastmod>${bugun}</lastmod></url>`).join('\n')}
 </urlset>`;
   await writeFile(join(KOK, 'sitemap.xml'), sitemap, 'utf8');

@@ -1,0 +1,49 @@
+/* Mağazanın bilgi sayfaları ve bütün sayfalardaki ortak altbilgi. */
+.bilgi-baglantilari { display:flex; flex-wrap:wrap; gap:8px 22px; margin-top:20px; }
+.bilgi-baglantilari a { display:inline-flex; align-items:center; min-height:44px; text-underline-offset:3px; }
+.bilgi-sayfasi { margin:0; background:#fff; color:#19344a; font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+.bilgi-sayfasi * { box-sizing:border-box; }
+.bilgi-sayfasi a { color:#19344a; text-underline-offset:3px; }
+.bilgi-sayfasi a:hover { color:#a82f40; }
+.bilgi-sayfasi :focus-visible, .depolama-bilgisi :focus-visible { outline:3px solid #c44454; outline-offset:4px; }
+.bilgi-baslik { display:flex; align-items:center; justify-content:space-between; gap:20px; max-width:1120px; margin:auto; padding:24px; border-bottom:1px solid #dde4e8; }
+.bilgi-marka { font:700 27px/1.2 Georgia,serif; text-decoration:none; }
+.bilgi-marka span { display:block; font:13px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+.bilgi-icerik { max-width:800px; padding:32px 24px 48px; margin:auto; overflow-wrap:anywhere; }
+.bilgi-yol { font-size:13px; color:#526777; }
+.bilgi-icerik h1 { margin:24px 0 18px; font-size:clamp(28px,5vw,40px); line-height:1.18; letter-spacing:-.025em; }
+.bilgi-icerik h2 { margin:32px 0 10px; font-size:22px; line-height:1.35; }
+.bilgi-icerik p { margin:12px 0; }
+.bilgi-giris { font-size:20px; line-height:1.5; }
+.bilgi-durum { padding:18px 20px; border-left:3px solid #c44454; background:#f4f6f8; }
+.bilgi-icerik li { margin:10px 0; }
+.bilgi-icerik ul,.bilgi-icerik ol { padding-left:24px; }
+.bilgi-icerik address { font-style:normal; }
+.bilgi-eylem { display:inline-flex; align-items:center; min-height:44px; }
+.bilgi-tablo { margin:24px 0; }
+.bilgi-tablo table { border-collapse:collapse; width:100%; table-layout:fixed; font-size:14px; }
+.bilgi-tablo caption { text-align:left; font-weight:600; margin-bottom:12px; }
+.bilgi-tablo th,.bilgi-tablo td { padding:14px 12px; border:1px solid #dde4e8; text-align:left; vertical-align:top; overflow-wrap:anywhere; }
+.bilgi-tablo th { background:#f4f6f8; }
+.bilgi-tablo code { font-size:12px; }
+.bilgi-tarih { margin-top:36px!important; color:#526777; font-size:13px; }
+.bilgi-sayfasi .isletme-bilgi { max-width:1120px; margin:auto; padding:28px 24px 36px; border-top:1px solid #dde4e8; font-size:14px; }
+.bilgi-sayfasi .isletme-bilgi h2 { margin:0 0 10px; font-size:20px; }
+.icerige-atla { position:absolute; left:16px; top:-100px; padding:12px; background:white; }
+.icerige-atla:focus { top:8px; }
+.depolama-bilgisi { display:flex; align-items:center; gap:20px; margin:0 auto; max-width:1320px; padding:18px 24px; border-top:1px solid #cbd9d3; background:#e4f1ec; color:#19344a; font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+.depolama-bilgisi[hidden] { display:none!important; }
+.depolama-bilgisi p { margin:0; flex:1; }
+.depolama-bilgisi a { color:inherit; text-decoration:underline; text-underline-offset:3px; }
+.depolama-bilgisi button { flex:none; background:white; color:#19344a; border:1px solid #8baba0; min-height:44px; padding:10px 14px; font:600 13px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; cursor:pointer; }
+@media(max-width:600px) {
+  .bilgi-baslik { padding:20px; gap:16px; }
+  .bilgi-baslik>a:last-child { font-size:13px; text-align:right; }
+  .bilgi-marka { font-size:23px; }
+  .bilgi-icerik { padding:24px 20px 32px; }
+  .bilgi-giris { font-size:18px; }
+  .bilgi-baglantilari { display:grid; gap:0; }
+  .bilgi-tablo th,.bilgi-tablo td { padding:10px 7px; font-size:12px; }
+  .bilgi-tablo code { font-size:11px; }
+  .depolama-bilgisi { flex-direction:column; align-items:flex-start; gap:12px; padding:18px 20px; }
+}

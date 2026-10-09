@@ -1,5 +1,5 @@
-import * as db from './db.js?v=018';
-import { kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER, kategoriGecerli } from './ui-helpers.js?v=018';
+import * as db from './db.js?v=019';
+import { kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER, kategoriGecerli } from './ui-helpers.js?v=019';
 
 const $ = (s) => document.querySelector(s);
 const ekranlar = ['giris', 'ara', 'detay', 'ekle', 'duzenle', 'sepet', 'alim-teklif', 'teklifler'];
@@ -1319,18 +1319,19 @@ $('#teklif-fotolar').addEventListener('change', (ev) => teklifFotograflariEkle(e
 $('#alim-teklif-form').addEventListener('submit', async (ev) => {
   ev.preventDefault();
   hataGizle('#alim-teklif-hata');
+  if (!$('#alim-teklif-form').reportValidity()) return;
   const btn = $('#alim-teklif-form button[type="submit"]');
   btn.disabled = true;
   try {
-    const foto_yollari = await db.teklifFotograflariYukle(teklifFotograflari.map(fotograf => fotograf.dosya), (sira, toplam) => {
-      $('#teklif-foto-durum').textContent = `${sira}/${toplam} gönderiliyor…`;
-    });
-    await db.alimTeklifiGonder({
+    const teklif = db.alimTeklifiDogrula({
       ad_soyad: $('#teklif-ad').value,
       iletisim: $('#teklif-iletisim').value,
       kitap_aciklama: $('#teklif-aciklama').value,
-      foto_yollari,
     });
+    const foto_yollari = await db.teklifFotograflariYukle(teklifFotograflari.map(fotograf => fotograf.dosya), (sira, toplam) => {
+      $('#teklif-foto-durum').textContent = `${sira}/${toplam} gönderiliyor…`;
+    });
+    await db.alimTeklifiGonder({ ...teklif, foto_yollari });
     teklifFotograflariTemizle();
     bildir('✓ Teklifin geldi. İnceleyip WhatsApp’tan döneceğiz.');
     history.back();

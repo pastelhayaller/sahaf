@@ -463,14 +463,23 @@ export async function teklifFotograflariYukle(dosyalar, ilerlemeYaz) {
   return sonuc;
 }
 
+// Aynı sınırlar yama-004 veritabanı kısıtlarıyla eşleşir; fotoğraf yüklemeden önce de çağrılır.
+export function alimTeklifiDogrula(teklif) {
+  const kayit = {};
+  for (const [alan, alt, ust, etiket] of [
+    ['ad_soyad', 2, 120, 'Ad soyad'],
+    ['iletisim', 5, 160, 'İletişim bilgisi'],
+    ['kitap_aciklama', 3, 3000, 'Kitap açıklaması'],
+  ]) {
+    const deger = typeof teklif?.[alan] === 'string' ? teklif[alan].trim() : '';
+    if ([...deger].length < alt || [...deger].length > ust) throw new Error(etiket + ' ' + alt + '–' + ust + ' karakter olmalı.');
+    kayit[alan] = deger;
+  }
+  return kayit;
+}
+
 export async function alimTeklifiGonder(teklif) {
-  const kayit = {
-    ad_soyad: (teklif.ad_soyad || '').trim(),
-    iletisim: (teklif.iletisim || '').trim(),
-    kitap_aciklama: (teklif.kitap_aciklama || '').trim(),
-    foto_yollari: teklif.foto_yollari || [],
-  };
-  if (!kayit.ad_soyad || !kayit.iletisim || !kayit.kitap_aciklama) throw new Error('Adın, iletişim bilgin ve kitap açıklaması gerekli.');
+  const kayit = { ...alimTeklifiDogrula(teklif), foto_yollari: teklif.foto_yollari || [] };
   if (denemeModu) return { ok: true };
   const { error } = await (await sb()).from('alim_teklifleri').insert(kayit);
   if (error) throw hata(yetkiHatasi(error));
