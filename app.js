@@ -1050,6 +1050,9 @@ function roluUygula() {
   $('#btn-alim-teklif-ac').hidden = yonetici;
   $('#btn-teklifler').hidden = !yonetici;
   $('#rol-rozet').hidden = yonetici;
+  const cikisEtiketi = yonetici ? 'Çıkış' : 'Personel girişi';
+  $('#btn-cikis').title = cikisEtiketi;
+  $('#btn-cikis').setAttribute('aria-label', cikisEtiketi);
   $('#yama-serit').hidden = !db.durum.yamaEksik;
   // Boş sonuç metni role göre değişir: ziyaretçiye "ekle" demek anlamsız.
   $('#bos-sonuc').querySelector('p').textContent = yonetici
@@ -1074,6 +1077,11 @@ async function araEkraniAc() {
   $('#deneme-serit').hidden = !db.denemeModu;
   $('#ziyaretci-alani').hidden = !db.ziyaretciGirisiVar;
   siralamaKutusunuKur();
-  if (await db.oturumVarMi()) await araEkraniAc();
-  else koku('giris');
+  if (await db.oturumVarMi()) return araEkraniAc();
+  // Müşteri giriş ekranına değil kitaplara düşsün; personel çıkış düğmesinden girer.
+  if (db.ziyaretciGirisiVar) {
+    try { await db.ziyaretciGirisiYap(); return araEkraniAc(); }
+    catch (e) { console.warn('Ziyaretçi girişi olmadı:', e); }
+  }
+  koku('giris');
 })();
