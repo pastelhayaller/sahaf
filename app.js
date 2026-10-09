@@ -1,5 +1,5 @@
-import * as db from './db.js';
-import { kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER } from './ui-helpers.js';
+import * as db from './db.js?v=016';
+import { kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER } from './ui-helpers.js?v=016';
 
 const $ = (s) => document.querySelector(s);
 const ekranlar = ['giris', 'ara', 'detay', 'ekle', 'duzenle', 'sepet', 'alim-teklif', 'teklifler'];
