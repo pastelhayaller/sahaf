@@ -1,8 +1,10 @@
 import * as db from './db.js';
+import { kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER } from './ui-helpers.js';
 
 const $ = (s) => document.querySelector(s);
-const ekranlar = ['giris', 'ara', 'ekle', 'duzenle', 'sepet', 'alim-teklif', 'teklifler'];
+const ekranlar = ['giris', 'ara', 'detay', 'ekle', 'duzenle', 'sepet', 'alim-teklif', 'teklifler'];
 let seciliKitap = null;
+let detayOdak = null;
 let sonSilinen = null;
 let bildirimZaman = null;
 let bildirimSayac = null;
@@ -17,6 +19,7 @@ let teklifFotograflari = [];
 // Terim ya da sıralama değişince sayfa 1'e döner — 7. sayfada arama yapıp
 // boş liste görmek en sık rastlanan sayfalama hatası.
 const liste = { terim: '', sirala: db.VARSAYILAN_SIRALAMA, sayfa: 1 };
+let rota = rotaOku(window.location.search);
 
 // 'yonetici' (baba + eş) veya 'ziyaretci'. Ziyaretçi sadece görür.
 // Bu değişken arayüzü şekillendirir; asıl kilit Supabase'deki RLS'tir.
@@ -34,26 +37,33 @@ function ekranCiz(ad) {
 // Her ekran ve onay penceresi bir tarayici gecmisi girdisidir; boylece
 // telefonun geri tusu siteden cikmak yerine bir adim geri alir.
 function durumUygula(d) {
+  if (!yoneticiMi() && d.rota) rotaUygula(d.rota);
+  if (d.ekran === 'detay' && d.kitap && !yoneticiMi()) {
+    seciliKitap = d.kitap;
+    detayCiz();
+  }
+  if (d.ekran === 'sepet') sepetiCiz();
   ekranCiz(d.ekran);
   $('#onay').hidden = !d.onay;
   $('#foto-buyut').hidden = !d.buyut;
 }
 
-function git(ekran) {
-  const d = { ekran, onay: false };
+function git(ekran, ekDurum = {}) {
+  const d = { ...ekDurum, ekran, onay: false, ...(!yoneticiMi() ? { rota: { ...rota } } : {}) };
   history.pushState(d, '');
   durumUygula(d);
 }
 
 // Gecmise yeni girdi eklemeden ekran degistirir (acilis, giris, cikis).
 function koku(ekran) {
-  const d = { ekran, onay: false };
+  const d = { ekran, onay: false, ...(!yoneticiMi() ? { rota: { ...rota } } : {}) };
   history.replaceState(d, '');
   durumUygula(d);
 }
 
 window.addEventListener('popstate', async (ev) => {
-  const d = ev.state || { ekran: 'ara', onay: false };
+  const d = ev.state || { ekran: 'ara', onay: false, rota: rotaOku(window.location.search) };
+  clearTimeout(aramaZaman);
   if (d.ekran !== 'alim-teklif' && teklifFotograflari.length) teklifFotograflariTemizle();
   // Düzenle'den çıkıldıysa kuyruk da kapanır; açık kalırsa sonraki tekil
   // düzenlemede şerit yanlışlıkla görünür ve "sonraki" beklenmedik yere atlar.
@@ -65,7 +75,16 @@ window.addEventListener('popstate', async (ev) => {
     kuyrukSayisiniTazele();
   }
   durumUygula(d);
-  if (d.ekran === 'ara' && !d.onay) await listeyiTazele();
+  if (d.ekran === 'ara' && !d.onay) {
+    const odak = detayOdak;
+    detayOdak = null;
+    await listeyiTazele();
+    if (odak && document.contains(odak)) odak.focus();
+    else if (odak?.dataset.kitapId) {
+      [...document.querySelectorAll('.kitap-basligi, .urun-kapak')]
+        .find(b => b.dataset.kitapId === odak.dataset.kitapId)?.focus();
+    }
+  }
 });
 
 function paraYaz(f) {
@@ -78,7 +97,10 @@ function sepetOku() {
   catch { return []; }
 }
 function sepetKaydet() { localStorage.setItem(SEPET_ANAHTAR, JSON.stringify(sepet)); }
-function sepetRozetiniYaz() { $('#sepet-sayi').textContent = sepet.length; }
+function sepetRozetiniYaz() {
+  $('#sepet-sayi').textContent = sepet.length;
+  $('#detay-sepet-sayi').textContent = sepet.length;
+}
 
 function bildir(metin, geriAlFn) {
   clearTimeout(bildirimZaman);
@@ -127,7 +149,7 @@ function fotoBuyut(urller, sira) {
   if (!buyutListesi.length) return;
   buyutSira = Math.max(0, Math.min(sira || 0, buyutListesi.length - 1));
   buyutCiz();
-  const d = { ekran: (history.state && history.state.ekran) || 'ara', onay: false, buyut: true };
+  const d = { ...history.state, ekran: history.state?.ekran || 'ara', onay: false, buyut: true };
   history.pushState(d, '');
   durumUygula(d);
 }
@@ -191,33 +213,127 @@ function kartIci(k) {
 }
 
 function kartYap(k) {
-  // Ziyaretçide kart tıklanabilir bir düğme değil: düzenleme ekranı hiç açılmaz.
-  // Sunucu zaten reddederdi; kapıyı da göstermemek yanlış beklenti yaratmıyor.
-  const el = document.createElement(yoneticiMi() ? 'button' : 'div');
-  el.className = 'kart' + (yoneticiMi() ? '' : ' salt-okunur');
-  el.innerHTML = kartIci(k);
   if (yoneticiMi()) {
+    const el = document.createElement('button');
+    el.className = 'kart';
+    el.innerHTML = kartIci(k);
     el.type = 'button';
     el.addEventListener('click', () => duzenleAc(k));
-  } else {
-    // Kart ziyaretcide bir sey acmiyor; bostaki tek dogal hedef kapagin kendisi.
-    const kapak = el.querySelector('img.kart-kapak');
-    if (kapak) kapak.addEventListener('click', () => fotoBuyut([kapak.src], 0));
-    const ekle = document.createElement('button');
-    ekle.className = 'sepet-ekle';
-    ekle.type = 'button';
-    ekle.textContent = sepet.some(x => x.id === k.id) ? 'Sepette' : 'Sepete ekle';
-    ekle.disabled = sepet.some(x => x.id === k.id);
-    ekle.addEventListener('click', () => sepeteEkle(k));
-    el.appendChild(ekle);
+    return el;
   }
+
+  // Başlık ve sepet eylemi kardeş düğmeler: erişilebilir ve yuvalanmamış.
+  const el = document.createElement('article');
+  el.className = 'kart customer-kart' + (k.foto_url ? '' : ' no-cover');
+  const kapakDugmesi = document.createElement('button');
+  kapakDugmesi.type = 'button';
+  kapakDugmesi.className = 'urun-kapak';
+  kapakDugmesi.dataset.kitapId = String(k.id);
+  kapakDugmesi.setAttribute('aria-label', `${k.ad || 'Adsız kitap'} — ayrıntıları gör`);
+  const kapakYok = () => {
+    kapakDugmesi.textContent = 'Kapak fotoğrafı yok';
+    el.classList.add('no-cover');
+  };
+  if (k.foto_url) {
+    const kapak = document.createElement('img');
+    kapak.className = 'kart-kapak';
+    kapak.src = k.foto_url;
+    kapak.alt = `${k.ad} kapağı`;
+    kapak.loading = 'lazy';
+    kapak.addEventListener('error', () => { kapakDugmesi.replaceChildren(); kapakYok(); }, { once: true });
+    kapakDugmesi.appendChild(kapak);
+  } else kapakYok();
+  kapakDugmesi.addEventListener('click', () => detayAc(k, kapakDugmesi));
+  el.appendChild(kapakDugmesi);
+  const orta = document.createElement('div');
+  orta.className = 'kart-orta';
+  const baslik = document.createElement('button');
+  baslik.type = 'button';
+  baslik.className = 'kart-ad kitap-basligi';
+  baslik.dataset.kitapId = String(k.id);
+  baslik.textContent = k.ad || 'Adsız kitap';
+  baslik.addEventListener('click', () => detayAc(k, baslik));
+  orta.appendChild(baslik);
+  if (k.yazar) {
+    const yazar = document.createElement('span');
+    yazar.className = 'kart-yazar';
+    yazar.textContent = k.yazar;
+    orta.appendChild(yazar);
+  }
+  const kunye = kitapKunye(k);
+  if (kunye.length) {
+    const meta = document.createElement('span');
+    meta.className = 'kart-kunye';
+    meta.textContent = kunye.join(' · ');
+    orta.appendChild(meta);
+  }
+  el.appendChild(orta);
+
+  const fiyat = document.createElement('span');
+  fiyat.className = 'kart-fiyat' + (!fiyatVar(k) ? ' fiyat-yok' : '');
+  fiyat.textContent = kitapFiyatEtiketi(k, paraYaz);
+  el.appendChild(fiyat);
+
+  const ekle = document.createElement('button');
+  ekle.className = 'sepet-ekle';
+  ekle.type = 'button';
+  ekle.textContent = sepet.some(x => x.id === k.id) ? 'Sepette' : 'Sepete ekle';
+  ekle.disabled = sepet.some(x => x.id === k.id);
+  ekle.addEventListener('click', () => sepeteEkle(k));
+  el.appendChild(ekle);
   return el;
+}
+
+function detayAc(k, odak) {
+  if (yoneticiMi()) return;
+  seciliKitap = k;
+  detayOdak = odak;
+  git('detay', { kitap: k });
+}
+
+function detayCiz() {
+  const k = seciliKitap;
+  if (!k) return;
+  const kapak = '<p class="detay-kapak-yok">Bu kayıt için kapak görseli yok.</p>';
+  const kunye = [
+    k.yazar && `<div><dt>Yazar</dt><dd>${escapeHtml(k.yazar)}</dd></div>`,
+    k.yayinevi && `<div><dt>Yayınevi</dt><dd>${escapeHtml(k.yayinevi)}</dd></div>`,
+    k.basim_yili && `<div><dt>Basım yılı</dt><dd>${escapeHtml(k.basim_yili)}</dd></div>`,
+    k.durum && `<div><dt>Durum</dt><dd>${escapeHtml(k.durum)}</dd></div>`,
+  ].filter(Boolean).join('');
+  const fiyat = kitapFiyatEtiketi(k, paraYaz);
+  $('#detay-icerik').innerHTML = `
+    <article class="detay-kart">
+      <div class="detay-gorsel">${kapak}</div>
+      <div class="detay-metin">
+        <h1>${escapeHtml(k.ad || 'Adsız kitap')}</h1>
+        ${kunye ? `<dl class="detay-kunye">${kunye}</dl>` : '<p class="ipucu">Bu kayıt için ek künye bilgisi bulunmuyor.</p>'}
+        ${k.notlar ? `<p class="detay-not"><strong>Not</strong>${escapeHtml(k.notlar)}</p>` : ''}
+        <p class="detay-fiyat">${fiyat}</p>
+        ${!fiyatVar(k) ? '<p class="ipucu">Güncel fiyatı WhatsApp’tan sorabilirsin.</p>' : ''}
+        <button id="btn-detay-sepet" class="btn birincil" type="button">${sepet.some(x => x.id === k.id) ? 'Sepette' : 'Sepete ekle'}</button>
+      </div>
+    </article>`;
+  if (k.foto_url) {
+    const gorsel = $('#detay-icerik .detay-gorsel');
+    const foto = fotoDugmesi([k.foto_url], 0, `${k.ad} kapağı`);
+    foto.querySelector('img').className = 'detay-kapak';
+    foto.querySelector('img').addEventListener('error', () => {
+      gorsel.innerHTML = '<p class="detay-kapak-yok">Kapak fotoğrafı yüklenemedi.</p>';
+    }, { once: true });
+    gorsel.replaceChildren(foto);
+  }
+  const ekle = $('#btn-detay-sepet');
+  ekle.disabled = sepet.some(x => x.id === k.id);
+  ekle.addEventListener('click', () => sepeteEkle(k));
 }
 
 function sepeteEkle(k) {
   if (sepet.some(x => x.id === k.id)) return;
   sepet.push({ id: k.id, ad: k.ad, yazar: k.yazar, fiyat: k.fiyat, raf: k.raf, foto_url: k.foto_url || null });
   sepetKaydet(); sepetRozetiniYaz();
+  const detayDugmesi = $('#btn-detay-sepet');
+  if (detayDugmesi && seciliKitap?.id === k.id) { detayDugmesi.disabled = true; detayDugmesi.textContent = 'Sepette'; }
   bildir(`✓ «${k.ad}» sepete eklendi`);
   listeyiTazele();
 }
@@ -228,13 +344,16 @@ function sepetiCiz() {
   $('#sepet-bos').hidden = sepet.length !== 0;
   $('#sepet-ozet').hidden = sepet.length === 0;
   $('#btn-whatsapp').hidden = sepet.length === 0;
-  const toplam = sepet.reduce((t, k) => t + (Number(k.fiyat) || 0), 0);
-  $('#sepet-toplam').textContent = paraYaz(toplam);
+  const { toplam, bilinen, bilinmeyen } = sepetOzeti(sepet);
+  $('#sepet-toplam-etiket').textContent = bilinmeyen ? 'Bilinen ara toplam' : 'Toplam';
+  $('#sepet-toplam').textContent = bilinen ? paraYaz(toplam) : 'Fiyatlar sorulacak';
+  $('#sepet-fiyat-notu').hidden = !bilinmeyen;
+  $('#sepet-fiyat-notu').textContent = `${bilinmeyen} kitabın fiyatı sorulacak; bu kitaplar ara toplama dahil değil. Kesin tutarı sahaf teyit eder.`;
   sepet.forEach(k => {
     const el = document.createElement('div'); el.className = 'sepet-kalem';
     el.innerHTML = `${k.foto_url ? `<img class="sepet-kapak" src="${escapeHtml(k.foto_url)}" alt="">` : ''}
-      <span class="kart-orta"><span class="kart-ad">${escapeHtml(k.ad)}</span>${k.yazar ? `<span class="kart-yazar">${escapeHtml(k.yazar)}</span>` : ''}<span class="sepet-raf">Raf ${escapeHtml(k.raf)}</span></span>
-      <span class="kart-fiyat">${paraYaz(k.fiyat)}</span>`;
+      <span class="kart-orta"><span class="kart-ad">${escapeHtml(k.ad)}</span>${k.yazar ? `<span class="kart-yazar">${escapeHtml(k.yazar)}</span>` : ''}</span>
+      <span class="kart-fiyat">${kitapFiyatEtiketi(k, paraYaz)}</span>`;
     const sil = document.createElement('button'); sil.className = 'btn sade kucuk'; sil.type = 'button'; sil.textContent = 'Çıkar';
     sil.addEventListener('click', () => { sepet = sepet.filter(x => x.id !== k.id); sepetKaydet(); sepetRozetiniYaz(); sepetiCiz(); });
     el.appendChild(sil); kap.appendChild(el);
@@ -244,9 +363,7 @@ function sepetiCiz() {
 function sepetiAc() { sepetiCiz(); git('sepet'); }
 
 function whatsappRezervasyon() {
-  const satirlar = sepet.map(k => `• ${k.ad}${k.yazar ? ` — ${k.yazar}` : ''}${k.fiyat == null ? '' : ` (${paraYaz(k.fiyat)})`}`);
-  const toplam = sepet.reduce((t, k) => t + (Number(k.fiyat) || 0), 0);
-  const mesaj = `Merhaba, aşağıdaki kitaplar için rezervasyon talep ediyorum:\n\n${satirlar.join('\n')}\n\nToplam: ${paraYaz(toplam)}\nStok durumunu teyit edebilir misiniz?`;
+  const mesaj = rezervasyonMetni(sepet, paraYaz);
   window.open(`https://wa.me/${WHATSAPP_NUMARASI}?text=${encodeURIComponent(mesaj)}`, '_blank', 'noopener');
 }
 
@@ -493,6 +610,7 @@ function listeYaz(sonuc, terimVarMi) {
   const kap = $('#sonuclar');
   kap.replaceChildren();
   $('#bos-sonuc').hidden = true;
+  magazaVitriniYaz(sonuc.kayitlar);
 
   if (!sonuc.kayitlar.length) {
     if (terimVarMi) $('#bos-sonuc').hidden = false;
@@ -511,6 +629,122 @@ function listeYaz(sonuc, terimVarMi) {
     : kaynak;
 
   sayfalamaYaz(sonuc);
+}
+
+// Vitrin yalnız varsayılan raf görünümünde; aramada sonuçlar öne çıkar.
+function magazaVitriniYaz(kitaplar) {
+  const vitrin = $('#magaza-vitrini');
+  vitrin.hidden = rota.bolum !== 'ana' || liste.sayfa !== 1;
+  $('#katalog-baslik').textContent = rotaBasligi(rota);
+  if (yoneticiMi() || vitrin.hidden) return;
+  const kap = $('#vitrin-kapaklari');
+  kap.replaceChildren();
+  kitaplar.filter(k => k.foto_url).slice(0, 3).forEach(k => {
+    const dugme = document.createElement('button');
+    dugme.type = 'button';
+    dugme.setAttribute('aria-label', `${k.ad} — ayrıntıları gör`);
+    dugme.dataset.kitapId = String(k.id);
+    const img = document.createElement('img');
+    img.src = k.foto_url;
+    img.alt = `${k.ad} kapağı`;
+    img.addEventListener('error', () => dugme.remove(), { once: true });
+    dugme.appendChild(img);
+    dugme.addEventListener('click', () => detayAc(k, dugme));
+    kap.appendChild(dugme);
+  });
+}
+
+function rotaUygula(yeni) {
+  rota = { ...yeni };
+  Object.assign(liste, { terim: rota.terim, sirala: rota.sirala, sayfa: rota.sayfa });
+  $('#arama').value = rota.bolum === 'arama' ? rota.terim : '';
+  $('#siralama').value = rota.sirala;
+  $('#dizin-arama').value = rota.terim;
+}
+
+async function rotaAc(yeni, degistir = false) {
+  if (yoneticiMi()) return;
+  clearTimeout(aramaZaman);
+  rotaUygula(yeni);
+  $('#kitap-menu').open = false;
+  const d = { ekran: 'ara', onay: false, rota: { ...rota } };
+  history[degistir ? 'replaceState' : 'pushState'](d, '', rotaUrl(rota));
+  durumUygula(d);
+  window.scrollTo(0, 0);
+  await listeyiTazele();
+}
+
+function rotaBagla(a) {
+  a.addEventListener('click', ev => {
+    if (yoneticiMi()) { ev.preventDefault(); return; }
+    if (ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey || ev.button > 0) return;
+    ev.preventDefault();
+    rotaAc(rotaOku(new URL(a.href, window.location.href).search));
+  });
+}
+
+function magazaSayfasiCiz() {
+  const dizinMi = ['yazarlar', 'yayinevleri'].includes(rota.bolum);
+  const kategoriMi = rota.bolum === 'kategori';
+  const eksikSecim = ['yazar', 'yayinevi'].includes(rota.bolum) && !rota.deger;
+  $('#dizin-sonuclar').hidden = !dizinMi;
+  $('#sonuclar').hidden = dizinMi || kategoriMi || eksikSecim;
+  $('#dizin-arama-form').hidden = !dizinMi;
+  $('#dizin-arama-etiket').textContent = rota.bolum === 'yazarlar' ? 'Yazar adı ara' : 'Yayınevi ara';
+  $('#siralama').hidden = dizinMi || kategoriMi || eksikSecim;
+  $('label[for="siralama"]').hidden = dizinMi || kategoriMi || eksikSecim;
+  $('#katalog-baslik').textContent = rotaBasligi(rota);
+  $('#katalog-aciklama').textContent = rota.bolum === 'yeni-basimlar'
+    ? 'Kayıtlı basım yılına göre sıralanır. Yeni yayın tarihi anlamına gelmez.'
+    : rota.bolum === 'yeni-gelenler' ? 'Dükkânın raflarına en son eklenen kitaplar.'
+    : rota.bolum === 'kitaplar' ? 'Tüm raflarımız, kitap adına göre A–Z.'
+    : rota.bolum === 'arama' ? (rota.terim ? `“${rota.terim}” için kitaplar` : 'Bir kitap adı veya yazar yaz.')
+    : dizinMi ? 'Katalogda adı bulunan tüm kayıtlar. Bir isim seçerek kitaplarını gör.'
+    : rota.bolum === 'ana' ? 'Aradığın kitap, belki de bu rafta.' : '';
+  $('#magaza-vitrini').hidden = rota.bolum !== 'ana' || rota.sayfa !== 1;
+  const yol = $('#magaza-yol');
+  yol.replaceChildren();
+  yol.hidden = rota.bolum === 'ana';
+  const ana = document.createElement('a'); ana.href = './'; ana.textContent = 'Ana sayfa'; rotaBagla(ana); yol.appendChild(ana);
+  const simdi = document.createElement('span'); simdi.textContent = rotaBasligi(rota); simdi.setAttribute('aria-current', 'page'); yol.appendChild(simdi);
+  document.querySelectorAll('.storefront-nav a[data-rota]').forEach(a => {
+    const hedef = rotaOku(new URL(a.href, window.location.href).search);
+    if (hedef.bolum === rota.bolum && hedef.deger === rota.deger) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+  });
+  $('#sayfa-mesaj').hidden = true;
+  return { dizinMi, kategoriMi, eksikSecim };
+}
+
+function sayfaMesaji(metin, tekrar = false) {
+  const el = $('#sayfa-mesaj'); el.replaceChildren(); el.hidden = false;
+  const p = document.createElement('p'); p.textContent = metin; el.appendChild(p);
+  if (tekrar) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn ikincil';
+    b.textContent = 'Yeniden dene'; b.addEventListener('click', listeyiTazele); el.appendChild(b);
+  }
+}
+
+async function dizinYaz(benim) {
+  const alan = rota.bolum === 'yazarlar' ? 'yazar' : 'yayinevi';
+  const kap = $('#dizin-sonuclar'); kap.replaceChildren();
+  $('#ara-durum').textContent = 'Dizin yükleniyor…';
+  const kayitlar = (await db.dizin(alan)).filter(k => db.normalize(k.ad).includes(db.normalize(rota.terim)));
+  if (benim !== istekSayaci) return;
+  const toplam = kayitlar.length;
+  const sayfaSayisi = Math.max(1, Math.ceil(toplam / 100));
+  liste.sayfa = Math.min(liste.sayfa, sayfaSayisi);
+  rota.sayfa = liste.sayfa;
+  history.replaceState({ ...history.state, rota: { ...rota } }, '', rotaUrl(rota));
+  const bas = (liste.sayfa - 1) * 100;
+  kayitlar.slice(bas, bas + 100).forEach(k => {
+    const a = document.createElement('a');
+    a.href = rotaUrl({ ...rotaOku(), bolum: alan, deger: k.ad, sirala: 'ad' });
+    a.textContent = `${k.ad} (${k.adet})`; rotaBagla(a); kap.appendChild(a);
+  });
+  $('#ara-durum').textContent = `${toplam} ${alan === 'yazar' ? 'yazar' : 'yayınevi'} · sayfa ${liste.sayfa}/${sayfaSayisi}`;
+  if (!toplam) sayfaMesaji(rota.terim ? 'Bu isimle kayıt bulunamadı.' : 'Bu dizinde henüz kayıt yok.');
+  sayfalamaYaz({ sayfa: liste.sayfa, sayfaSayisi });
 }
 
 // --- Sayfalama ----------------------------------------------------------
@@ -568,6 +802,7 @@ function sayfalamaYaz(sonuc) {
 }
 
 async function sayfayaGit(no) {
+  if (!yoneticiMi()) return rotaAc({ ...rota, sayfa: no });
   liste.sayfa = no;
   await listeyiTazele();
   // Sayfa değişince listenin başına dön: kullanıcı 20. kitabın hizasında kalmasın.
@@ -580,19 +815,43 @@ async function sayfayaGit(no) {
 let istekSayaci = 0;
 async function listeyiTazele() {
   const benim = ++istekSayaci;
-  // Liste boşken bekleme boş ekran demek; kılcal iskelet satırlar basıyoruz.
-  // Doluysa eski satırlar durur — yazarken her tuşta ekran titremesin.
-  if (!$('#sonuclar').firstChild) iskeletYaz();
+  $('#bos-sonuc').hidden = true;
+  $('#sayfalama').hidden = true;
   try {
-    const sonuc = await db.listele(liste);
+    if (!yoneticiMi()) {
+      const { dizinMi, kategoriMi, eksikSecim } = magazaSayfasiCiz();
+      if (kategoriMi || eksikSecim || (rota.bolum === 'arama' && !rota.terim)) {
+        $('#sonuclar').replaceChildren();
+        $('#ara-durum').textContent = '';
+        sayfaMesaji(kategoriMi ? (Object.hasOwn(KATEGORILER, rota.deger)
+          ? 'Bu raf hazırlanıyor. Kitaplarımızı doğru türlerine ayırdıktan sonra burada görebileceksin. Şimdilik tüm kitaplarda arama yapabilirsin.'
+          : 'Bu kategori bulunamadı. Kitap menüsünden bir kategori seçebilirsin.')
+          : eksikSecim ? 'Dizinden bir isim seçerek kitaplarına ulaşabilirsin.' : 'Aramaya başlamak için yukarıya bir kitap adı veya yazar yaz.');
+        return;
+      }
+      if (dizinMi) return await dizinYaz(benim);
+    }
+    if (!$('#sonuclar').firstChild) iskeletYaz();
+    const filtre = yoneticiMi() ? {} : {
+      yazar: rota.bolum === 'yazar' ? rota.deger : '',
+      yayinevi: rota.bolum === 'yayinevi' ? rota.deger : '',
+      basimVar: rota.bolum === 'yeni-basimlar',
+    };
+    const sonuc = await db.listele({ ...liste, ...filtre });
     if (benim !== istekSayaci) return;
-    liste.sayfa = sonuc.sayfa; // db aralık dışına düşen sayfayı geri çekmiş olabilir
+    liste.sayfa = sonuc.sayfa;
+    if (!yoneticiMi()) {
+      rota.sayfa = sonuc.sayfa;
+      history.replaceState({ ...history.state, rota: { ...rota } }, '', rotaUrl(rota));
+    }
     listeYaz(sonuc, !!liste.terim);
+    if (!yoneticiMi() && !sonuc.kayitlar.length) sayfaMesaji('Bu sayfada gösterilecek kitap bulunamadı.');
   } catch (e) {
     if (benim !== istekSayaci) return;
-    $('#sonuclar').replaceChildren(); // iskelet kalmasın
+    $('#sonuclar').replaceChildren();
     $('#ara-durum').textContent = e.message;
     $('#sayfalama').hidden = true;
+    if (!yoneticiMi()) sayfaMesaji('Kitaplar yüklenemedi. Bağlantını kontrol edip yeniden deneyebilirsin.', true);
   }
 }
 
@@ -622,6 +881,7 @@ function siralamaKutusunuKur() {
   });
   sec.value = liste.sirala;
   sec.addEventListener('change', async () => {
+    if (!yoneticiMi()) return rotaAc({ ...rota, sirala: sec.value, sayfa: 1 });
     liste.sirala = sec.value;
     liste.sayfa = 1;
     await listeyiTazele();
@@ -987,7 +1247,23 @@ $('#btn-cikis').addEventListener('click', async () => {
 
 // --- Bağlantılar ---------------------------------------------------------
 let aramaZaman = null;
+document.querySelectorAll('a[data-rota]').forEach(rotaBagla);
+$('#magaza-arama-form').addEventListener('submit', ev => {
+  ev.preventDefault();
+  if (!yoneticiMi()) rotaAc({ ...rotaOku('?bolum=arama'), terim: $('#arama').value.trim() });
+});
+$('#dizin-arama-form').addEventListener('submit', ev => {
+  ev.preventDefault();
+  if (!yoneticiMi()) rotaAc({ ...rota, terim: $('#dizin-arama').value.trim(), sayfa: 1 });
+});
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'Escape' && $('#kitap-menu').open) { $('#kitap-menu').open = false; $('#kitap-menu summary').focus(); }
+});
+document.addEventListener('click', ev => {
+  if ($('#kitap-menu').open && !$('#kitap-menu').contains(ev.target)) $('#kitap-menu').open = false;
+});
 $('#arama').addEventListener('input', () => {
+  if (!yoneticiMi()) return;
   clearTimeout(aramaZaman);
   aramaZaman = setTimeout(async () => {
     liste.terim = $('#arama').value.trim();
@@ -1010,6 +1286,7 @@ $('#btn-bunu-ekle').addEventListener('click', () => ekleAc($('#arama').value.tri
   });
 });
 $('#btn-sepet').addEventListener('click', sepetiAc);
+$('#btn-detay-sepet-ac').addEventListener('click', sepetiAc);
 $('#btn-whatsapp').addEventListener('click', whatsappRezervasyon);
 $('#btn-alim-teklif-ac').addEventListener('click', alimTeklifAc);
 $('#btn-teklifler').addEventListener('click', teklifleriAc);
@@ -1044,12 +1321,20 @@ document.querySelectorAll('[data-geri]').forEach(function (b) {
 // --- Role göre arayüz ----------------------------------------------------
 function roluUygula() {
   const yonetici = yoneticiMi();
+  document.body.dataset.rol = rol;
+  if (yonetici) {
+    $('#sonuclar').hidden = false;
+    $('#dizin-sonuclar').hidden = true;
+    $('#sayfa-mesaj').hidden = true;
+    $('#siralama').hidden = false;
+    $('label[for="siralama"]').hidden = false;
+  }
   $('#btn-ekle-ac').hidden = !yonetici;          // "+" düğmesi
   $('#btn-bunu-ekle').hidden = !yonetici;        // boş sonuçtaki "Bunu ekle"
   $('#btn-sepet').hidden = yonetici;
   $('#btn-alim-teklif-ac').hidden = yonetici;
   $('#btn-teklifler').hidden = !yonetici;
-  $('#rol-rozet').hidden = yonetici;
+  $('#rol-rozet').hidden = true;
   const cikisEtiketi = yonetici ? 'Çıkış' : 'Personel girişi';
   $('#btn-cikis').title = cikisEtiketi;
   $('#btn-cikis').setAttribute('aria-label', cikisEtiketi);
@@ -1063,13 +1348,14 @@ function roluUygula() {
 // --- Açılış --------------------------------------------------------------
 async function araEkraniAc() {
   rol = await db.rolGetir();
+  if (!yoneticiMi()) rotaUygula(rotaOku(window.location.search));
   koku('ara');
   $('#btn-cikis').hidden = db.denemeModu;
   roluUygula();
   if (yoneticiMi()) await raflariTazele();
   await listeyiTazele();
   kuyrukSayisiniTazele();
-  $('#arama').focus();
+  if (yoneticiMi()) $('#arama').focus();
 }
 
 (async function baslat() {

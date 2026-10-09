@@ -28,7 +28,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..700,0..100,0..1&family=Inter+Tight:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=012">
+<link rel="stylesheet" href="styles.css?v=015">
 </head>
 <body>
 
@@ -64,9 +64,14 @@
 
 <!-- ARA -->
 <section id="ekran-ara" class="ekran" hidden>
+  <div class="storefront-top customer-only"><span>Çorum’un kitaplarla dolu köşesi</span><a href="#magaza-bilgileri">Dükkândan teslim al</a></div>
+  <div class="storefront-header">
   <header class="baslik">
     <span id="rol-rozet" class="rozet" hidden>Ziyaretçi</span>
-    <h1 class="marka kucuk">Pastelhayaller<span>Sahaf</span></h1>
+    <div class="marka-blok">
+      <h1 class="marka kucuk"><a class="marka-ana" href="./" data-rota>Pastelhayaller<span>Sahaf</span></a></h1>
+      <span class="magaza-konum">Çorum · Bahçelievler</span>
+    </div>
     <div class="baslik-eylemler">
       <button id="btn-teklifler" class="btn sade teklifler-dugme" type="button" hidden>Teklifler</button>
       <button id="btn-sepet" class="btn sepet-dugme" type="button" hidden>Sepet <span id="sepet-sayi">0</span></button>
@@ -81,34 +86,113 @@
     </div>
   </header>
 
-  <div class="arama-alani">
+  <form id="magaza-arama-form" class="arama-alani" role="search">
+    <label class="arama-baslik" for="arama">Kitabını ara</label>
     <input id="arama" type="search" placeholder="Kitap adı veya yazar ara…"
            autocomplete="off" autocapitalize="none" spellcheck="false">
-  </div>
+    <button id="btn-magaza-ara" class="customer-only" type="submit">Ara</button>
+    <p class="katalog-soz">Kitabını bul, WhatsApp’tan ayırt, dükkândan al.</p>
+  </form>
 
+  </div>
+  <nav class="storefront-nav customer-only" aria-label="Kitap mağazası">
+    <details id="kitap-menu" class="kitap-menu">
+      <summary>Kitap <span aria-hidden="true">⌄</span></summary>
+      <div class="mega-menu">
+        <div><h2>Kitapları keşfet</h2>
+          <a href="?bolum=kitaplar" data-rota>Tüm kitaplar</a>
+          <a href="?bolum=yeni-gelenler" data-rota>Yeni gelenler</a>
+          <a href="?bolum=yeni-basimlar" data-rota>Basım yılına göre</a>
+          <a href="?bolum=yazarlar" data-rota>Yazarlar</a>
+          <a href="?bolum=yayinevleri" data-rota>Yayınevleri</a>
+        </div>
+        <div><h2>Edebiyat</h2>
+          <a href="?bolum=kategori&amp;ad=roman" data-rota>Roman</a>
+          <a href="?bolum=kategori&amp;ad=oyku" data-rota>Öykü</a>
+          <a href="?bolum=kategori&amp;ad=siir" data-rota>Şiir</a>
+          <a href="?bolum=kategori&amp;ad=cizgi-roman" data-rota>Çizgi Roman</a>
+        </div>
+        <div><h2>İlgi alanları</h2>
+          <a href="?bolum=kategori&amp;ad=tarih" data-rota>Tarih</a>
+          <a href="?bolum=kategori&amp;ad=felsefe" data-rota>Felsefe</a>
+          <a href="?bolum=kategori&amp;ad=psikoloji" data-rota>Psikoloji</a>
+          <a href="?bolum=kategori&amp;ad=bilim" data-rota>Bilim</a>
+          <a href="?bolum=kategori&amp;ad=sanat" data-rota>Sanat</a>
+        </div>
+        <div><h2>Çocuk kitapları</h2>
+          <a href="?bolum=kategori&amp;ad=cocuk" data-rota>Çocuk Kitapları</a>
+          <p>Tür raflarımız hazırlanıyor. Tüm kitaplara aramadan ulaşabilirsin.</p>
+        </div>
+      </div>
+    </details>
+    <a href="?bolum=kitaplar" data-rota>Tüm kitaplar</a>
+    <a href="?bolum=yeni-gelenler" data-rota>Yeni gelenler</a>
+    <a href="?bolum=yazarlar" data-rota>Yazarlar</a>
+    <a href="?bolum=yayinevleri" data-rota>Yayınevleri</a>
+    <a href="#magaza-bilgileri">Dükkânımız</a>
+  </nav>
+  <nav id="magaza-yol" class="magaza-yol customer-only" aria-label="Konum"></nav>
+  <div id="magaza-vitrini" class="storefront-promo customer-only">
+    <div class="promo-ana">
+      <div class="promo-metin">
+        <h2>Bir kitabın yeni hikâyesi sende başlasın.</h2>
+        <p>İkinci el ve nadir kitapları keşfet.<br>WhatsApp’tan ayırt, dükkândan al.</p>
+        <a class="promo-kesfet" href="?bolum=kitaplar" data-rota>Kitapları keşfet</a>
+      </div>
+      <div id="vitrin-kapaklari" class="promo-kapaklar" aria-label="Raflarımızdan kitaplar"></div>
+    </div>
+    <button id="btn-alim-teklif-ac" class="alim-cagri" type="button" hidden>
+      <span>Kitaplarına yeni bir okur bulalım.</span>
+      <strong>İkinci el kitaplarını alıyoruz.</strong>
+      <span class="alim-eylem">Fotoğraf gönder, fiyat iste</span>
+    </button>
+  </div>
+  <div class="katalog-bolum customer-only"><h2 id="katalog-baslik">Raflara yeni gelenler</h2><p id="katalog-aciklama">Aradığın kitap, belki de bu rafta.</p></div>
+  <form id="dizin-arama-form" class="dizin-arama customer-only" hidden>
+    <label id="dizin-arama-etiket" for="dizin-arama">İsim ara</label>
+    <input id="dizin-arama" type="search" autocomplete="off"><button type="submit">Dizinde ara</button>
+  </form>
   <div class="arac-cubugu">
+    <p id="ara-durum" class="durum" aria-live="polite"></p>
     <label for="siralama">Sırala</label>
     <select id="siralama"></select>
   </div>
 
-  <button id="btn-alim-teklif-ac" class="alim-cagri" type="button" hidden>
-    <span>Elindeki kitapları satmak mı istiyorsun?</span><strong>Fotoğraf gönder, fiyat iste ›</strong>
-  </button>
-
   <button id="btn-kuyruk-baslat" class="btn ikincil tamamla-dugme" type="button" hidden></button>
 
-  <p id="ara-durum" class="durum"></p>
+  <div class="katalog-calisma-alani">
+    <div class="katalog-sonuclar">
+      <div id="sayfa-mesaj" class="sayfa-mesaj" hidden></div>
+      <div id="dizin-sonuclar" class="dizin-sonuclar" hidden></div>
+      <div id="sonuclar" class="liste"></div>
 
-  <div id="sonuclar" class="liste"></div>
+      <nav id="sayfalama" class="sayfalama" aria-label="Sayfalar" hidden></nav>
 
-  <nav id="sayfalama" class="sayfalama" aria-label="Sayfalar" hidden></nav>
+      <div id="bos-sonuc" class="bos" hidden>
+        <p>Bu isimde kitap kayıtlı değil.</p>
+        <button id="btn-bunu-ekle" class="btn birincil" type="button">Bunu ekle</button>
+      </div>
+    </div>
 
-  <div id="bos-sonuc" class="bos" hidden>
-    <p>Bu isimde kitap kayıtlı değil.</p>
-    <button id="btn-bunu-ekle" class="btn birincil" type="button">Bunu ekle</button>
+    <aside id="magaza-bilgileri" class="magaza-rail" aria-label="Dükkân bilgileri">
+      <p class="rail-baslik">Dükkâna gel</p>
+      <h2>Pastelhayaller Sahaf</h2>
+      <p><a href="https://maps.google.com/?cid=4502818142900572789">Piribaba Çamlığı, Bahçelievler Mah., Sanat Sk. No:8<br>19200 Çorum Merkez/Çorum</a></p>
+      <p>Pazartesi–Cumartesi<br>10:00–17:00<br>Pazar kapalı</p>
+      <a class="rail-whatsapp" href="https://wa.me/905369782758">0536 978 27 58 · WhatsApp</a>
+    </aside>
   </div>
 
   <button id="btn-ekle-ac" class="fab" type="button" aria-label="Yeni kitap ekle">+</button>
+</section>
+
+<!-- ZİYARETÇİ KİTAP DETAYI: yalnızca mevcut liste kaydını gösterir. -->
+<section id="ekran-detay" class="ekran" hidden>
+  <header class="baslik">
+    <button class="btn sade" type="button" data-geri>‹ Kitaplara dön</button>
+    <button id="btn-detay-sepet-ac" class="btn sepet-dugme" type="button">Sepet <span id="detay-sepet-sayi">0</span></button>
+  </header>
+  <div id="detay-icerik" class="kitap-detay"></div>
 </section>
 
 <!-- ZİYARETÇİDEN ALIM TEKLİFİ -->
@@ -284,8 +368,9 @@
   <div id="sepet-kalemleri" class="sepet-liste"></div>
   <div id="sepet-bos" class="bos" hidden><p>Sepetin boş.</p></div>
   <div id="sepet-ozet" class="sepet-ozet" hidden>
-    <strong>Toplam</strong><strong id="sepet-toplam"></strong>
+    <strong id="sepet-toplam-etiket">Toplam</strong><strong id="sepet-toplam"></strong>
   </div>
+  <p id="sepet-fiyat-notu" class="ipucu fiyat-notu" hidden>Fiyatı bulunmayan kitaplar için WhatsApp’tan güncel fiyatı soracağız.</p>
   <button id="btn-whatsapp" class="btn whatsapp" type="button">WhatsApp’tan rezervasyon iste</button>
 </section>
 
@@ -323,6 +408,6 @@
   <p><a href="vitrin/">Tüm kitapların listesi</a></p>
 </footer>
 
-<script type="module" src="app.js"></script>
+<script type="module" src="app.js?v=015"></script>
 </body>
 </html>

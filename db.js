@@ -20,6 +20,7 @@ export const SAYFA_BOYU = 20;
 
 // Sıralama seçenekleri. Anahtarlar arayüzdeki <select> değerleriyle birebir.
 export const SIRALAMALAR = {
+  basim:        { etiket: 'Basım yılı — önce yeni', kolon: 'basim_yili', artan: false },
   yeni:         { etiket: 'Son eklenenler',      kolon: 'created_at', artan: false },
   ad:           { etiket: 'Ada göre (A→Z)',      kolon: 'ad',         artan: true  },
   fiyat_artan:  { etiket: 'Fiyat — önce ucuz',   kolon: 'fiyat',      artan: true  },
@@ -184,6 +185,7 @@ function yerelSirala(liste, sirala) {
   damgali.sort((a, b) => {
     if (s.kolon === 'created_at') return b.i - a.i;
     if (s.kolon === 'ad') return (a.k.ad || '').localeCompare(b.k.ad || '', 'tr');
+    if (s.kolon === 'basim_yili') return (b.k.basim_yili || 0) - (a.k.basim_yili || 0);
     // Fiyat: boş fiyat her iki yönde de en sona.
     const af = a.k.fiyat, bf = b.k.fiyat;
     if (af == null && bf == null) return a.i - b.i;
@@ -199,15 +201,15 @@ function yerelSirala(liste, sirala) {
  * envanter listelenir — eskiden ana ekranda yalnız "son 20" görünüyordu.
  * Döner: { kayitlar, toplam, sayfa, sayfaSayisi }
  */
-export async function listele({ terim = '', sirala = VARSAYILAN_SIRALAMA, sayfa = 1 } = {}) {
+export async function listele({ terim = '', sirala = VARSAYILAN_SIRALAMA, sayfa = 1, yazar = '', yayinevi = '', basimVar = false } = {}) {
   const s = SIRALAMALAR[sirala] || SIRALAMALAR[VARSAYILAN_SIRALAMA];
   const t = normalize(terim);
   const istenen = Math.max(1, Math.floor(sayfa) || 1);
 
   if (denemeModu) {
-    const tumu = t
-      ? yerelOku().filter(k => normalize(`${k.ad} ${k.yazar || ''} ${k.raf}`).includes(t))
-      : yerelOku();
+    const tumu = yerelOku().filter(k => (!t || normalize(`${k.ad} ${k.yazar || ''} ${k.raf}`).includes(t))
+      && (!yazar || k.yazar === yazar) && (!yayinevi || k.yayinevi === yayinevi)
+      && (!basimVar || k.basim_yili != null));
     const sirali = yerelSirala(tumu, sirala);
     const toplam = sirali.length;
     const sayfaSayisi = Math.max(1, Math.ceil(toplam / SAYFA_BOYU));
@@ -220,6 +222,9 @@ export async function listele({ terim = '', sirala = VARSAYILAN_SIRALAMA, sayfa 
   const sorgula = (sayfaNo) => {
     let q = istemci.from(TABLO).select('id,ad,yazar,raf,fiyat,notlar,foto_url,yayinevi,basim_yili,durum', { count: 'exact' });
     if (t) q = q.ilike('arama', `%${t}%`);
+    if (yazar) q = q.eq('yazar', yazar);
+    if (yayinevi) q = q.eq('yayinevi', yayinevi);
+    if (basimVar) q = q.not('basim_yili', 'is', null);
     // nullsFirst:false — fiyatı girilmemiş kitap her iki yönde de en sonda.
     q = q.order(s.kolon, { ascending: s.artan, nullsFirst: false });
     // İkincil sıra: eşit fiyat/ad'da sayfalar arası kayma olmasın.
@@ -240,6 +245,43 @@ export async function listele({ terim = '', sirala = VARSAYILAN_SIRALAMA, sayfa 
     return { kayitlar: tekrar.data || [], toplam, sayfa: sayfaSayisi, sayfaSayisi };
   }
   return { kayitlar: data || [], toplam, sayfa: istenen, sayfaSayisi };
+}
+
+// Dizin, API'nin varsayılan satır sınırına takılmadan mevcut kayıtların tamamını okur.
+const dizinOnbellegi = new Map();
+export async function dizin(alan) {
+  if (!['yazar', 'yayinevi'].includes(alan)) throw new Error('Geçersiz dizin.');
+  if (dizinOnbellegi.has(alan)) return dizinOnbellegi.get(alan);
+  const istek = (async () => {
+    let kayitlar = [];
+    if (denemeModu) kayitlar = yerelOku();
+    else {
+      const istemci = await sb();
+      let bas = 0;
+      while (true) {
+        const { data, error, count } = await istemci.from(TABLO).select(`id,${alan}`, { count: 'exact' })
+          .order('id', { ascending: true }).range(bas, bas + 499);
+        if (error) throw hata(error);
+        const parca = data || [];
+        kayitlar.push(...parca);
+        bas += parca.length;
+        if (count != null && bas >= count) break;
+        if (!parca.length) {
+          if (count > bas) throw new Error('Dizin tamamlanamadı. Yeniden dene.');
+          break;
+        }
+      }
+    }
+    const sayilar = new Map();
+    for (const k of kayitlar) {
+      const ad = k[alan];
+      if (typeof ad === 'string' && ad.trim()) sayilar.set(ad, (sayilar.get(ad) || 0) + 1);
+    }
+    return [...sayilar].map(([ad, adet]) => ({ ad, adet })).sort((a, b) => a.ad.localeCompare(b.ad, 'tr'));
+  })();
+  dizinOnbellegi.set(alan, istek);
+  try { return await istek; }
+  catch (e) { dizinOnbellegi.delete(alan); throw e; }
 }
 
 export async function ekle(kitap) {
