@@ -41,7 +41,13 @@ assert.equal([...alimTeklifiDogrula({ ...valid, ad_soyad: '😀'.repeat(120) }).
 const bannerSource = await read('depolama-bilgisi.js');
 const key = 'pastelhayaller_depolama_bilgisi_kapatildi';
 const policy = await read('cerez-politikasi.html');
-assert(policy.includes(key));
+assert(policy.includes('Bu sekmenin tarayıcı oturumu boyunca'));
+assert(policy.includes('Otomatik süre sonu yoktur'));
+for (const text of [policy, await read('gizlilik.html')]) {
+  assert.doesNotMatch(text, /Supabase|GitHub|jsDelivr|Google Fonts|localStorage|sessionStorage|auth-token|pastelhayaller_ziyaretci|pastelhayaller_depolama|EXIF|24 saat/);
+}
+assert(app.includes('Çerez bilgilendirmesi'));
+assert.doesNotMatch(app, /Supabase/);
 for (const mode of ['first', 'closed', 'blocked']) {
   let listener, written;
   const banner = { hidden: true };
