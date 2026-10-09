@@ -273,7 +273,7 @@ function listeSayfasi(kayitlar) {
   ${k.yazar ? `<span>${kac(k.yazar)}</span>` : ''}
   ${fiyatYaz(k.fiyat) ? `<span class="fiyat">${kac(fiyatYaz(k.fiyat))}</span>` : ''}
   ${k.durum ? `<span class="etiket">${kac(k.durum)}</span>` : ''}
-</a>`).join('');
+</a>`).join('').replace(/[ \t]+$/gm, '');
 
   const govde = `
 <h1>Çorum Sahaf — Kitaplarımız</h1>
