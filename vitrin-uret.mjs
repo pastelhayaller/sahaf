@@ -24,7 +24,7 @@ const WHATSAPP = '905369782758';
 
 // Google İşletme Profili ile birebir aynı olmalı (ad/adres/telefon tutarlılığı yerel sıralamayı etkiler).
 // index.html'deki JSON-LD de aynı bilgiyi taşır; birini değiştirirsen ötekini de değiştir.
-const ADRES = 'Piribaba Çamlığı, Bahçelievler Mah., Sanat Sk. No:8, 19200 Çorum Merkez/Çorum';
+const ADRES = 'Piribaba Çamlığı, Bahçelievler Mah., Sanat Sk. No:18, 19200 Çorum Merkez/Çorum';
 const SAATLER = 'Pazartesi–Cumartesi 10:00–17:00 · Pazar kapalı';
 const HARITA = 'https://maps.google.com/?cid=4502818142900572789';
 export const ISLETME = {
@@ -35,7 +35,7 @@ export const ISLETME = {
   telephone: '+90 536 978 27 58',
   address: {
     '@type': 'PostalAddress',
-    streetAddress: 'Piribaba Çamlığı, Bahçelievler Mah., Sanat Sk. No:8',
+    streetAddress: 'Piribaba Çamlığı, Bahçelievler Mah., Sanat Sk. No:18',
     addressLocality: 'Çorum', addressRegion: 'Çorum', postalCode: '19200', addressCountry: 'TR'
   },
   geo: { '@type': 'GeoCoordinates', latitude: 40.5481191, longitude: 34.9945967 },
@@ -296,7 +296,7 @@ function listeSayfasi(kayitlar) {
 
   return sayfa({
     baslik: 'Çorum Sahaf — Kitaplarımız · Pastelhayaller Sahaf',
-    aciklama: `Çorum'da sahaf: Pastelhayaller Sahaf'ta satışta olan ${kayitlar.length} ikinci el ve nadir kitap. Bahçelievler, Sanat Sokak No:8. WhatsApp'tan ayırt, dükkândan al.`,
+    aciklama: `Çorum'da sahaf: Pastelhayaller Sahaf'ta satışta olan ${kayitlar.length} ikinci el ve nadir kitap. Bahçelievler, Sanat Sokak No:18. WhatsApp'tan ayırt, dükkândan al.`,
     govde, kanonik: `${SITE}/vitrin/`,
     jsonld: { '@context': 'https://schema.org', ...ISLETME }
   });

@@ -15,7 +15,7 @@ for (const file of files) {
   assert(!html.includes('noindex'));
   assert(!html.includes('<script'), 'Information pages need no app auth or storage scripts');
   assert.equal((html.match(/<h1>/g) || []).length, 1);
-  assert(html.includes('Piribaba Çamlığı, Bahçelievler Mah., Sanat Sk. No:8, 19200 Çorum Merkez/Çorum'));
+  assert(html.includes('Piribaba Çamlığı, Bahçelievler Mah., Sanat Sk. No:18, 19200 Çorum Merkez/Çorum'));
   assert(html.includes('Pazartesi–Cumartesi 10:00–17:00 · Pazar kapalı'));
   for (const target of files) assert(html.includes('href="/' + target + '"'), file + ' shared footer link');
   assert(app.includes('href="/' + file + '"'));
