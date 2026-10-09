@@ -774,3 +774,12 @@ body::before {
 }
 /* Atla ve Bitir sağa: yanlışlıkla basılması en zor yer. */
 .kuyruk-serit #btn-kuyruk-atla { margin-left: auto; }
+
+/* Statik işletme bilgisi — sayfa sonu, sakin bir künye gibi */
+.isletme-bilgi {
+  position: relative; z-index: 1; max-width: 640px; margin: -64px auto 0; padding: 18px 20px 40px;
+  border-top: 1px solid var(--kilcal); font-size: 13px; line-height: 1.6; color: var(--soluk);
+}
+.isletme-bilgi h2 { font-family: "Fraunces", Georgia, serif; font-size: 15px; font-weight: 600; color: var(--murekkep-2); margin: 0 0 4px; }
+.isletme-bilgi p { margin: 0 0 2px; }
+.isletme-bilgi a { color: var(--muhur-koyu); }

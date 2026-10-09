@@ -22,6 +22,31 @@ const CIKTI = join(KOK, 'vitrin');
 const SITE = 'https://pastelhayaller.com';
 const WHATSAPP = '905369782758';
 
+// Google İşletme Profili ile birebir aynı olmalı (ad/adres/telefon tutarlılığı yerel sıralamayı etkiler).
+// index.html'deki JSON-LD de aynı bilgiyi taşır; birini değiştirirsen ötekini de değiştir.
+const ADRES = 'Piribaba Çamlığı, Bahçelievler Mah., Sanat Sk. No:8, 19200 Çorum Merkez/Çorum';
+const SAATLER = 'Pazartesi–Cumartesi 10:00–17:00 · Pazar kapalı';
+const HARITA = 'https://maps.google.com/?cid=4502818142900572789';
+export const ISLETME = {
+  '@type': 'BookStore',
+  '@id': 'https://pastelhayaller.com/#isletme',
+  name: 'Pastelhayaller Sahaf',
+  url: 'https://pastelhayaller.com/',
+  telephone: '+90 536 978 27 58',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: 'Piribaba Çamlığı, Bahçelievler Mah., Sanat Sk. No:8',
+    addressLocality: 'Çorum', addressRegion: 'Çorum', postalCode: '19200', addressCountry: 'TR'
+  },
+  geo: { '@type': 'GeoCoordinates', latitude: 40.5481191, longitude: 34.9945967 },
+  hasMap: HARITA,
+  openingHoursSpecification: [{
+    '@type': 'OpeningHoursSpecification',
+    dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    opens: '10:00', closes: '17:00'
+  }]
+};
+
 // ——— veri ———————————————————————————————————————————————
 
 async function kitaplariGetir() {
@@ -148,13 +173,15 @@ ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld)}</script
 <body>
 <div class="sar">
 <header>
-  <a class="marka" href="${SITE}/vitrin/">Pastelhayaller Sahaf</a>
-  <div class="alt">İkinci el ve nadir kitap</div>
+  <a class="marka" href="${SITE}/">Pastelhayaller Sahaf</a>
+  <div class="alt">Çorum sahaf · İkinci el ve nadir kitap</div>
 </header>
 ${govde}
 <footer>
-  Pastelhayaller Sahaf · <a href="${SITE}/">Raf arama uygulaması</a> ·
-  <a href="https://wa.me/${WHATSAPP}">WhatsApp</a>
+  <b>Pastelhayaller Sahaf</b> · Çorum<br>
+  <a href="${HARITA}">${ADRES}</a><br>
+  ${SAATLER} · <a href="https://wa.me/${WHATSAPP}">0536 978 27 58 (WhatsApp)</a><br>
+  <a href="${SITE}/">Kitap ara ve sepete ekle</a> · <a href="${SITE}/vitrin/">Tüm kitaplar</a>
 </footer>
 </div>
 </body>
@@ -178,7 +205,7 @@ function kitapSayfasi(k) {
   const kanonik = `${SITE}/vitrin/kitap/${slug}.html`;
   const fiyat = fiyatYaz(k.fiyat);
   const yazar = k.yazar ? `${k.yazar}` : null;
-  const aciklama = [k.ad, yazar, k.yayinevi, k.basim_yili, k.durum ? `Durum: ${k.durum}` : null, fiyat, 'Pastelhayaller Sahaf\'ta satışta.']
+  const aciklama = [k.ad, yazar, k.yayinevi, k.basim_yili, k.durum ? `Durum: ${k.durum}` : null, fiyat, 'Çorum\'daki Pastelhayaller Sahaf\'ta satışta.']
     .filter(Boolean).join(' — ').slice(0, 300);
 
   const mesaj = encodeURIComponent(`Merhaba, "${k.ad}" kitabı hâlâ var mı?`);
@@ -193,7 +220,7 @@ ${fiyat ? `<p class="fiyat">${kac(fiyat)}</p>` : ''}
 ${k.notlar ? `<div class="not">${kac(k.notlar)}</div>` : ''}
 <p><a class="dugme" href="https://wa.me/${WHATSAPP}?text=${mesaj}">WhatsApp'tan sor</a></p>
 <p style="margin-top:22px;color:var(--murekkep-2);font-size:15px">
-Bu kitap dükkânımızda bulunuyor. Stok tek adettir; sormadan önce satılmış olabilir.
+Bu kitap Çorum'daki dükkânımızda bulunuyor; gelip alabilir ya da WhatsApp'tan ayırtabilirsin. Stok tek adettir; sormadan önce satılmış olabilir.
 </p>`;
 
   // ponytail: fiyat yoksa offers yazmıyoruz — uydurma fiyat structured data'da yalan olur.
@@ -208,12 +235,13 @@ Bu kitap dükkânımızda bulunuyor. Stok tek adettir; sormadan önce satılmı�
     ...(k.fiyat != null && k.fiyat !== '' ? {
       offers: {
         '@type': 'Offer', price: Number(k.fiyat), priceCurrency: 'TRY',
-        availability: 'https://schema.org/InStock', url: kanonik
+        availability: 'https://schema.org/InStock', url: kanonik,
+        seller: { '@id': ISLETME['@id'] }
       }
     } : {})
   };
 
-  return { slug, kanonik, html: sayfa({ baslik: `${k.ad}${yazar ? ' — ' + yazar : ''} · Pastelhayaller Sahaf`, aciklama, govde, kanonik, jsonld }) };
+  return { slug, kanonik, html: sayfa({ baslik: `${k.ad}${yazar ? ' — ' + yazar : ''} · Pastelhayaller Sahaf Çorum`, aciklama, govde, kanonik, jsonld }) };
 }
 
 function listeSayfasi(kayitlar) {
@@ -226,14 +254,15 @@ function listeSayfasi(kayitlar) {
 </a>`).join('');
 
   const govde = `
-<h1>Kitaplarımız</h1>
-<p class="yazar">${kayitlar.length} kitap · dükkânda satışta</p>
+<h1>Çorum Sahaf — Kitaplarımız</h1>
+<p class="yazar">${kayitlar.length} ikinci el ve nadir kitap · Çorum'daki dükkânımızda satışta</p>
 <div class="izgara">${kartlar}</div>`;
 
   return sayfa({
-    baslik: 'Kitaplarımız · Pastelhayaller Sahaf',
-    aciklama: `Pastelhayaller Sahaf'ta satışta olan ${kayitlar.length} ikinci el ve nadir kitap.`,
-    govde, kanonik: `${SITE}/vitrin/`
+    baslik: 'Çorum Sahaf — Kitaplarımız · Pastelhayaller Sahaf',
+    aciklama: `Çorum'da sahaf: Pastelhayaller Sahaf'ta satışta olan ${kayitlar.length} ikinci el ve nadir kitap. Bahçelievler, Sanat Sokak No:8. WhatsApp'tan ayırt, dükkândan al.`,
+    govde, kanonik: `${SITE}/vitrin/`,
+    jsonld: { '@context': 'https://schema.org', ...ISLETME }
   });
 }
 
@@ -258,6 +287,7 @@ async function uret() {
   const bugun = new Date().toISOString().slice(0, 10);
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url><loc>${SITE}/</loc><lastmod>${bugun}</lastmod></url>
 <url><loc>${SITE}/vitrin/</loc><lastmod>${bugun}</lastmod></url>
 ${kayitlar.map(r => `<url><loc>${r.kanonik}</loc><lastmod>${bugun}</lastmod></url>`).join('\n')}
 </urlset>`;
