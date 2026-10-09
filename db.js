@@ -165,8 +165,12 @@ export async function rolGetir() {
 
 // --- Kitaplar -----------------------------------------------------------
 function kayitTemizle(k) {
+  if (k.aciklama != null && typeof k.aciklama !== 'string') throw new Error('Kitap açıklaması metin olmalı.');
+  const aciklama = k.aciklama?.trim() || null;
+  if (aciklama && aciklama.length > 3000) throw new Error('Kitap açıklaması en fazla 3000 karakter olabilir.');
   if (k.kategori != null && k.kategori !== '' && !kategoriGecerli(k.kategori)) throw new Error('Geçersiz kategori.');
   return {
+    ...(Object.hasOwn(k, 'aciklama') ? { aciklama } : {}),
     ...(Object.hasOwn(k, 'kategori') ? { kategori: k.kategori || null } : {}),
     ad: (k.ad || '').trim(),
     yazar: (k.yazar || '').trim() || null,
@@ -224,7 +228,7 @@ export async function listele({ terim = '', sirala = VARSAYILAN_SIRALAMA, sayfa 
 
   const istemci = await sb();
   const sorgula = (sayfaNo) => {
-    let q = istemci.from(TABLO).select('id,ad,yazar,raf,fiyat,notlar,foto_url,yayinevi,basim_yili,durum,kategori', { count: 'exact' });
+    let q = istemci.from(TABLO).select('id,ad,yazar,raf,fiyat,notlar,foto_url,yayinevi,basim_yili,durum,kategori,aciklama', { count: 'exact' });
     if (t) q = q.ilike('arama', `%${t}%`);
     if (kategori !== null) q = q.eq('kategori', kategori);
     if (yazar) q = q.eq('yazar', yazar);
@@ -592,7 +596,7 @@ export async function eksikKuyrugu() {
     // Yerel kayıtta created_at yok; eklenme sırası dizinin kendi sırasıdır.
     return yerelOku().filter(eksikMi);
   }
-  const kolonlar = 'id,ad,yazar,raf,fiyat,notlar,foto_url,yayinevi,basim_yili,durum,kategori';
+  const kolonlar = 'id,ad,yazar,raf,fiyat,notlar,foto_url,yayinevi,basim_yili,durum,kategori,aciklama';
   const istemci = await sb();
   // PostgREST tek istekte 1000 satır veriyor ve fazlasını SESSİZCE kesiyor.
   const ADIM = 1000;

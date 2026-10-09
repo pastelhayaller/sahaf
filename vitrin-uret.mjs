@@ -64,7 +64,7 @@ async function kitaplariGetir() {
   const hepsi = [];
   for (let bas = 0; ; bas += ADIM) {
     const cevap = await fetch(
-      `${SUPABASE_URL}/rest/v1/kitaplar?select=id,ad,yazar,raf,fiyat,notlar,foto_url,yayinevi,basim_yili,durum&order=id.asc`,
+      `${SUPABASE_URL}/rest/v1/kitaplar?select=id,ad,yazar,raf,fiyat,notlar,foto_url,yayinevi,basim_yili,durum,aciklama&order=id.asc`,
       {
         headers: {
           apikey: SUPABASE_ANON_KEY,
@@ -168,6 +168,9 @@ font-size:15px;align-items:baseline}
 letter-spacing:.12em;text-transform:uppercase;color:var(--soluk)}
 .kunye dd{margin:0;color:var(--murekkep)}
 .not{background:var(--kagit-2);border-left:3px solid var(--cizgi);padding:11px 14px;margin:18px 0}
+.kitap-hakkinda,.nusha{margin-top:24px}
+.kitap-hakkinda h2,.nusha h2{font-size:21px;margin:0 0 12px}
+.kitap-hakkinda p{white-space:pre-line;overflow-wrap:anywhere;line-height:1.65}
 footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--kilcal);
 font-size:13px;color:var(--soluk)}
 .geri{font-family:"Space Mono",ui-monospace,monospace;font-size:11px;
@@ -191,7 +194,7 @@ function sayfa({ baslik, aciklama, govde, kanonik, jsonld }) {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Inter+Tight:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
 <style>${STIL}</style>
-${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld)}</script>` : ''}
+${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, '\\u003c')}</script>` : ''}
 </head>
 <body>
 <div class="sar">
@@ -223,11 +226,14 @@ function kunye(k) {
     .map(([b, d]) => `<dt>${kac(b)}</dt><dd>${kac(d)}</dd>`).join('')}</dl>`;
 }
 
-function kitapSayfasi(k, slug) {
+export function kitapSayfasi(k, slug) {
   const kanonik = `${SITE}/vitrin/kitap/${slug}.html`;
   const fiyat = fiyatYaz(k.fiyat);
   const yazar = k.yazar ? `${k.yazar}` : null;
-  const aciklama = [k.ad, yazar, k.yayinevi, k.basim_yili, k.durum ? `Durum: ${k.durum}` : null, fiyat, 'Çorum\'daki Pastelhayaller Sahaf\'ta satışta.']
+  const kitapAciklamasi = typeof k.aciklama === 'string' ? k.aciklama.trim() : '';
+  const baskiKunyesi = kunye(k);
+  const ozet = kitapAciklamasi.replace(/\s+/g, ' ').slice(0, 180);
+  const aciklama = [ozet, k.ad, yazar, k.yayinevi, k.basim_yili, k.durum ? `Durum: ${k.durum}` : null, fiyat, 'Çorum\'daki Pastelhayaller Sahaf\'ta satışta.']
     .filter(Boolean).join(' — ').slice(0, 300);
 
   const mesaj = encodeURIComponent(`Merhaba, "${k.ad}" kitabı hâlâ var mı?`);
@@ -237,9 +243,10 @@ function kitapSayfasi(k, slug) {
 <h1>${kac(k.ad)}</h1>
 ${yazar ? `<p class="yazar">${kac(yazar)}</p>` : ''}
 ${k.foto_url ? `<img class="kapak" src="${kac(k.foto_url)}" alt="${kac(k.ad)} kapak görseli" loading="lazy">` : ''}
-${kunye(k)}
+${kitapAciklamasi ? `<section class="kitap-hakkinda"><h2>Kitap hakkında</h2><p>${kac(kitapAciklamasi)}</p></section>` : ''}
+<section class="nusha"><h2>Bu nüsha</h2>${baskiKunyesi || (!k.notlar ? '<p>Bu kayıt için ek künye bilgisi bulunmuyor.</p>' : '')}
+${k.notlar ? `<div class="not">${kac(k.notlar)}</div>` : ''}</section>
 ${fiyat ? `<p class="fiyat">${kac(fiyat)}</p>` : ''}
-${k.notlar ? `<div class="not">${kac(k.notlar)}</div>` : ''}
 <p><a class="dugme" href="https://wa.me/${WHATSAPP}?text=${mesaj}">WhatsApp'tan sor</a></p>
 <p style="margin-top:22px;color:var(--murekkep-2);font-size:15px">
 Bu kitap Çorum'daki dükkânımızda bulunuyor; gelip alabilir ya da WhatsApp'tan ayırtabilirsin. Stok tek adettir; sormadan önce satılmış olabilir.
@@ -249,11 +256,11 @@ Bu kitap Çorum'daki dükkânımızda bulunuyor; gelip alabilir ya da WhatsApp't
   const jsonld = {
     '@context': 'https://schema.org', '@type': 'Book',
     name: k.ad, url: kanonik, identifier: String(k.id),
+    ...(kitapAciklamasi ? { description: kitapAciklamasi } : {}),
     ...(yazar ? { author: { '@type': 'Person', name: yazar } } : {}),
     ...(k.foto_url ? { image: k.foto_url } : {}),
     ...(k.yayinevi ? { publisher: { '@type': 'Organization', name: k.yayinevi } } : {}),
     ...(k.basim_yili ? { datePublished: String(k.basim_yili) } : {}),
-    ...(k.durum ? { bookEdition: k.durum } : {}),
     ...(k.fiyat != null && k.fiyat !== '' ? {
       offers: {
         '@type': 'Offer', price: Number(k.fiyat), priceCurrency: 'TRY',

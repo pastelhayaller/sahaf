@@ -1,5 +1,5 @@
-import * as db from './db.js?v=017';
-import { kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER, kategoriGecerli } from './ui-helpers.js?v=017';
+import * as db from './db.js?v=018';
+import { kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER, kategoriGecerli } from './ui-helpers.js?v=018';
 
 const $ = (s) => document.querySelector(s);
 const ekranlar = ['giris', 'ara', 'detay', 'ekle', 'duzenle', 'sepet', 'alim-teklif', 'teklifler'];
@@ -303,13 +303,17 @@ function detayCiz() {
     k.durum && `<div><dt>Durum</dt><dd>${escapeHtml(k.durum)}</dd></div>`,
   ].filter(Boolean).join('');
   const fiyat = kitapFiyatEtiketi(k, paraYaz);
+  const aciklama = typeof k.aciklama === 'string' ? k.aciklama.trim() : '';
   $('#detay-icerik').innerHTML = `
     <article class="detay-kart">
       <div class="detay-gorsel">${kapak}</div>
       <div class="detay-metin">
         <h1>${escapeHtml(k.ad || 'Adsız kitap')}</h1>
-        ${kunye ? `<dl class="detay-kunye">${kunye}</dl>` : '<p class="ipucu">Bu kayıt için ek künye bilgisi bulunmuyor.</p>'}
-        ${k.notlar ? `<p class="detay-not"><strong>Not</strong>${escapeHtml(k.notlar)}</p>` : ''}
+        ${aciklama ? `<section class="detay-aciklama"><h2>Kitap hakkında</h2><p>${escapeHtml(aciklama)}</p></section>` : ''}
+        <section class="detay-nusha"><h2>Bu nüsha</h2>
+          ${kunye ? `<dl class="detay-kunye">${kunye}</dl>` : '<p class="ipucu">Bu kayıt için ek künye bilgisi bulunmuyor.</p>'}
+          ${k.notlar ? `<p class="detay-not"><strong>Nüsha notu</strong>${escapeHtml(k.notlar)}</p>` : ''}
+        </section>
         <p class="detay-fiyat">${fiyat}</p>
         ${!fiyatVar(k) ? '<p class="ipucu">Güncel fiyatı WhatsApp’tan sorabilirsin.</p>' : ''}
         <button id="btn-detay-sepet" class="btn birincil" type="button">${sepet.some(x => x.id === k.id) ? 'Sepette' : 'Sepete ekle'}</button>
@@ -1029,6 +1033,7 @@ function ekleAc(onDolguAd = '') {
   $('#ekle-ad').value = onDolguAd;
   $('#ekle-yazar').value = '';
   $('#ekle-kategori').value = '';
+  $('#ekle-aciklama').value = '';
   $('#ekle-fiyat').value = '';
   $('#ekle-notlar').value = '';
   $('#ekle-basim-yili').value = '';
@@ -1052,6 +1057,7 @@ $('#ekle-form').addEventListener('submit', async (ev) => {
       basim_yili: $('#ekle-basim-yili').value,
       durum: $('#ekle-durum').value,
       kategori: $('#ekle-kategori').value,
+      aciklama: $('#ekle-aciklama').value,
       foto_url: await kapakUrlHazirla('ekle'),
     };
     await db.ekle(kitap);
@@ -1059,6 +1065,7 @@ $('#ekle-form').addEventListener('submit', async (ev) => {
     $('#ekle-ad').value = '';
     $('#ekle-yazar').value = '';
     $('#ekle-kategori').value = '';
+    $('#ekle-aciklama').value = '';
     $('#ekle-fiyat').value = '';
     $('#ekle-notlar').value = '';
     $('#ekle-basim-yili').value = '';
@@ -1158,6 +1165,7 @@ function duzenleAc(k) {
   $('#duz-basim-yili').value = k.basim_yili == null ? '' : k.basim_yili;
   $('#duz-durum').value = k.durum || '';
   $('#duz-kategori').value = kategoriGecerli(k.kategori) ? k.kategori : '';
+  $('#duz-aciklama').value = k.aciklama || '';
   kapakTaslaginiSifirla('duz', k.foto_url || null);
   raflariTazele();
   kuyrukSeridiniYaz();
@@ -1180,6 +1188,7 @@ $('#duzenle-form').addEventListener('submit', async (ev) => {
       basim_yili: $('#duz-basim-yili').value,
       durum: $('#duz-durum').value,
       kategori: $('#duz-kategori').value,
+      aciklama: $('#duz-aciklama').value,
       foto_url: await kapakUrlHazirla('duz'),
     });
     if (kuyruktaMi()) {

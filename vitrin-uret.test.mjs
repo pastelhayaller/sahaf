@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { slugla, slugHaritasi } from './vitrin-uret.mjs';
+import { slugla, slugHaritasi, kitapSayfasi } from './vitrin-uret.mjs';
 
 const KOK = dirname(fileURLToPath(import.meta.url));
 
@@ -51,3 +51,20 @@ if (dosyalar.length) {
   assert.deepEqual([...stable.values()].map(slug => slug + '.html').sort(), current.sort(), 'Every existing URL survives metadata cleanup');
   console.log(`URL koruması: ${stable.size} mevcut yol değişmedi.`);
 }
+
+const described = { id: 'desc1234-full', ad: 'Örnek kitap', yazar: 'Yazar', yayinevi: 'Yayın', basim_yili: 2001, durum: 'İyi', notlar: 'Kapakta çizik', aciklama: 'Konu tanıtımı.\n</script><script>alert(1)</script> & devam.' };
+const describedPage = kitapSayfasi(described, 'eski-ad-desc1234');
+assert.equal(describedPage.kanonik, 'https://pastelhayaller.com/vitrin/kitap/eski-ad-desc1234.html');
+assert.match(describedPage.html, /<h2>Kitap hakkında<\/h2>/);
+assert.match(describedPage.html, /Konu tanıtımı\.\n&lt;\/script&gt;&lt;script&gt;alert\(1\)&lt;\/script&gt; &amp; devam\./);
+assert.doesNotMatch(describedPage.html, /<script>alert/);
+const bookJson = JSON.parse(describedPage.html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
+assert.equal(bookJson.description, described.aciklama);
+assert.equal(bookJson.bookEdition, undefined, 'Physical condition is not a bibliographic edition');
+assert(describedPage.html.indexOf('Kapakta çizik') > describedPage.html.indexOf('<h2>Bu nüsha</h2>'));
+const metaDescription = describedPage.html.match(/<meta name="description" content="([^"]*)"/)[1];
+assert.match(metaDescription, /Konu tanıtımı/); assert.match(metaDescription, /Yayın/); assert.match(metaDescription, /2001/);
+const blankPage = kitapSayfasi({ ...described, aciklama: '  ' }, 'eski-ad-desc1234');
+assert.doesNotMatch(blankPage.html, /<h2>Kitap hakkında/);
+assert.equal(JSON.parse(blankPage.html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]).description, undefined);
+console.log('Vitrin description HTML/JSON-LD escaping, topic/copy separation and stable URL passed.');

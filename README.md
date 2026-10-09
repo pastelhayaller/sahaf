@@ -113,6 +113,10 @@ yöneticinin imzalı bağlantıyla görüntülemesine izin verilir.
 
 Bu sürümün yerel kontrolleri: `node --test katalog-ui.test.mjs katalog-data.test.mjs vitrin-uret.test.mjs`.
 
+### Kitap açıklaması sürümü
+
+Önce `supabase/yama-009-kitap-aciklamasi.sql` uygulanır; ardından v018 uygulama dosyaları yayınlanır. `aciklama` yalnız doğrulanmış konu tanıtımıdır; boş kalabilir ve eksik bilgi kuyruğuna zorunlu alan olarak eklenmez. Fiziksel kondisyon `notlar` alanında tutulur. Tanıtımlar onaylanıp yazıldıktan sonra mevcut URL'ler korunarak statik vitrin üretilir. Açıklama bulunmayan kitaba metin uydurulmaz.
+
 ## Yerelde çalıştırmak
 ```
 python -m http.server 8765

@@ -106,3 +106,26 @@ const html = await readFile(new URL('index.html', import.meta.url), 'utf8');
 const menuSlugs = [...html.matchAll(/href="\?bolum=kategori&amp;ad=([a-z-]+)"/g)].map(m => m[1]);
 assert.deepEqual([...new Set(menuSlugs)].sort(), Object.keys(KATEGORILER).sort(), 'All categories reachable from menu');
 console.log('Local category filter/edit/undo/queue and menu coverage passed.');
+
+// Description is optional, typed, bounded and preserved by legacy edit/undo.
+for (const invalid of [17, {}, [], true]) {
+  ctx.badDescription = invalid;
+  assert.throws(() => run('kayitTemizle({ aciklama: badDescription })'), /metin olmalı/);
+}
+assert.equal(run("kayitTemizle({ aciklama: '  Satır 1\\nSatır 2  ' }).aciklama"), 'Satır 1\nSatır 2');
+assert.equal(run("kayitTemizle({ aciklama: '   ' }).aciklama"), null);
+assert.equal(run("kayitTemizle({ aciklama: null }).aciklama"), null);
+assert.equal(run("Object.hasOwn(kayitTemizle({}), 'aciklama')"), false);
+assert.equal(run("kayitTemizle({ aciklama: 'ş'.repeat(3000) }).aciklama.length"), 3000);
+assert.throws(() => run("kayitTemizle({ aciklama: 'ş'.repeat(3001) })"), /3000/);
+assert.equal(run("kayitTemizle({ aciklama: '📚'.repeat(1500) }).aciklama.length"), 3000);
+assert.throws(() => run("kayitTemizle({ aciklama: '📚'.repeat(1501) })"), /3000/);
+await localRun("guncelle(savedBook.id, { ...savedBook, aciklama: 'Doğrulanmış konu.\\nİkinci satır.' })");
+local.savedDescription = structuredClone(localRows.find(k => k.id === complete.id));
+await localRun("guncelle(savedBook.id, { ...savedBook })");
+assert.equal(localRows.find(k => k.id === complete.id).aciklama, local.savedDescription.aciklama);
+await localRun("sil(savedBook.id); geriKoy(savedDescription);");
+assert.equal(localRows.find(k => k.id === complete.id).aciklama, local.savedDescription.aciklama);
+assert.equal((await localRun('eksikKuyrugu()')).length, 1, 'Missing description must not add every book to queue');
+assert.match(await readFile(new URL('supabase/yama-009-kitap-aciklamasi.sql', import.meta.url), 'utf8'), /char_length\(aciklama\) <= 3000/);
+console.log('Description type/limit/trim/omission/undo/optional-queue checks passed.');

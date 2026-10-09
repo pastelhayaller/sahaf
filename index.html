@@ -28,7 +28,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..700,0..100,0..1&family=Inter+Tight:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=015">
+<link rel="stylesheet" href="styles.css?v=018">
 </head>
 <body>
 
@@ -292,7 +292,11 @@
       <option>Yıpranmış</option>
     </select>
 
-    <label for="ekle-notlar">Not</label>
+    <label for="ekle-aciklama">Kitap hakkında</label>
+    <textarea id="ekle-aciklama" name="aciklama" maxlength="3000" rows="5" aria-describedby="ekle-aciklama-ipucu"></textarea>
+    <p id="ekle-aciklama-ipucu" class="ipucu">Kitabın konusu hakkında doğrulanmış kısa tanıtım. En fazla 3000 karakter; nüshanın fiziksel durumunu aşağıya yaz.</p>
+
+    <label for="ekle-notlar">Nüsha notu</label>
     <input id="ekle-notlar" name="notlar" autocomplete="off" placeholder="örn. kapağı yıpranmış">
 
     <fieldset class="foto-alani">
@@ -357,7 +361,11 @@
       <option>Yıpranmış</option>
     </select>
 
-    <label for="duz-notlar">Not</label>
+    <label for="duz-aciklama">Kitap hakkında</label>
+    <textarea id="duz-aciklama" name="aciklama" maxlength="3000" rows="5" aria-describedby="duz-aciklama-ipucu"></textarea>
+    <p id="duz-aciklama-ipucu" class="ipucu">Kitabın konusu hakkında doğrulanmış kısa tanıtım. En fazla 3000 karakter; nüshanın fiziksel durumunu aşağıya yaz.</p>
+
+    <label for="duz-notlar">Nüsha notu</label>
     <input id="duz-notlar" name="notlar" autocomplete="off">
 
     <fieldset class="foto-alani">
@@ -424,6 +432,6 @@
   <p><a href="vitrin/">Tüm kitapların listesi</a></p>
 </footer>
 
-<script type="module" src="app.js?v=017"></script>
+<script type="module" src="app.js?v=018"></script>
 </body>
 </html>
