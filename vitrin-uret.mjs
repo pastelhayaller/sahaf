@@ -19,7 +19,7 @@ import {
 
 const KOK = dirname(fileURLToPath(import.meta.url));
 const CIKTI = join(KOK, 'vitrin');
-const SITE = 'https://pastelhayaller.github.io/sahaf';
+const SITE = 'https://pastelhayaller.com';
 const WHATSAPP = '905369782758';
 
 // ——— veri ———————————————————————————————————————————————

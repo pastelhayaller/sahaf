@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://pastelhayaller.github.io/sahaf/sitemap.xml
+Sitemap: https://pastelhayaller.com/sitemap.xml
