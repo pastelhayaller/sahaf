@@ -88,7 +88,7 @@ console.log('Kategori: exact count/paging, invalid filter, omitted-field preserv
 
 // Exercise the local path and edit/undo against actual stored rows.
 let localRows = Array.from({ length: 24 }, (_, i) => ({ id: `local-${i}`, ad: `Kitap ${i}`, raf: 'A1', kategori: i < 23 ? 'roman' : null, durum: 'İyi', yayinevi: 'Yayın', basim_yili: 2020, foto_url: 'cover.jpg' }));
-const local = vm.createContext({ SUPABASE_URL: '', SUPABASE_ANON_KEY: '', ZIYARETCI_EPOSTA: '', ZIYARETCI_SIFRE: '', console, kategoriGecerli,
+const local = vm.createContext({ SUPABASE_URL: '', SUPABASE_ANON_KEY: '', ZIYARETCI_EPOSTA: '', ZIYARETCI_SIFRE: '', GOOGLE_GIRIS: false, console, kategoriGecerli,
   localStorage: { getItem: () => JSON.stringify(localRows), setItem: (key, value) => { localRows = JSON.parse(value); } } });
 vm.runInContext(source, local);
 const localRun = code => vm.runInContext(code, local);
