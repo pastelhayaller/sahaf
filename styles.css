@@ -927,6 +927,9 @@ body[data-rol="ziyaretci"] .form label { font-family: var(--govde-yazi); letter-
 body[data-rol="ziyaretci"] button:focus-visible,
 body[data-rol="ziyaretci"] a:focus-visible { outline: 2px solid #19344a; outline-offset: 3px; }
 .fiyat-notu { margin-top: 12px; }
+/* Müşteri iskeleti gerçek kartın ölçüsünde: liste gelince sayfa zıplamasın. */
+body[data-rol="ziyaretci"] .iskelet { display: block; min-height: 360px; padding: 0; border: 1px solid #e3e8ed; border-radius: 5px; background: #f4f6f8; }
+body[data-rol="ziyaretci"] .iskelet i { display: none; }
 @media (max-width: 1000px) {
   body[data-rol="ziyaretci"] .storefront-header { grid-template-columns: 220px minmax(0, 1fr) auto; gap: 16px; }
   body[data-rol="ziyaretci"] #sonuclar { grid-template-columns: repeat(3, minmax(0, 1fr)); }

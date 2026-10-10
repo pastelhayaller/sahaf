@@ -14,51 +14,66 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Inter+Tight:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
 <style>
-:root{--kagit:#f5eee0;--kagit-2:#fdfaf3;--kraft:#e9dcc0;--murekkep:#1b1913;
---murekkep-2:#554e3d;--soluk:#6b6353;--kilcal:#ded4bf;--cizgi:#c6b99c;
---muhur:#4a6e51;--muhur-koyu:#3a5740;--baski:3px 3px 0 rgba(28,26,21,.16)}
+:root{--lacivert:#19344a;--gri:#64717c;--gri-2:#455866;--zemin:#f4f6f8;--cizgi:#e3e8ed;
+--kirmizi:#c44454;--kirmizi-koyu:#a43140}
 *{box-sizing:border-box}
-body{margin:0;background:var(--kagit);color:var(--murekkep);
-font-family:"Inter Tight",Inter,-apple-system,"Segoe UI",Roboto,sans-serif;
-font-size:16px;line-height:1.6}
-a{color:var(--muhur-koyu)}
-.sar{max-width:960px;margin:0 auto;padding:24px 18px 64px}
-header{border-bottom:2px solid var(--murekkep);padding-bottom:14px;margin-bottom:26px}
-.marka{font-family:Fraunces,"Iowan Old Style",Georgia,serif;font-size:26px;
-font-weight:600;letter-spacing:.01em;text-decoration:none;color:var(--murekkep);display:block}
-.alt{font-family:"Space Mono",ui-monospace,monospace;font-size:10.5px;
-letter-spacing:.16em;text-transform:uppercase;color:var(--soluk);margin-top:5px}
-h1{font-family:Fraunces,"Iowan Old Style",Georgia,serif;font-size:30px;
-font-weight:600;margin:0 0 6px;line-height:1.25}
-.yazar{font-size:17px;color:var(--murekkep-2);margin:0 0 18px}
-.izgara{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
-.kart{background:var(--kagit-2);border:1px solid var(--cizgi);border-radius:2px;
-padding:14px;box-shadow:var(--baski);text-decoration:none;color:inherit;display:block}
-.kart b{font-family:Fraunces,Georgia,serif;font-size:17px;font-weight:600;
-display:block;margin-bottom:3px;line-height:1.3}
-.kart span{font-size:14px;color:var(--murekkep-2)}
-.fiyat{font-family:"Space Mono",ui-monospace,monospace;font-size:14px;
-font-weight:700;color:var(--muhur-koyu);margin-top:9px;display:block}
-.etiket{display:inline-block;background:var(--kraft);border:1px solid var(--cizgi);
-font-family:"Space Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.1em;
-text-transform:uppercase;padding:3px 8px;margin-top:10px}
-.kapak{width:100%;max-width:280px;border:1px solid var(--cizgi);box-shadow:var(--baski);
-display:block;margin-bottom:20px}
-.dugme{display:inline-block;background:var(--muhur);color:#fff;text-decoration:none;
-font-weight:600;padding:13px 22px;border:0;box-shadow:var(--baski);margin-top:8px}
-.kunye{display:grid;grid-template-columns:auto 1fr;gap:5px 16px;margin:0 0 18px;
-font-size:15px;align-items:baseline}
-.kunye dt{font-family:"Space Mono",ui-monospace,monospace;font-size:10.5px;
-letter-spacing:.12em;text-transform:uppercase;color:var(--soluk)}
-.kunye dd{margin:0;color:var(--murekkep)}
-.not{background:var(--kagit-2);border-left:3px solid var(--cizgi);padding:11px 14px;margin:18px 0}
-.kitap-hakkinda,.nusha{margin-top:24px}
-.kitap-hakkinda h2,.nusha h2{font-size:21px;margin:0 0 12px}
-.kitap-hakkinda p{white-space:pre-line;overflow-wrap:anywhere;line-height:1.65}
-footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--kilcal);
-font-size:13px;color:var(--soluk)}
-.geri{font-family:"Space Mono",ui-monospace,monospace;font-size:11px;
-letter-spacing:.1em;text-transform:uppercase;display:inline-block;margin-bottom:18px}
+body{margin:0;background:#fff;color:var(--lacivert);
+font:16px/1.6 "Inter Tight",Inter,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--lacivert);text-underline-offset:3px}
+a:hover{color:var(--kirmizi-koyu)}
+a:focus-visible{outline:2px solid var(--lacivert);outline-offset:3px}
+.sar{max-width:1240px;margin:0 auto;padding:0 24px 56px}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;
+padding:22px 0;border-bottom:1px solid var(--cizgi);margin-bottom:28px}
+.marka{font:600 27px/1.1 Fraunces,"Iowan Old Style",Georgia,serif;text-decoration:none;color:var(--lacivert)}
+.marka span{display:block;margin-top:5px;font:600 12px/1 "Inter Tight",sans-serif;letter-spacing:.12em;color:var(--kirmizi)}
+.ust-eylem{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.ust-eylem a{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border:1px solid #c8d0d8;
+border-radius:5px;font-size:14px;font-weight:600;text-decoration:none}
+.ust-eylem a.ana{background:var(--lacivert);border-color:var(--lacivert);color:#fff}
+h1{font:600 clamp(26px,4vw,34px)/1.2 Fraunces,"Iowan Old Style",Georgia,serif;margin:0 0 6px;overflow-wrap:anywhere}
+.yazar{font-size:17px;color:var(--gri-2);margin:0 0 18px}
+.izgara{display:grid;gap:24px 18px;grid-template-columns:repeat(5,minmax(0,1fr))}
+.kart{display:flex;flex-direction:column;min-width:0;padding:12px;border:1px solid var(--cizgi);border-radius:5px;
+background:#fff;text-decoration:none;color:inherit}
+.kart:hover{border-color:#b4c1cb;color:inherit}
+.kart-kapak{display:grid;place-items:center;height:188px;border-radius:3px;background:var(--zemin);color:var(--gri);font-size:13px;overflow:hidden}
+.kart-kapak img{width:100%;height:100%;object-fit:contain}
+.kart b{display:block;margin-top:14px;font-size:16px;font-weight:600;line-height:1.35;overflow-wrap:anywhere}
+.kart .kart-yazar{display:block;margin-top:6px;font-size:13px;line-height:1.4;color:var(--gri)}
+.kart .kart-kunye{display:block;margin-top:6px;font-size:12px;line-height:1.4;color:var(--gri)}
+.kart .fiyat{margin-top:auto;padding-top:12px}
+.fiyat{display:block;font-weight:700;font-size:20px;line-height:1.2;color:var(--lacivert)}
+.urun{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:40px;align-items:start}
+.kapak{display:block;width:100%;border-radius:5px;background:var(--zemin)}
+.kapak-yok{display:grid;place-items:center;aspect-ratio:3/4;border-radius:5px;background:var(--zemin);color:var(--gri);font-size:14px}
+.urun .fiyat{font-size:28px;margin:18px 0 0}
+.dugme{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 24px;margin-top:14px;
+border-radius:5px;background:var(--kirmizi);color:#fff;font-weight:600;text-decoration:none}
+.dugme:hover{background:var(--kirmizi-koyu);color:#fff}
+.stok-notu{margin-top:16px;color:var(--gri-2);font-size:14px}
+.kunye{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;margin:0;font-size:15px;align-items:baseline}
+.kunye dt{font-size:13px;color:var(--gri)}
+.kunye dd{margin:0}
+.not{background:var(--zemin);border-left:3px solid var(--kirmizi);padding:11px 14px;margin:14px 0 0}
+.kitap-hakkinda,.nusha{margin-top:28px;padding-top:22px;border-top:1px solid var(--cizgi)}
+.kitap-hakkinda h2,.nusha h2{font-size:19px;margin:0 0 12px}
+.kitap-hakkinda p{white-space:pre-line;overflow-wrap:anywhere;line-height:1.7;margin:0}
+footer{margin-top:56px;padding:28px;border-radius:5px;background:var(--zemin);font-size:14px;color:var(--gri-2)}
+.geri{display:inline-block;margin-bottom:20px;font-size:14px}
+@media(max-width:1000px){.izgara{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){
+.sar{padding:0 16px 40px}
+header{padding:14px 0;margin-bottom:20px}
+.marka{font-size:23px}
+.ust-eylem a:not(.ana){display:none}
+.izgara{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.kart{padding:8px}
+.kart-kapak{height:150px}
+.urun{grid-template-columns:1fr;gap:20px}
+.urun .kapak,.urun .kapak-yok{max-width:240px}
+footer{padding:20px}
+}
 </style>
 <link rel="stylesheet" href="/bilgilendirme.css?v=019">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Book","name":"Pera palasta gölge oyunu","url":"https://pastelhayaller.com/vitrin/kitap/pera-palasta-golge-oyunu-kayahan-demir-6fe30a49.html","identifier":"6fe30a49-0c80-4add-b72a-db9dddc73fea","author":{"@type":"Person","name":"Kayahan Demir"},"offers":{"@type":"Offer","price":95,"priceCurrency":"TRY","availability":"https://schema.org/InStock","url":"https://pastelhayaller.com/vitrin/kitap/pera-palasta-golge-oyunu-kayahan-demir-6fe30a49.html","seller":{"@id":"https://pastelhayaller.com/#isletme"}}}</script>
@@ -66,22 +81,27 @@ letter-spacing:.1em;text-transform:uppercase;display:inline-block;margin-bottom:
 <body>
 <div class="sar">
 <header>
-  <a class="marka" href="https://pastelhayaller.com/">Pastelhayaller Sahaf</a>
-  <div class="alt">Çorum sahaf · İkinci el ve nadir kitap</div>
+  <a class="marka" href="https://pastelhayaller.com/">Pastelhayaller<span>SAHAF · ÇORUM</span></a>
+  <nav class="ust-eylem" aria-label="Mağaza">
+    <a href="https://pastelhayaller.com/vitrin/">Tüm kitaplar</a>
+    <a class="ana" href="https://pastelhayaller.com/">Kitap ara</a>
+  </nav>
 </header>
 
 <a class="geri" href="https://pastelhayaller.com/vitrin/">← Tüm kitaplar</a>
+<div class="urun">
+<div><div class="kapak-yok">Kapak fotoğrafı yakında</div></div>
+<div>
 <h1>Pera palasta gölge oyunu</h1>
 <p class="yazar">Kayahan Demir</p>
 
-
-<section class="nusha"><h2>Bu nüsha</h2>
-<div class="not">Orta</div></section>
 <p class="fiyat">95 TL</p>
-<p><a class="dugme" href="https://wa.me/905369782758?text=Merhaba%2C%20%22Pera%20palasta%20g%C3%B6lge%20oyunu%22%20kitab%C4%B1%20h%C3%A2l%C3%A2%20var%20m%C4%B1%3F">WhatsApp'tan sor</a></p>
-<p style="margin-top:22px;color:var(--murekkep-2);font-size:15px">
-Bu kitap Çorum'daki dükkânımızda bulunuyor; gelip alabilir ya da WhatsApp'tan ayırtabilirsin. Stok tek adettir; sormadan önce satılmış olabilir.
-</p>
+<a class="dugme" href="https://wa.me/905369782758?text=Merhaba%2C%20%22Pera%20palasta%20g%C3%B6lge%20oyunu%22%20kitab%C4%B1%20h%C3%A2l%C3%A2%20var%20m%C4%B1%3F">WhatsApp'tan ayırt</a>
+<p class="stok-notu">Kitap Çorum'daki dükkânımızda; ayırtıp dükkândan teslim alabilirsin. Her kitaptan tek nüsha var.</p>
+
+<section class="nusha"><h2>Bu nüsha</h2><div class="not">Orta</div></section>
+</div>
+</div>
 <footer>
   <b>Pastelhayaller Sahaf</b> · Çorum<br>
   <a href="https://maps.google.com/?cid=4502818142900572789">Piribaba Çamlığı, Bahçelievler Mah., Sanat Sk. No:18, 19200 Çorum Merkez/Çorum</a><br>

@@ -28,10 +28,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..700,0..100,0..1&family=Inter+Tight:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=019">
+<link rel="stylesheet" href="styles.css?v=020">
 <link rel="stylesheet" href="bilgilendirme.css?v=019">
 </head>
-<body>
+<!-- Ziyaretçi varsayılan: giriş ağ turları sürerken müşteri boş/krem ekran görmesin.
+     Personel oturumu roluUygula() ile kendi temasına geçer. -->
+<body data-rol="ziyaretci">
 <aside id="depolama-bilgisi" class="depolama-bilgisi" aria-label="Tarayıcı depolaması hakkında" hidden>
   <p>Sepetinizin ve oturumunuzun çalışması için cihazınızda kayıt tutuyoruz. Reklam ve analiz amaçlı takip kullanmıyoruz. <a href="/cerez-politikasi.html">Çerez bilgilendirmesi</a></p>
   <button id="depolama-bilgisi-kapat" type="button">Bilgilendirmeyi kapat</button>
@@ -68,7 +70,7 @@
 </section>
 
 <!-- ARA -->
-<section id="ekran-ara" class="ekran" hidden>
+<section id="ekran-ara" class="ekran">
   <div class="storefront-top customer-only"><span>Çorum’un kitaplarla dolu köşesi</span><a href="#magaza-bilgileri">Dükkândan teslim al</a></div>
   <div class="storefront-header">
   <header class="baslik">
@@ -79,7 +81,7 @@
     </div>
     <div class="baslik-eylemler">
       <button id="btn-teklifler" class="btn sade teklifler-dugme" type="button" hidden>Teklifler</button>
-      <button id="btn-sepet" class="btn sepet-dugme" type="button" hidden>Sepet <span id="sepet-sayi">0</span></button>
+      <button id="btn-sepet" class="btn sepet-dugme" type="button">Sepet <span id="sepet-sayi">0</span></button>
       <button id="btn-cikis" class="btn sade cikis-dugme" type="button" hidden aria-label="Çıkış" title="Çıkış">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -179,7 +181,7 @@
     <div class="katalog-sonuclar">
       <div id="sayfa-mesaj" class="sayfa-mesaj" hidden></div>
       <div id="dizin-sonuclar" class="dizin-sonuclar" hidden></div>
-      <div id="sonuclar" class="liste"></div>
+      <div id="sonuclar" class="liste"><div class="iskelet" aria-hidden="true"></div><div class="iskelet" aria-hidden="true"></div><div class="iskelet" aria-hidden="true"></div><div class="iskelet" aria-hidden="true"></div><div class="iskelet" aria-hidden="true"></div></div>
 
       <nav id="sayfalama" class="sayfalama" aria-label="Sayfalar" hidden></nav>
 
@@ -198,7 +200,7 @@
     </aside>
   </div>
 
-  <button id="btn-ekle-ac" class="fab" type="button" aria-label="Yeni kitap ekle">+</button>
+  <button id="btn-ekle-ac" class="fab" type="button" aria-label="Yeni kitap ekle" hidden>+</button>
 </section>
 
 <!-- ZİYARETÇİ KİTAP DETAYI: yalnızca mevcut liste kaydını gösterir. -->
