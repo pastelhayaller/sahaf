@@ -4,8 +4,10 @@ import { kategoriGecerli } from './kategori.js';
 //   boşsa              -> localStorage (deneme modu)
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY,
-  ZIYARETCI_EPOSTA, ZIYARETCI_SIFRE,
+  ZIYARETCI_EPOSTA, ZIYARETCI_SIFRE, GOOGLE_GIRIS,
 } from './config.js';
+
+export const googleGirisiVar = !!GOOGLE_GIRIS;
 
 export const denemeModu = !SUPABASE_URL || !SUPABASE_ANON_KEY;
 export const ziyaretciGirisiVar = !denemeModu && !!ZIYARETCI_EPOSTA && !!ZIYARETCI_SIFRE;

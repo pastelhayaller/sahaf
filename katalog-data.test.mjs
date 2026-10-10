@@ -31,7 +31,7 @@ const client = {
   },
 };
 const source = (await readFile(new URL('db.js', import.meta.url), 'utf8')).replace(/import\s*\{[\s\S]*?\}\s*from '\.\/config.js';/, '').replace(/^import .*;\r?\n/gm, '').replace(/^export /gm, '');
-const ctx = vm.createContext({ SUPABASE_URL: 'https://example.test', SUPABASE_ANON_KEY: 'public-test', ZIYARETCI_EPOSTA: '', ZIYARETCI_SIFRE: '', client, console, kategoriGecerli });
+const ctx = vm.createContext({ SUPABASE_URL: 'https://example.test', SUPABASE_ANON_KEY: 'public-test', ZIYARETCI_EPOSTA: '', ZIYARETCI_SIFRE: '', GOOGLE_GIRIS: false, client, console, kategoriGecerli });
 vm.runInContext(source, ctx);
 vm.runInContext('_sb = client;', ctx);
 const run = code => vm.runInContext(code, ctx);

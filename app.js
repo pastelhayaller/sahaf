@@ -1287,7 +1287,7 @@ function girisModu(mod) {
   $('#giris-form').hidden = mod !== 'giris';
   $('#uye-form').hidden = mod !== 'uye';
   $('#sifre-form').hidden = mod !== 'sifre';
-  $('#google-alani').hidden = mod === 'sifre';
+  $('#google-alani').hidden = mod === 'sifre' || !db.googleGirisiVar;
   $('#sekme-giris').setAttribute('aria-pressed', String(mod === 'giris'));
   $('#sekme-uye').setAttribute('aria-pressed', String(mod === 'uye'));
   hataGizle('#giris-hata');

@@ -23,3 +23,7 @@ export const SUPABASE_ANON_KEY = "sb_publishable_SbMPKHAK6Q7G3gf_XbeKqw_yl92FMOi
 // uygulama eskisi gibi sadece şifreli girişle çalışır.
 export const ZIYARETCI_EPOSTA = "ziyaretci@pastelhayaller.com";
 export const ZIYARETCI_SIFRE = "1906";
+
+// Google ile giriş: Supabase → Authentication → Providers → Google açılıp
+// istemci kimliği girilince true yap. Kapalıyken düğme hiç görünmez.
+export const GOOGLE_GIRIS = false;
