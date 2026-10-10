@@ -4,10 +4,13 @@ import { kategoriGecerli } from './kategori.js';
 //   boşsa              -> localStorage (deneme modu)
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY,
-  ZIYARETCI_EPOSTA, ZIYARETCI_SIFRE, GOOGLE_GIRIS,
+  ZIYARETCI_EPOSTA, ZIYARETCI_SIFRE,
 } from './config.js';
+// Ad alanı içe aktarımı: önbellekteki eski config.js'te GOOGLE_GIRIS yoksa
+// adlı içe aktarım tüm uygulamayı düşürür (2026-10-11'de oldu); burada yalnız undefined olur.
+import * as ayar from './config.js';
 
-export const googleGirisiVar = !!GOOGLE_GIRIS;
+export const googleGirisiVar = !!ayar.GOOGLE_GIRIS;
 
 export const denemeModu = !SUPABASE_URL || !SUPABASE_ANON_KEY;
 export const ziyaretciGirisiVar = !denemeModu && !!ZIYARETCI_EPOSTA && !!ZIYARETCI_SIFRE;

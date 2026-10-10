@@ -1,5 +1,5 @@
-import * as db from './db.js?v=021';
-import { kucukKapakUrl, telefonDuzenle, kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER, kategoriGecerli } from './ui-helpers.js?v=021';
+import * as db from './db.js?v=022';
+import { kucukKapakUrl, telefonDuzenle, kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER, kategoriGecerli } from './ui-helpers.js?v=022';
 
 const $ = (s) => document.querySelector(s);
 const ekranlar = ['giris', 'hesap', 'ara', 'detay', 'ekle', 'duzenle', 'sepet', 'alim-teklif', 'teklifler'];
