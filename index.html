@@ -28,7 +28,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..700,0..100,0..1&family=Inter+Tight:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=020">
+<link rel="stylesheet" href="styles.css?v=021">
 <link rel="stylesheet" href="bilgilendirme.css?v=019">
 </head>
 <!-- Ziyaretçi varsayılan: giriş ağ turları sürerken müşteri boş/krem ekran görmesin.
@@ -52,19 +52,46 @@
 <section id="ekran-giris" class="ekran" hidden>
   <div class="giris-kutu">
     <h1 class="marka">Pastelhayaller<span>Sahaf</span></h1>
+    <div class="giris-sekmeler" role="group" aria-label="Giriş veya üyelik">
+      <button id="sekme-giris" type="button" aria-pressed="true">Giriş yap</button>
+      <button id="sekme-uye" type="button" aria-pressed="false">Üye ol</button>
+    </div>
+    <div id="google-alani">
+      <button id="btn-google" class="btn ikincil" type="button">Google ile devam et</button>
+      <p class="ayirac"><span>veya e-postayla</span></p>
+    </div>
     <form id="giris-form" novalidate>
       <label for="giris-eposta">E-posta</label>
       <input id="giris-eposta" type="email" autocomplete="username" required>
       <label for="giris-sifre">Şifre</label>
       <input id="giris-sifre" type="password" autocomplete="current-password" required>
       <button class="btn birincil" type="submit">Giriş yap</button>
-      <p id="giris-hata" class="hata" hidden></p>
+      <button id="btn-sifre-unuttum" class="btn sade kucuk" type="button">Şifremi unuttum</button>
     </form>
+    <form id="uye-form" novalidate hidden>
+      <label for="uye-ad">Ad soyad</label>
+      <input id="uye-ad" type="text" autocomplete="name" maxlength="80" required>
+      <label for="uye-telefon">Cep telefonu</label>
+      <input id="uye-telefon" type="tel" inputmode="tel" autocomplete="tel" placeholder="05xx xxx xx xx" required>
+      <label for="uye-eposta">E-posta</label>
+      <input id="uye-eposta" type="email" autocomplete="email" required>
+      <label for="uye-sifre">Şifre</label>
+      <input id="uye-sifre" type="password" autocomplete="new-password" minlength="8" required>
+      <p class="ipucu">Telefonunu yalnız ayırttığın kitaplar için WhatsApp’tan dönmek için kullanırız. <a href="/gizlilik.html">Kişisel verilerin nasıl kullanılır?</a></p>
+      <button class="btn birincil" type="submit">Üye ol</button>
+    </form>
+    <form id="sifre-form" novalidate hidden>
+      <label for="yeni-sifre">Yeni şifre</label>
+      <input id="yeni-sifre" type="password" autocomplete="new-password" minlength="8" required>
+      <button class="btn birincil" type="submit">Şifremi kaydet</button>
+    </form>
+    <p id="giris-hata" class="hata" hidden></p>
+    <p id="giris-bilgi" class="ipucu ortala" role="status" hidden></p>
 
     <div id="ziyaretci-alani" hidden>
       <p class="ayirac"><span>veya</span></p>
-      <button id="btn-ziyaretci" class="btn ikincil" type="button">Ziyaretçi olarak gir</button>
-      <p class="ipucu ortala">Kitapları görebilirsin; ekleme ve düzenleme personele aittir.</p>
+      <button id="btn-ziyaretci" class="btn ikincil" type="button">Üye olmadan devam et</button>
+      <p class="ipucu ortala">Kitaplara bakıp WhatsApp’tan ayırtabilirsin.</p>
     </div>
   </div>
 </section>
@@ -81,6 +108,7 @@
     </div>
     <div class="baslik-eylemler">
       <button id="btn-teklifler" class="btn sade teklifler-dugme" type="button" hidden>Teklifler</button>
+      <button id="btn-hesap" class="btn sade hesap-dugme" type="button" hidden>Giriş yap</button>
       <button id="btn-sepet" class="btn sepet-dugme" type="button">Sepet <span id="sepet-sayi">0</span></button>
       <button id="btn-cikis" class="btn sade cikis-dugme" type="button" hidden aria-label="Çıkış" title="Çıkış">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
@@ -390,6 +418,23 @@
 </section>
 
 <!-- ZİYARETÇİ SEPETİ -->
+<section id="ekran-hesap" class="ekran" hidden>
+  <header class="baslik">
+    <button class="btn sade" type="button" data-geri>‹ Geri</button>
+    <h2>Hesabım</h2>
+  </header>
+  <form id="hesap-form" class="form" novalidate>
+    <p id="hesap-eposta" class="ipucu"></p>
+    <label for="hesap-ad">Ad soyad</label>
+    <input id="hesap-ad" type="text" autocomplete="name" maxlength="80" required>
+    <label for="hesap-telefon">Cep telefonu</label>
+    <input id="hesap-telefon" type="tel" inputmode="tel" autocomplete="tel" placeholder="05xx xxx xx xx" required>
+    <p id="hesap-hata" class="hata" hidden></p>
+    <button class="btn birincil" type="submit">Kaydet</button>
+  </form>
+  <button id="btn-hesap-cikis" class="btn ikincil hesap-cikis" type="button">Çıkış yap</button>
+</section>
+
 <section id="ekran-sepet" class="ekran" hidden>
   <header class="baslik">
     <button class="btn sade" type="button" data-geri>‹ Geri</button>
@@ -447,6 +492,6 @@
 </footer>
 
 <script src="depolama-bilgisi.js?v=019" defer></script>
-<script type="module" src="app.js?v=020"></script>
+<script type="module" src="app.js?v=021"></script>
 </body>
 </html>

@@ -7,6 +7,15 @@ export function kucukKapakUrl(url) {
   return m ? `https://pastelhayaller.com/kapak/${m[1]}.jpg` : url;
 }
 
+// TR cep telefonu: "+90 532 ...", "532...", "0532-..." hepsi "05321234567" olur.
+// Cep değilse (05 ile başlamıyorsa) null; ayırtmada WhatsApp'tan dönülecek numara bu.
+export function telefonDuzenle(metin) {
+  let r = String(metin || '').replace(/\D/g, '');
+  if (r.length === 12 && r.startsWith('90')) r = r.slice(2);
+  if (r.length === 10 && r.startsWith('5')) r = '0' + r;
+  return /^05\d{9}$/.test(r) ? r : null;
+}
+
 // Customer cards and detail share these small display decisions.
 export function kitapKunye(k) {
   return [k.yayinevi, k.basim_yili, k.durum]

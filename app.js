@@ -1,8 +1,8 @@
-import * as db from './db.js?v=020';
-import { kucukKapakUrl, kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER, kategoriGecerli } from './ui-helpers.js?v=020';
+import * as db from './db.js?v=021';
+import { kucukKapakUrl, telefonDuzenle, kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER, kategoriGecerli } from './ui-helpers.js?v=021';
 
 const $ = (s) => document.querySelector(s);
-const ekranlar = ['giris', 'ara', 'detay', 'ekle', 'duzenle', 'sepet', 'alim-teklif', 'teklifler'];
+const ekranlar = ['giris', 'hesap', 'ara', 'detay', 'ekle', 'duzenle', 'sepet', 'alim-teklif', 'teklifler'];
 let seciliKitap = null;
 let detayOdak = null;
 let sonSilinen = null;
@@ -1277,6 +1277,118 @@ $('#btn-cikis').addEventListener('click', async () => {
   rol = 'ziyaretci';
   liste.terim = ''; liste.sayfa = 1;
   $('#arama').value = '';
+  girisModu('giris');
+  koku('giris');
+});
+
+// --- Müşteri üyeliği -----------------------------------------------------
+// Tek giriş formu: personel de üye de buradan girer, rol arayüzü belirler.
+function girisModu(mod) {
+  $('#giris-form').hidden = mod !== 'giris';
+  $('#uye-form').hidden = mod !== 'uye';
+  $('#sifre-form').hidden = mod !== 'sifre';
+  $('#google-alani').hidden = mod === 'sifre';
+  $('#sekme-giris').setAttribute('aria-pressed', String(mod === 'giris'));
+  $('#sekme-uye').setAttribute('aria-pressed', String(mod === 'uye'));
+  hataGizle('#giris-hata');
+  $('#giris-bilgi').hidden = true;
+}
+function girisBilgi(metin) { $('#giris-bilgi').textContent = metin; $('#giris-bilgi').hidden = false; }
+$('#sekme-giris').addEventListener('click', () => girisModu('giris'));
+$('#sekme-uye').addEventListener('click', () => girisModu('uye'));
+
+async function mesgul(btn, is) {
+  btn.disabled = true;
+  try { await is(); } catch (e) { hataGoster('#giris-hata', e); } finally { btn.disabled = false; }
+}
+
+$('#btn-google').addEventListener('click', ev => mesgul(ev.currentTarget, () => db.googleIleGir()));
+
+$('#uye-form').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  hataGizle('#giris-hata');
+  const ad = $('#uye-ad').value.trim(), eposta = $('#uye-eposta').value.trim(), sifre = $('#uye-sifre').value;
+  const telefon = telefonDuzenle($('#uye-telefon').value);
+  if (!ad) return hataGoster('#giris-hata', new Error('Adını yaz.'));
+  if (!telefon) return hataGoster('#giris-hata', new Error('Cep telefonunu 05xx xxx xx xx biçiminde yaz.'));
+  if (!/^\S+@\S+\.\S+$/.test(eposta)) return hataGoster('#giris-hata', new Error('Geçerli bir e-posta yaz.'));
+  if (sifre.length < 8) return hataGoster('#giris-hata', new Error('Şifre en az 8 karakter olmalı.'));
+  await mesgul(ev.submitter || $('#uye-form button[type=submit]'), async () => {
+    const { onayGerekli } = await db.uyeOl({ ad, telefon, eposta, sifre });
+    if (onayGerekli) {
+      $('#uye-form').reset();
+      girisModu('giris');
+      girisBilgi(`${eposta} adresine onay bağlantısı gönderdik. Bağlantıya tıklayınca üyeliğin açılır.`);
+    } else {
+      await araEkraniAc();
+      bildir('✓ Üyeliğin açıldı. Hoş geldin!');
+    }
+  });
+});
+
+$('#btn-sifre-unuttum').addEventListener('click', ev => {
+  hataGizle('#giris-hata');
+  const eposta = $('#giris-eposta').value.trim();
+  if (!/^\S+@\S+\.\S+$/.test(eposta)) return hataGoster('#giris-hata', new Error('Önce e-posta adresini yaz, sonra “Şifremi unuttum”a dokun.'));
+  mesgul(ev.currentTarget, async () => {
+    await db.sifreSifirlamaGonder(eposta);
+    girisBilgi(`${eposta} adresine şifre yenileme bağlantısı gönderdik.`);
+  });
+});
+
+$('#sifre-form').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  hataGizle('#giris-hata');
+  const sifre = $('#yeni-sifre').value;
+  if (sifre.length < 8) return hataGoster('#giris-hata', new Error('Şifre en az 8 karakter olmalı.'));
+  await mesgul(ev.submitter || $('#sifre-form button[type=submit]'), async () => {
+    await db.yeniSifreKaydet(sifre);
+    await araEkraniAc();
+    bildir('✓ Şifren değişti.');
+  });
+});
+
+// Ziyaretçiye "Giriş yap", üyeye "Hesabım". Personel kendi çıkış düğmesini kullanır.
+let uye = null;
+async function hesapDugmesiniGuncelle() {
+  uye = yoneticiMi() ? null : await db.uyeBilgisi();
+  const btn = $('#btn-hesap');
+  btn.hidden = yoneticiMi() || db.denemeModu;
+  btn.textContent = uye ? 'Hesabım' : 'Giriş yap';
+}
+
+$('#btn-hesap').addEventListener('click', () => {
+  if (!uye) { girisModu('giris'); return git('giris'); }
+  $('#hesap-eposta').textContent = uye.eposta;
+  $('#hesap-ad').value = uye.ad;
+  $('#hesap-telefon').value = uye.telefon;
+  hataGizle('#hesap-hata');
+  git('hesap');
+});
+
+$('#hesap-form').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  hataGizle('#hesap-hata');
+  const ad = $('#hesap-ad').value.trim();
+  const telefon = telefonDuzenle($('#hesap-telefon').value);
+  if (!ad) return hataGoster('#hesap-hata', new Error('Adını yaz.'));
+  if (!telefon) return hataGoster('#hesap-hata', new Error('Cep telefonunu 05xx xxx xx xx biçiminde yaz.'));
+  try {
+    await db.uyeBilgisiKaydet({ ad, telefon });
+    uye = { ...uye, ad, telefon };
+    bildir('✓ Bilgilerin kaydedildi.');
+    history.back();
+  } catch (e) { hataGoster('#hesap-hata', e); }
+});
+
+// Üye çıkınca kitaplar kaybolmasın: ortak ziyaretçi oturumuna geri döner.
+$('#btn-hesap-cikis').addEventListener('click', async () => {
+  await db.cikisYap();
+  if (db.ziyaretciGirisiVar) {
+    try { await db.ziyaretciGirisiYap(); await araEkraniAc(); bildir('Çıkış yaptın.'); return; }
+    catch (e) { console.warn('Ziyaretçi girişi olmadı:', e); }
+  }
+  girisModu('giris');
   koku('giris');
 });
 
@@ -1386,8 +1498,9 @@ async function araEkraniAc() {
   rol = await db.rolGetir();
   if (!yoneticiMi()) rotaUygula(rotaOku(window.location.search));
   koku('ara');
-  $('#btn-cikis').hidden = db.denemeModu;
+  $('#btn-cikis').hidden = db.denemeModu || !yoneticiMi();
   roluUygula();
+  await hesapDugmesiniGuncelle();
   if (yoneticiMi()) await raflariTazele();
   await listeyiTazele();
   kuyrukSayisiniTazele();
@@ -1400,7 +1513,13 @@ async function araEkraniAc() {
   $('#ziyaretci-alani').hidden = !db.ziyaretciGirisiVar;
   siralamaKutusunuKur();
   kategoriKutulariniKur();
-  if (await db.oturumVarMi()) return araEkraniAc();
+  // Şifre yenileme bağlantısından gelen kullanıcı önce yeni şifresini girer.
+  // Hash Supabase istemcisi açılınca temizlenir; önce okunur.
+  const sifreKurtarma = /type=recovery/.test(location.hash);
+  if (await db.oturumVarMi()) {
+    if (sifreKurtarma) { girisModu('sifre'); return koku('giris'); }
+    return araEkraniAc();
+  }
   // Müşteri giriş ekranına değil kitaplara düşsün; personel çıkış düğmesinden girer.
   if (db.ziyaretciGirisiVar) {
     try { await db.ziyaretciGirisiYap(); return araEkraniAc(); }

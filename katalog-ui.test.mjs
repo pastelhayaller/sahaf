@@ -262,3 +262,9 @@ const hamKapak = 'https://x.supabase.co/storage/v1/object/public/kitap-kapaklari
 assert.equal(helpers.kucukKapakUrl(hamKapak), 'https://pastelhayaller.com/kapak/0e4c1b49-d158-4905-ba99-6b91d6e643e2.jpg');
 assert.equal(helpers.kucukKapakUrl('data:image/jpeg;base64,xx'), 'data:image/jpeg;base64,xx', 'Deneme modu kapağı aynen kalır');
 console.log('Küçük kapak adresi: Storage kapağı kopyaya, diğerleri aynen.');
+
+for (const giris of ['0532 123 45 67', '+90 532 123 45 67', '5321234567', '0532-123-4567']) {
+  assert.equal(helpers.telefonDuzenle(giris), '05321234567', giris);
+}
+for (const gecersiz of ['0312 123 45 67', '12345', '', null]) assert.equal(helpers.telefonDuzenle(gecersiz), null, String(gecersiz));
+console.log('Telefon: TR cep numarası biçimleri tek biçime iniyor, sabit hat reddediliyor.');

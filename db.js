@@ -50,6 +50,11 @@ async function sb() {
 function hata(e) {
   const m = (e && e.message) || String(e);
   if (/Invalid login credentials/i.test(m)) return new Error('E-posta veya şifre hatalı.');
+  if (/already registered|already been registered/i.test(m)) return new Error('Bu e-postayla zaten üyelik var. Giriş yapabilir ya da şifreni sıfırlayabilirsin.');
+  if (/Email not confirmed/i.test(m)) return new Error('E-postanı henüz onaylamadın. Gelen kutundaki bağlantıya tıkla.');
+  if (/Signups not allowed|signup.*disabled/i.test(m)) return new Error('Üyelik şu an kapalı. Kısa süre sonra yeniden dene.');
+  if (/Password should be at least/i.test(m)) return new Error('Şifre en az 8 karakter olmalı.');
+  if (/rate limit|too many/i.test(m)) return new Error('Çok fazla deneme yapıldı. Birkaç dakika sonra yeniden dene.');
   if (/Failed to fetch|NetworkError/i.test(m)) return new Error('İnternete bağlanılamadı. Bağlantını kontrol et.');
   return new Error(m);
 }
@@ -119,6 +124,53 @@ export async function cikisYap() {
   _rol = null;
   if (denemeModu) return;
   await (await sb()).auth.signOut();
+}
+
+// --- Müşteri üyeliği -----------------------------------------------------
+// Üye de "rol satırı olmayan" kullanıcıdır; kitapları ziyaretçi kadar görür.
+// Ad/telefon user_metadata'da durur: e-posta onayı beklenirken oturum yoktur,
+// RLS'li bir tabloya yazılamaz. Personel bu bilgiye ayırtma kaydıyla erişecek.
+const DONUS = typeof location !== 'undefined' ? `${location.origin}/` : undefined;
+
+export async function uyeOl({ ad, telefon, eposta, sifre }) {
+  const { data, error } = await (await sb()).auth.signUp({
+    email: eposta, password: sifre,
+    options: { data: { ad, telefon }, emailRedirectTo: DONUS },
+  });
+  if (error) throw hata(error);
+  _rol = null;
+  // Onay açıksa oturum gelmez; kapalıysa üye doğrudan girmiş olur.
+  return { onayGerekli: !data.session };
+}
+
+export async function googleIleGir() {
+  const { error } = await (await sb()).auth.signInWithOAuth({ provider: 'google', options: { redirectTo: DONUS } });
+  if (error) throw hata(error);
+}
+
+export async function sifreSifirlamaGonder(eposta) {
+  const { error } = await (await sb()).auth.resetPasswordForEmail(eposta, { redirectTo: DONUS });
+  if (error) throw hata(error);
+}
+
+export async function yeniSifreKaydet(sifre) {
+  const { error } = await (await sb()).auth.updateUser({ password: sifre });
+  if (error) throw hata(error);
+}
+
+// Ortak ziyaretçi hesabı üye değildir; null döner.
+export async function uyeBilgisi() {
+  if (denemeModu) return null;
+  const { data } = await (await sb()).auth.getUser();
+  const u = data && data.user;
+  if (!u || u.email === ZIYARETCI_EPOSTA) return null;
+  const m = u.user_metadata || {};
+  return { eposta: u.email, ad: m.ad || m.full_name || m.name || '', telefon: m.telefon || '' };
+}
+
+export async function uyeBilgisiKaydet({ ad, telefon }) {
+  const { error } = await (await sb()).auth.updateUser({ data: { ad, telefon } });
+  if (error) throw hata(error);
 }
 
 /**

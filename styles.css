@@ -457,6 +457,18 @@ body::before {
 .btn.ikincil:active { background: var(--murekkep); color: var(--kagit); transform: translateY(1px); }
 .ipucu.ortala { text-align: center; margin-top: 18px; }
 
+/* --- Müşteri üyeliği --------------------------------------------------- */
+.giris-sekmeler { display: grid; grid-template-columns: 1fr 1fr; margin: 0 0 22px; border-bottom: 1px solid var(--kilcal); }
+.giris-sekmeler button {
+  min-height: 44px; border: 0; border-bottom: 2px solid transparent; background: none;
+  font: 600 15px var(--govde-yazi); color: var(--soluk); cursor: pointer;
+}
+.giris-sekmeler button[aria-pressed="true"] { color: var(--murekkep); border-bottom-color: var(--muhur); }
+#btn-sifre-unuttum { align-self: center; margin-top: 10px; }
+#google-alani .ayirac { margin: 22px 0 16px; }
+.hesap-cikis { margin-top: 28px; }
+body[data-rol="ziyaretci"] .hesap-dugme { min-height: 40px; padding: 0 12px; font: 600 14px var(--govde-yazi); color: #19344a; }
+
 /* Rol rozeti — personel mi ziyaretçi mi, bir bakışta */
 .rozet {
   position: static;
