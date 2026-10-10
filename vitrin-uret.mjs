@@ -11,7 +11,10 @@
 // Bağımlılık yok (Node 18+ yerleşik fetch). Uygulamaya hiç dokunmaz.
 
 import { writeFile, mkdir, rm, readdir } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
+import { existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { join, dirname, basename } from 'node:path';
+import { kucukKapakUrl } from './ui-helpers.js';
 import { fileURLToPath } from 'node:url';
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, ZIYARETCI_EPOSTA, ZIYARETCI_SIFRE
@@ -123,6 +126,12 @@ export function slugHaritasi(kitaplar, dosyalar = []) {
 
 const kac = s => String(s ?? '').replace(/[&<>"']/g, h =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[h]));
+
+// Küçük kopya (kapak-kucult.py) diskteyse onu, yoksa ham Storage kapağını göster.
+const gosterimKapagi = url => {
+  const kucuk = kucukKapakUrl(url);
+  return kucuk !== url && existsSync(join(KOK, 'kapak', basename(kucuk))) ? kucuk : url;
+};
 
 const fiyatYaz = f =>
   f == null || f === '' ? null : `${Number(f).toLocaleString('tr-TR', { minimumFractionDigits: 0 })} TL`;
@@ -268,7 +277,7 @@ export function kitapSayfasi(k, slug) {
 <a class="geri" href="${SITE}/vitrin/">← Tüm kitaplar</a>
 <div class="urun">
 <div>${k.foto_url
-    ? `<img class="kapak" src="${kac(k.foto_url)}" alt="${kac(k.ad)} kapak görseli">`
+    ? `<img class="kapak" src="${kac(gosterimKapagi(k.foto_url))}" alt="${kac(k.ad)} kapak görseli">`
     : '<div class="kapak-yok">Kapak fotoğrafı yakında</div>'}</div>
 <div>
 <h1>${kac(k.ad)}</h1>
@@ -300,7 +309,7 @@ ${k.notlar ? `<section class="nusha"><h2>Bu nüsha</h2><div class="not">${kac(k.
     } : {})
   };
 
-  return { slug, kanonik, html: sayfa({ baslik: `${k.ad}${yazar ? ' — ' + yazar : ''} · Pastelhayaller Sahaf Çorum`, aciklama, govde, kanonik, jsonld, gorsel: k.foto_url }) };
+  return { slug, kanonik, html: sayfa({ baslik: `${k.ad}${yazar ? ' — ' + yazar : ''} · Pastelhayaller Sahaf Çorum`, aciklama, govde, kanonik, jsonld, gorsel: k.foto_url && gosterimKapagi(k.foto_url) }) };
 }
 
 function listeSayfasi(kayitlar) {
@@ -308,7 +317,7 @@ function listeSayfasi(kayitlar) {
   const sirali = [...kayitlar].sort((a, b) => !a.k.foto_url - !b.k.foto_url);
   const kartlar = sirali.map(({ k, slug }) => `
 <a class="kart" href="${SITE}/vitrin/kitap/${slug}.html">
-  <span class="kart-kapak">${k.foto_url ? `<img src="${kac(k.foto_url)}" alt="" loading="lazy">` : 'Kapak yakında'}</span>
+  <span class="kart-kapak">${k.foto_url ? `<img src="${kac(gosterimKapagi(k.foto_url))}" alt="" loading="lazy">` : 'Kapak yakında'}</span>
   <b>${kac(k.ad)}</b>
   ${k.yazar ? `<span class="kart-yazar">${kac(k.yazar)}</span>` : ''}
   ${k.durum ? `<span class="kart-kunye">${kac(k.durum)}</span>` : ''}
@@ -333,6 +342,13 @@ function listeSayfasi(kayitlar) {
 async function uret() {
   const kitaplar = await kitaplariGetir();
   if (!kitaplar.length) throw new Error('Hiç kitap gelmedi — üretim durduruldu (boş vitrin basmıyoruz).');
+
+  // Kapak kopyaları: Pillow'lu Python yoksa üretim durmaz, sayfalar ham kapağı kullanır.
+  const kapaklar = JSON.stringify(kitaplar.map(k => k.foto_url).filter(Boolean));
+  for (const py of [['py', '-3'], ['python3']]) {
+    const s = spawnSync(py[0], [...py.slice(1), join(KOK, 'kapak-kucult.py')], { input: kapaklar, stdio: ['pipe', 'inherit', 'inherit'], env: { ...process.env, PYTHONUTF8: '1' } });
+    if (!s.error) break;
+  }
 
   const dosyalar = await readdir(join(CIKTI, 'kitap')).catch(e => { if (e.code === 'ENOENT') return []; throw e; });
   const sluglar = slugHaritasi(kitaplar, dosyalar);

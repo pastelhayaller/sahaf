@@ -1,5 +1,5 @@
-import * as db from './db.js?v=019';
-import { kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER, kategoriGecerli } from './ui-helpers.js?v=019';
+import * as db from './db.js?v=020';
+import { kucukKapakUrl, kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER, kategoriGecerli } from './ui-helpers.js?v=020';
 
 const $ = (s) => document.querySelector(s);
 const ekranlar = ['giris', 'ara', 'detay', 'ekle', 'duzenle', 'sepet', 'alim-teklif', 'teklifler'];
@@ -201,9 +201,19 @@ function escapeHtml(s) {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+// Küçük kapak kopyası yoksa (yeni yüklenmiş) bir kez orijinale düş. Yakalama
+// evresinde durdurulur ki img'nin kendi "kapak yok" dinleyicisi erken çalışmasın.
+function kapakSrc(img, url) { img.src = kucukKapakUrl(url); img.dataset.asil = url; }
+document.addEventListener('error', ev => {
+  const img = ev.target;
+  if (!(img instanceof HTMLImageElement) || !img.dataset.asil || img.src === img.dataset.asil) return;
+  ev.stopImmediatePropagation();
+  img.src = img.dataset.asil;
+}, true);
+
 function kartIci(k) {
   return `
-    ${k.foto_url ? `<img class="kart-kapak" src="${escapeHtml(k.foto_url)}" alt="${escapeHtml(k.ad)} kapağı">` : '<span class="kart-kapak yok" aria-hidden="true">☷</span>'}
+    ${k.foto_url ? `<img class="kart-kapak" src="${escapeHtml(kucukKapakUrl(k.foto_url))}" data-asil="${escapeHtml(k.foto_url)}" loading="lazy" alt="${escapeHtml(k.ad)} kapağı">` : '<span class="kart-kapak yok" aria-hidden="true">☷</span>'}
     <span class="raf-rozet"><span class="raf-etiket">RAF</span>${escapeHtml(k.raf)}</span>
     <span class="kart-orta">
       <span class="kart-ad">${escapeHtml(k.ad)}</span>
@@ -237,7 +247,7 @@ function kartYap(k) {
   if (k.foto_url) {
     const kapak = document.createElement('img');
     kapak.className = 'kart-kapak';
-    kapak.src = k.foto_url;
+    kapakSrc(kapak, k.foto_url);
     kapak.alt = `${k.ad} kapağı`;
     kapak.loading = 'lazy';
     kapak.addEventListener('error', () => { kapakDugmesi.replaceChildren(); kapakYok(); }, { once: true });
@@ -356,7 +366,7 @@ function sepetiCiz() {
   $('#sepet-fiyat-notu').textContent = `${bilinmeyen} kitabın fiyatı sorulacak; bu kitaplar ara toplama dahil değil. Kesin tutarı sahaf teyit eder.`;
   sepet.forEach(k => {
     const el = document.createElement('div'); el.className = 'sepet-kalem';
-    el.innerHTML = `${k.foto_url ? `<img class="sepet-kapak" src="${escapeHtml(k.foto_url)}" alt="">` : ''}
+    el.innerHTML = `${k.foto_url ? `<img class="sepet-kapak" src="${escapeHtml(kucukKapakUrl(k.foto_url))}" data-asil="${escapeHtml(k.foto_url)}" alt="">` : ''}
       <span class="kart-orta"><span class="kart-ad">${escapeHtml(k.ad)}</span>${k.yazar ? `<span class="kart-yazar">${escapeHtml(k.yazar)}</span>` : ''}</span>
       <span class="kart-fiyat">${kitapFiyatEtiketi(k, paraYaz)}</span>`;
     const sil = document.createElement('button'); sil.className = 'btn sade kucuk'; sil.type = 'button'; sil.textContent = 'Çıkar';
@@ -650,7 +660,7 @@ function magazaVitriniYaz(kitaplar) {
     dugme.setAttribute('aria-label', `${k.ad} — ayrıntıları gör`);
     dugme.dataset.kitapId = String(k.id);
     const img = document.createElement('img');
-    img.src = k.foto_url;
+    kapakSrc(img, k.foto_url);
     img.alt = `${k.ad} kapağı`;
     img.addEventListener('error', () => dugme.remove(), { once: true });
     dugme.appendChild(img);

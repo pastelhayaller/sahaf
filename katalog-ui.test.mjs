@@ -257,3 +257,8 @@ get('#alim-teklif-form').reportValidity = () => false;
 await get('#alim-teklif-form').listeners.submit({ preventDefault() {} });
 assert.equal(offerUploads, 0, 'Native validity failure must prevent upload');
 console.log('Alım formu: geçersiz alanlar fotoğraf yükleme ve kayıt ekleme öncesinde durduruldu.');
+
+const hamKapak = 'https://x.supabase.co/storage/v1/object/public/kitap-kapaklari/0e4c1b49-d158-4905-ba99-6b91d6e643e2.png';
+assert.equal(helpers.kucukKapakUrl(hamKapak), 'https://pastelhayaller.com/kapak/0e4c1b49-d158-4905-ba99-6b91d6e643e2.jpg');
+assert.equal(helpers.kucukKapakUrl('data:image/jpeg;base64,xx'), 'data:image/jpeg;base64,xx', 'Deneme modu kapağı aynen kalır');
+console.log('Küçük kapak adresi: Storage kapağı kopyaya, diğerleri aynen.');

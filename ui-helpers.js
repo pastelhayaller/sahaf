@@ -1,5 +1,12 @@
 import { KATEGORILER } from './kategori.js';
 export { KATEGORILER, kategoriGecerli } from './kategori.js';
+// Ham Storage kapağının kapak-kucult.py ile üretilen ~60 KB kopyası. Kopya henüz
+// yoksa (yeni yüklenen kapak) img'nin data-asil yedeğine düşülür.
+export function kucukKapakUrl(url) {
+  const m = /\/kitap-kapaklari\/([0-9a-f-]{36})\.(?:jpg|png|webp)$/.exec(url || '');
+  return m ? `https://pastelhayaller.com/kapak/${m[1]}.jpg` : url;
+}
+
 // Customer cards and detail share these small display decisions.
 export function kitapKunye(k) {
   return [k.yayinevi, k.basim_yili, k.durum]

@@ -357,7 +357,8 @@ export async function kapakYukle(dosya) {
   if (!/^image\/(jpeg|png|webp)$/.test(dosya.type)) {
     throw new Error('Yalnız JPG, PNG veya WEBP fotoğraf yüklenebilir.');
   }
-  if (dosya.size > 6 * 1024 * 1024) throw new Error('Fotoğraf 6 MB’dan küçük olmalı.');
+  // Telefon fotoğrafı ~4,5 MB / 4000 px geliyordu; vitrinde her kart bunu indiriyordu.
+  dosya = await yuklemeyeHazirla(dosya);
 
   if (denemeModu) {
     return new Promise((resolve, reject) => {
