@@ -25,10 +25,12 @@
  "openingHoursSpecification":[{"@type":"OpeningHoursSpecification",
   "dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],"opens":"10:00","closes":"17:00"}]}
 </script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..700,0..100,0..1&family=Inter+Tight:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=023">
+<link rel="preload" href="fonts/fraunces-400-700-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/fraunces-400-700-latin-ext.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/inter-tight-400-700-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/inter-tight-400-700-latin-ext.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/fonts.css?v=001">
+<link rel="stylesheet" href="styles.css?v=024">
 <link rel="stylesheet" href="bilgilendirme.css?v=023">
 </head>
 <!-- Ziyaretçi varsayılan: giriş ağ turları sürerken müşteri boş/krem ekran görmesin.
@@ -97,7 +99,7 @@
 </section>
 
 <!-- ARA -->
-<section id="ekran-ara" class="ekran">
+<main id="ekran-ara" class="ekran">
   <div class="storefront-top customer-only"><span>Çorum’un kitaplarla dolu köşesi</span><a href="#magaza-bilgileri">Dükkândan teslim al</a></div>
   <div class="storefront-header">
   <header class="baslik">
@@ -242,7 +244,7 @@
   </div>
 
   <button id="btn-ekle-ac" class="fab" type="button" aria-label="Yeni kitap ekle" hidden>+</button>
-</section>
+</main>
 
 <!-- ZİYARETÇİ KİTAP DETAYI: yalnızca mevcut liste kaydını gösterir. -->
 <section id="ekran-detay" class="ekran" hidden>
@@ -506,6 +508,6 @@
 </footer>
 
 <script src="depolama-bilgisi.js?v=019" defer></script>
-<script type="module" src="app.js?v=022"></script>
+<script type="module" src="app.js?v=023"></script>
 </body>
 </html>

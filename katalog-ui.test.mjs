@@ -111,6 +111,14 @@ card.children[0].listeners.click();
 assert.equal(history.state.kitap.id, 'E', 'Kapak düğmesi ayrıntıyı açmalı');
 const coverless = run("kartYap({ id: 'F', ad: 'Fotoğrafsız' })");
 assert.equal(coverless.children[0].textContent, 'Kapak fotoğrafı yok');
+const ilkKart = run("kartYap({ id: 'G', ad: 'İlk kitap', foto_url: 'https://x.supabase.co/storage/v1/object/public/kitap-kapaklari/925eed62-0e99-4592-b95b-c3b4652229e5.jpg' }, true)");
+const ilkKapak = ilkKart.children[0].children[0];
+assert.equal(ilkKapak.loading, 'eager');
+assert.equal(ilkKapak.fetchPriority, 'high');
+assert.equal(ilkKapak.width, 213);
+assert.equal(ilkKapak.height, 284);
+assert.equal(ilkKapak.decoding, 'async');
+assert.equal(run("kartYap({ id: 'H', ad: 'İkinci kitap', foto_url: 'https://x.supabase.co/storage/v1/object/public/kitap-kapaklari/925eed62-0e99-4592-b95b-c3b4652229e5.jpg' })").children[0].children[0].loading, 'lazy');
 await run("liste.sayfa = 4; liste.sirala = 'fiyat'; rotaAc(rotaOku('?bolum=arama&q=Çorum'));");
 assert.equal(run('liste.terim'), 'Çorum');
 assert.equal(run('liste.sayfa'), 1);
@@ -259,7 +267,8 @@ assert.equal(offerUploads, 0, 'Native validity failure must prevent upload');
 console.log('Alım formu: geçersiz alanlar fotoğraf yükleme ve kayıt ekleme öncesinde durduruldu.');
 
 const hamKapak = 'https://x.supabase.co/storage/v1/object/public/kitap-kapaklari/0e4c1b49-d158-4905-ba99-6b91d6e643e2.png';
-assert.equal(helpers.kucukKapakUrl(hamKapak), 'https://pastelhayaller.com/kapak/0e4c1b49-d158-4905-ba99-6b91d6e643e2.jpg');
+assert.equal(helpers.kucukKapakUrl(hamKapak), 'https://pastelhayaller.com/kapak/0e4c1b49-d158-4905-ba99-6b91d6e643e2.webp');
+assert.equal(helpers.buyukKapakUrl(hamKapak), 'https://pastelhayaller.com/kapak/0e4c1b49-d158-4905-ba99-6b91d6e643e2.jpg');
 assert.equal(helpers.kucukKapakUrl('data:image/jpeg;base64,xx'), 'data:image/jpeg;base64,xx', 'Deneme modu kapağı aynen kalır');
 console.log('Küçük kapak adresi: Storage kapağı kopyaya, diğerleri aynen.');
 

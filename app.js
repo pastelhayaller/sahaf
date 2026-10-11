@@ -1,5 +1,5 @@
-import * as db from './db.js?v=022';
-import { kucukKapakUrl, telefonDuzenle, kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER, kategoriGecerli } from './ui-helpers.js?v=022';
+import * as db from './db.js?v=023';
+import { kucukKapakUrl, telefonDuzenle, kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER, kategoriGecerli } from './ui-helpers.js?v=023';
 
 const $ = (s) => document.querySelector(s);
 const ekranlar = ['giris', 'hesap', 'ara', 'detay', 'ekle', 'duzenle', 'sepet', 'alim-teklif', 'teklifler'];
@@ -179,6 +179,7 @@ function fotoDugmesi(urller, sira, alt) {
   img.src = urller[sira];
   img.alt = alt;
   img.loading = 'lazy';
+  img.decoding = 'async';
   btn.appendChild(img);
   btn.addEventListener('click', (ev) => { ev.stopPropagation(); fotoBuyut(urller, sira); });
   return btn;
@@ -211,9 +212,9 @@ document.addEventListener('error', ev => {
   img.src = img.dataset.asil;
 }, true);
 
-function kartIci(k) {
+function kartIci(k, ilkMi = false) {
   return `
-    ${k.foto_url ? `<img class="kart-kapak" src="${escapeHtml(kucukKapakUrl(k.foto_url))}" data-asil="${escapeHtml(k.foto_url)}" loading="lazy" alt="${escapeHtml(k.ad)} kapağı">` : '<span class="kart-kapak yok" aria-hidden="true">☷</span>'}
+    ${k.foto_url ? `<img class="kart-kapak" src="${escapeHtml(kucukKapakUrl(k.foto_url))}" data-asil="${escapeHtml(k.foto_url)}" width="58" height="84" loading="${ilkMi ? 'eager' : 'lazy'}" decoding="async"${ilkMi ? ' fetchpriority="high"' : ''} alt="${escapeHtml(k.ad)} kapağı">` : '<span class="kart-kapak yok" aria-hidden="true">☷</span>'}
     <span class="raf-rozet"><span class="raf-etiket">RAF</span>${escapeHtml(k.raf)}</span>
     <span class="kart-orta">
       <span class="kart-ad">${escapeHtml(k.ad)}</span>
@@ -222,11 +223,11 @@ function kartIci(k) {
     <span class="kart-fiyat">${paraYaz(k.fiyat)}</span>`;
 }
 
-function kartYap(k) {
+function kartYap(k, ilkMi = false) {
   if (yoneticiMi()) {
     const el = document.createElement('button');
     el.className = 'kart';
-    el.innerHTML = kartIci(k);
+    el.innerHTML = kartIci(k, ilkMi);
     el.type = 'button';
     el.addEventListener('click', () => duzenleAc(k));
     return el;
@@ -249,7 +250,11 @@ function kartYap(k) {
     kapak.className = 'kart-kapak';
     kapakSrc(kapak, k.foto_url);
     kapak.alt = `${k.ad} kapağı`;
-    kapak.loading = 'lazy';
+    kapak.width = 213;
+    kapak.height = 284;
+    kapak.loading = ilkMi ? 'eager' : 'lazy';
+    kapak.decoding = 'async';
+    if (ilkMi) kapak.fetchPriority = 'high';
     kapak.addEventListener('error', () => { kapakDugmesi.replaceChildren(); kapakYok(); }, { once: true });
     kapakDugmesi.appendChild(kapak);
   } else kapakYok();
@@ -634,7 +639,8 @@ function listeYaz(sonuc, terimVarMi) {
     return;
   }
 
-  sonuc.kayitlar.forEach(k => kap.appendChild(kartYap(k)));
+  const ilkKapak = sonuc.kayitlar.findIndex(k => k.foto_url);
+  sonuc.kayitlar.forEach((k, i) => kap.appendChild(kartYap(k, i === ilkKapak)));
 
   const kaynak = terimVarMi
     ? `${sonuc.toplam} kitap bulundu`
@@ -662,6 +668,10 @@ function magazaVitriniYaz(kitaplar) {
     const img = document.createElement('img');
     kapakSrc(img, k.foto_url);
     img.alt = `${k.ad} kapağı`;
+    img.width = 116;
+    img.height = 173;
+    img.decoding = 'async';
+    img.loading = 'lazy';
     img.addEventListener('error', () => dugme.remove(), { once: true });
     dugme.appendChild(img);
     dugme.addEventListener('click', () => detayAc(k, dugme));

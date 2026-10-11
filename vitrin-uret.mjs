@@ -14,7 +14,7 @@ import { writeFile, mkdir, rm, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join, dirname, basename } from 'node:path';
-import { kucukKapakUrl } from './ui-helpers.js';
+import { kucukKapakUrl, buyukKapakUrl } from './ui-helpers.js';
 import { fileURLToPath } from 'node:url';
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, ZIYARETCI_EPOSTA, ZIYARETCI_SIFRE
@@ -128,10 +128,14 @@ export function slugHaritasi(kitaplar, dosyalar = []) {
 const kac = s => String(s ?? '').replace(/[&<>"']/g, h =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[h]));
 
-// Küçük kopya (kapak-kucult.py) diskteyse onu, yoksa ham Storage kapağını göster.
+// Detayda 800px JPEG, listede ~480px WebP kullanılır; eksik kopya ham kapağa düşer.
 const gosterimKapagi = url => {
+  const buyuk = buyukKapakUrl(url);
+  return buyuk !== url && existsSync(join(KOK, 'kapak', basename(buyuk))) ? buyuk : url;
+};
+const gosterimKucukKapagi = url => {
   const kucuk = kucukKapakUrl(url);
-  return kucuk !== url && existsSync(join(KOK, 'kapak', basename(kucuk))) ? kucuk : url;
+  return kucuk !== url && existsSync(join(KOK, 'kapak', basename(kucuk))) ? kucuk : gosterimKapagi(url);
 };
 
 const fiyatYaz = f =>
@@ -219,9 +223,8 @@ function sayfa({ baslik, aciklama, govde, kanonik, jsonld, gorsel }) {
 <meta property="og:description" content="${kac(aciklama)}">
 <meta property="og:type" content="website">
 <meta property="og:url" content="${kac(kanonik)}">
-${gorsel ? `<meta property="og:image" content="${kac(gorsel)}">\n` : ''}<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Inter+Tight:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
+${gorsel ? `<meta property="og:image" content="${kac(gorsel)}">\n` : ''}
+<link rel="stylesheet" href="/fonts.css?v=001">
 <style>${STIL}</style>
 <link rel="stylesheet" href="/bilgilendirme.css?v=019">
 ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, '\\u003c')}</script>` : ''}
@@ -340,9 +343,9 @@ export function kategoriNavigasyonu(gruplar) {
 export function listeSayfasi(kayitlar, { baslik, aciklama, h1, ustMetin, kanonik = `${SITE}/vitrin/`, kategoriNav = '' } = {}) {
   // Fotoğraflılar önde (sort kararlı: kendi içlerinde A→Z kalır); vitrin gri kutuyla açılmasın.
   const sirali = [...kayitlar].sort((a, b) => !a.k.foto_url - !b.k.foto_url);
-  const kartlar = sirali.map(({ k, slug }) => `
+  const kartlar = sirali.map(({ k, slug }, i) => `
 <a class="kart" href="${SITE}/vitrin/kitap/${slug}.html">
-  <span class="kart-kapak">${k.foto_url ? `<img src="${kac(gosterimKapagi(k.foto_url))}" alt="" loading="lazy">` : 'Kapak yakında'}</span>
+  <span class="kart-kapak">${k.foto_url ? `<img src="${kac(gosterimKucukKapagi(k.foto_url))}" alt="" width="480" height="640" loading="${i === 0 ? 'eager' : 'lazy'}" decoding="async"${i === 0 ? ' fetchpriority="high"' : ''}>` : 'Kapak yakında'}</span>
   <b>${kac(k.ad)}</b>
   ${k.yazar ? `<span class="kart-yazar">${kac(k.yazar)}</span>` : ''}
   ${k.durum ? `<span class="kart-kunye">${kac(k.durum)}</span>` : ''}

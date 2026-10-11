@@ -895,7 +895,7 @@ body[data-rol="ziyaretci"] .customer-kart {
 body[data-rol="ziyaretci"] .customer-kart:hover { border-color: #b4c1cb; background: #fff; }
 body[data-rol="ziyaretci"] .customer-kart:active { transform: none; }
 .urun-kapak { display: grid; place-items: center; width: 100%; height: 212px; padding: 12px; border: 0; border-radius: 3px; background: #f4f6f8; color: #64717c; font: 13px/1.5 var(--govde-yazi); cursor: pointer; }
-body[data-rol="ziyaretci"] .customer-kart .kart-kapak { display: block; width: 100%; height: 188px; object-fit: contain; border: 0; background: transparent; }
+body[data-rol="ziyaretci"] .customer-kart .kart-kapak { display: block; width: 100%; height: 188px; aspect-ratio: 3 / 4; object-fit: contain; border: 0; background: transparent; }
 body[data-rol="ziyaretci"] .customer-kart .kart-orta { align-self: stretch; margin: 15px 0 12px; flex: 1; }
 body[data-rol="ziyaretci"] .customer-kart .kart-ad { display: block; width: 100%; padding: 0; border: 0; background: transparent; font: 600 16px/1.35 var(--govde-yazi); color: #19344a; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
 body[data-rol="ziyaretci"] .customer-kart .kart-ad:hover { color: #a43140; }
