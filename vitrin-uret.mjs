@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, ZIYARETCI_EPOSTA, ZIYARETCI_SIFRE
 } from './config.js';
+import { KATEGORILER, kategoriGecerli } from './kategori.js';
 
 const KOK = dirname(fileURLToPath(import.meta.url));
 const CIKTI = join(KOK, 'vitrin');
@@ -67,7 +68,7 @@ async function kitaplariGetir() {
   const hepsi = [];
   for (let bas = 0; ; bas += ADIM) {
     const cevap = await fetch(
-      `${SUPABASE_URL}/rest/v1/kitaplar?select=id,ad,yazar,raf,fiyat,notlar,foto_url,yayinevi,basim_yili,durum,aciklama&order=id.asc`,
+      `${SUPABASE_URL}/rest/v1/kitaplar?select=id,ad,yazar,raf,fiyat,notlar,foto_url,yayinevi,basim_yili,durum,kategori,aciklama&order=id.asc`,
       {
         headers: {
           apikey: SUPABASE_ANON_KEY,
@@ -170,6 +171,9 @@ background:#fff;text-decoration:none;color:inherit}
 .kart .kart-kunye{display:block;margin-top:6px;font-size:12px;line-height:1.4;color:var(--gri)}
 .kart .fiyat{margin-top:auto;padding-top:12px}
 .fiyat{display:block;font-weight:700;font-size:20px;line-height:1.2;color:var(--lacivert)}
+.kategori-nav{margin:24px 0;padding:14px 16px;border:1px solid var(--cizgi);border-radius:5px;background:var(--zemin);font-size:14px}
+.kategori-nav b{margin-right:10px}
+.kategori-nav a{display:inline-block;margin:3px 10px 3px 0}
 .urun{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:40px;align-items:start}
 .kapak{display:block;width:100%;border-radius:5px;background:var(--zemin)}
 .kapak-yok{display:grid;place-items:center;aspect-ratio:3/4;border-radius:5px;background:var(--zemin);color:var(--gri);font-size:14px}
@@ -273,8 +277,10 @@ export function kitapSayfasi(k, slug) {
 
   const mesaj = encodeURIComponent(`Merhaba, "${k.ad}" kitabı hâlâ var mı?`);
 
+  const kategoriBaglantisi = kategoriGecerli(k.kategori)
+    ? ` / <a href="${SITE}/vitrin/kategori/${k.kategori}.html">${kac(KATEGORILER[k.kategori])}</a>` : '';
   const govde = `
-<a class="geri" href="${SITE}/vitrin/">← Tüm kitaplar</a>
+<nav class="geri" aria-label="Konum"><a href="${SITE}/vitrin/">← Tüm kitaplar</a>${kategoriBaglantisi}</nav>
 <div class="urun">
 <div>${k.foto_url
     ? `<img class="kapak" src="${kac(gosterimKapagi(k.foto_url))}" alt="${kac(k.ad)} kapak görseli">`
@@ -312,7 +318,26 @@ ${k.notlar ? `<section class="nusha"><h2>Bu nüsha</h2><div class="not">${kac(k.
   return { slug, kanonik, html: sayfa({ baslik: `${k.ad}${yazar ? ' — ' + yazar : ''} · Pastelhayaller Sahaf Çorum`, aciklama, govde, kanonik, jsonld, gorsel: k.foto_url && gosterimKapagi(k.foto_url) }) };
 }
 
-function listeSayfasi(kayitlar) {
+export function kategoriGruplari(kayitlar) {
+  const gruplar = new Map();
+  for (const kayit of kayitlar) {
+    const key = kayit.k?.kategori;
+    if (!kategoriGecerli(key)) continue;
+    if (!gruplar.has(key)) gruplar.set(key, []);
+    gruplar.get(key).push(kayit);
+  }
+  return Object.keys(KATEGORILER)
+    .filter(key => gruplar.has(key))
+    .map(key => ({ key, ad: KATEGORILER[key], kayitlar: gruplar.get(key) }));
+}
+
+export function kategoriNavigasyonu(gruplar) {
+  if (!gruplar.length) return '';
+  return `<nav id="kategoriler" class="kategori-nav" aria-label="Kategoriler"><b>Konular</b>${gruplar.map(({ key, ad, kayitlar }) =>
+    ` <a href="${SITE}/vitrin/kategori/${key}.html">${kac(ad)} (${kayitlar.length})</a>`).join('')}</nav>`;
+}
+
+export function listeSayfasi(kayitlar, { baslik, aciklama, h1, ustMetin, kanonik = `${SITE}/vitrin/`, kategoriNav = '' } = {}) {
   // Fotoğraflılar önde (sort kararlı: kendi içlerinde A→Z kalır); vitrin gri kutuyla açılmasın.
   const sirali = [...kayitlar].sort((a, b) => !a.k.foto_url - !b.k.foto_url);
   const kartlar = sirali.map(({ k, slug }) => `
@@ -325,15 +350,27 @@ function listeSayfasi(kayitlar) {
 </a>`).join('').replace(/[ \t]+$/gm, '');
 
   const govde = `
-<h1>Çorum Sahaf — Kitaplarımız</h1>
-<p class="yazar">${kayitlar.length} ikinci el ve nadir kitap · Çorum'daki dükkânımızda satışta</p>
+${kategoriNav}
+<h1>${kac(h1 ?? 'Çorum Sahaf — Kitaplarımız')}</h1>
+<p class="yazar">${kac(ustMetin ?? `${kayitlar.length} ikinci el ve nadir kitap · Çorum'daki dükkânımızda satışta`)}</p>
 <div class="izgara">${kartlar}</div>`;
 
   return sayfa({
-    baslik: 'Çorum Sahaf — Kitaplarımız · Pastelhayaller Sahaf',
-    aciklama: `Çorum'da sahaf: Pastelhayaller Sahaf'ta satışta olan ${kayitlar.length} ikinci el ve nadir kitap. Bahçelievler, Sanat Sokak No:18. WhatsApp'tan ayırt, dükkândan al.`,
-    govde, kanonik: `${SITE}/vitrin/`,
+    baslik: baslik ?? 'Çorum Sahaf — Kitaplarımız · Pastelhayaller Sahaf',
+    aciklama: aciklama ?? `Çorum'da sahaf: Pastelhayaller Sahaf'ta satışta olan ${kayitlar.length} ikinci el ve nadir kitap. Bahçelievler, Sanat Sokak No:18. WhatsApp'tan ayırt, dükkândan al.`,
+    govde, kanonik,
     jsonld: { '@context': 'https://schema.org', ...ISLETME }
+  });
+}
+
+export function kategoriSayfasi({ key, ad, kayitlar }) {
+  const kanonik = `${SITE}/vitrin/kategori/${key}.html`;
+  return listeSayfasi(kayitlar, {
+    baslik: `${ad} — İkinci El Kitaplar · Pastelhayaller Sahaf Çorum`,
+    aciklama: `Çorum Pastelhayaller Sahaf'ta ${ad} kategorisindeki ${kayitlar.length} ikinci el kitap. Bahçelievler, Sanat Sokak No:18. WhatsApp'tan ayırt, dükkândan al.`,
+    h1: `${ad} — Çorum Sahaf`,
+    ustMetin: `${ad} kategorisinde ${kayitlar.length} kitap · Çorum'daki dükkânımızda satışta`,
+    kanonik,
   });
 }
 
@@ -363,7 +400,12 @@ async function uret() {
     kayitlar.push({ k, slug, kanonik });
   }
 
-  await writeFile(join(CIKTI, 'index.html'), listeSayfasi(kayitlar), 'utf8');
+  const gruplar = kategoriGruplari(kayitlar);
+  await mkdir(join(CIKTI, 'kategori'), { recursive: true });
+  for (const grup of gruplar) {
+    await writeFile(join(CIKTI, 'kategori', `${grup.key}.html`), kategoriSayfasi(grup), 'utf8');
+  }
+  await writeFile(join(CIKTI, 'index.html'), listeSayfasi(kayitlar, { kategoriNav: kategoriNavigasyonu(gruplar) }), 'utf8');
 
   const bugun = new Date().toISOString().slice(0, 10);
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -375,6 +417,7 @@ async function uret() {
 <url><loc>${SITE}/islem-rehberi.html</loc><lastmod>${bugun}</lastmod></url>
 <url><loc>${SITE}/iletisim.html</loc><lastmod>${bugun}</lastmod></url>
 ${kayitlar.map(r => `<url><loc>${r.kanonik}</loc><lastmod>${bugun}</lastmod></url>`).join('\n')}
+${gruplar.map(({ key }) => `<url><loc>${SITE}/vitrin/kategori/${key}.html</loc><lastmod>${bugun}</lastmod></url>`).join('\n')}
 </urlset>`;
   await writeFile(join(KOK, 'sitemap.xml'), sitemap, 'utf8');
   await writeFile(join(KOK, 'robots.txt'),

@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { slugla, slugHaritasi, kitapSayfasi } from './vitrin-uret.mjs';
+import { slugla, slugHaritasi, kitapSayfasi, kategoriGruplari, kategoriSayfasi, listeSayfasi, kategoriNavigasyonu } from './vitrin-uret.mjs';
 
 const KOK = dirname(fileURLToPath(import.meta.url));
 
@@ -68,3 +68,28 @@ const blankPage = kitapSayfasi({ ...described, aciklama: '  ' }, 'eski-ad-desc12
 assert.doesNotMatch(blankPage.html, /<h2>Kitap hakkında/);
 assert.equal(JSON.parse(blankPage.html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]).description, undefined);
 console.log('Vitrin description HTML/JSON-LD escaping, topic/copy separation and stable URL passed.');
+
+const categoryRecords = [
+  { k: { id: 'roman1234-full', ad: 'Rüzgâr & "Yol"', yazar: 'Yazar', kategori: 'roman' }, slug: 'ruzgar-yol-roman1234', kanonik: 'https://pastelhayaller.com/vitrin/kitap/ruzgar-yol-roman1234.html' },
+  { k: { id: 'roman5678-full', ad: 'İkinci Roman', kategori: 'roman' }, slug: 'ikinci-roman-roman5678', kanonik: 'https://pastelhayaller.com/vitrin/kitap/ikinci-roman-roman5678.html' },
+  { k: { id: 'null1234-full', ad: 'Sınıflandırılmamış', kategori: null }, slug: 'siniflandirilmamis-null1234', kanonik: 'https://pastelhayaller.com/vitrin/kitap/siniflandirilmamis-null1234.html' },
+  { k: { id: 'bad12345-full', ad: 'Geçersiz Kategori', kategori: 'uydurma' }, slug: 'gecersiz-kategori-bad12345', kanonik: 'https://pastelhayaller.com/vitrin/kitap/gecersiz-kategori-bad12345.html' },
+  { k: { id: 'empty123-full', ad: 'Boş Kategori', kategori: '' }, slug: 'bos-kategori-empty123', kanonik: 'https://pastelhayaller.com/vitrin/kitap/bos-kategori-empty123.html' },
+  { k: { id: 'empty456-full', ad: 'Boş Kategori İki', kategori: 'siir' }, slug: 'bos-kategori-empty456', kanonik: 'https://pastelhayaller.com/vitrin/kitap/bos-kategori-empty456.html' },
+];
+const gruplar = kategoriGruplari(categoryRecords);
+assert.deepEqual(gruplar.map(g => g.key), ['roman', 'siir']);
+assert.deepEqual(gruplar[0].kayitlar.map(r => r.k.ad), ['Rüzgâr & "Yol"', 'İkinci Roman']);
+assert.doesNotMatch(kategoriSayfasi(gruplar[0]), /Sınıflandırılmamış|Geçersiz Kategori|Boş Kategori/);
+assert.match(kategoriSayfasi(gruplar[0]), /<link rel="canonical" href="https:\/\/pastelhayaller\.com\/vitrin\/kategori\/roman\.html">/);
+assert.match(kategoriSayfasi(gruplar[0]), /href="https:\/\/pastelhayaller\.com\/vitrin\/kitap\/ruzgar-yol-roman1234\.html"/);
+assert.match(kategoriSayfasi(gruplar[0]), /Rüzgâr &amp; &quot;Yol&quot;/);
+assert.match(listeSayfasi(categoryRecords, { kategoriNav: kategoriNavigasyonu(gruplar) }), /id="kategoriler"/);
+assert.match(kategoriNavigasyonu(gruplar), /roman\.html">Roman \(2\)/);
+assert.match(listeSayfasi(categoryRecords), /siniflandirilmamis-null1234\.html/);
+assert.match(kitapSayfasi({ ...categoryRecords[0].k }, categoryRecords[0].slug).html, /kategori\/roman\.html/);
+console.log('Kategori üyeliği, dışlama, kaçış, canonical ve gezinme geçti.');
+
+assert.deepEqual(kategoriGruplari([]), []);
+assert.equal(kategoriNavigasyonu([]), "");
+assert.deepEqual(kategoriGruplari([{ k: { kategori: "__proto__" } }]), []);
