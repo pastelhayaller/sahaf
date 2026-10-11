@@ -868,7 +868,7 @@ body[data-rol="ziyaretci"] .storefront-promo { display: grid; grid-template-colu
 .promo-kapaklar button:nth-child(1) { transform: rotate(-9deg) translateY(8px); }
 .promo-kapaklar button:nth-child(2) { transform: translateY(-11px); }
 .promo-kapaklar button:nth-child(3) { transform: rotate(9deg) translateY(8px); }
-.promo-kapaklar img { display: block; width: 100%; max-height: 173px; object-fit: contain; filter: drop-shadow(3px 7px 5px #19344a26); }
+.promo-kapaklar img { display: block; width: 100%; height: auto; max-height: 173px; object-fit: contain; filter: drop-shadow(3px 7px 5px #19344a26); }
 body[data-rol="ziyaretci"] .storefront-promo .alim-cagri {
   display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 16px;
   width: 100%; padding: 28px 24px; margin: 0; background: #e4f1ec; border: 0; border-radius: 7px;

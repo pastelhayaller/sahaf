@@ -30,7 +30,7 @@
 <link rel="preload" href="fonts/inter-tight-400-700-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/inter-tight-400-700-latin-ext.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/fonts.css?v=001">
-<link rel="stylesheet" href="styles.css?v=024">
+<link rel="stylesheet" href="styles.css?v=025">
 <link rel="stylesheet" href="bilgilendirme.css?v=023">
 </head>
 <!-- Ziyaretçi varsayılan: giriş ağ turları sürerken müşteri boş/krem ekran görmesin.
@@ -119,7 +119,7 @@
     </div>
     <div class="baslik-eylemler">
       <button id="btn-teklifler" class="btn sade teklifler-dugme" type="button" hidden>Teklifler</button>
-      <button id="btn-hesap" class="btn sade hesap-dugme" type="button" hidden>Giriş yap</button>
+      <button id="btn-hesap" class="btn sade hesap-dugme" type="button">Giriş yap</button>
       <button id="btn-sepet" class="btn sepet-dugme" type="button">Sepet <span id="sepet-sayi">0</span></button>
       <button id="btn-cikis" class="btn sade cikis-dugme" type="button" hidden aria-label="Çıkış" title="Çıkış">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
@@ -200,7 +200,7 @@
       </div>
       <div id="vitrin-kapaklari" class="promo-kapaklar" aria-label="Raflarımızdan kitaplar"></div>
     </div>
-    <button id="btn-alim-teklif-ac" class="alim-cagri" type="button" hidden>
+    <button id="btn-alim-teklif-ac" class="alim-cagri" type="button">
       <span>Kitaplarına yeni bir okur bulalım.</span>
       <strong>İkinci el kitaplarını alıyoruz.</strong>
       <span class="alim-eylem">Fotoğraf gönder, fiyat iste</span>
@@ -214,7 +214,7 @@
   <div class="arac-cubugu">
     <p id="ara-durum" class="durum" aria-live="polite"></p>
     <label for="siralama">Sırala</label>
-    <select id="siralama"></select>
+    <select id="siralama" aria-label="Sırala"></select>
   </div>
 
   <button id="btn-kuyruk-baslat" class="btn ikincil tamamla-dugme" type="button" hidden></button>
