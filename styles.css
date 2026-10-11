@@ -943,6 +943,7 @@ body[data-rol="ziyaretci"] a:focus-visible { outline: 2px solid #19344a; outline
 body[data-rol="ziyaretci"] .iskelet { display: block; min-height: 360px; padding: 0; border: 1px solid #e3e8ed; border-radius: 5px; background: #f4f6f8; }
 body[data-rol="ziyaretci"] .iskelet i { display: none; }
 @media (max-width: 1000px) {
+  body[data-rol="ziyaretci"] .storefront-nav { flex-wrap: wrap; gap: 4px 20px; }
   body[data-rol="ziyaretci"] .storefront-header { grid-template-columns: 220px minmax(0, 1fr) auto; gap: 16px; }
   body[data-rol="ziyaretci"] #sonuclar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .promo-metin h2 { font-size: 29px; }
@@ -950,6 +951,7 @@ body[data-rol="ziyaretci"] .iskelet i { display: none; }
   .promo-kapaklar { gap: 5px; }
 }
 @media (max-width: 700px) {
+  body[data-rol="ziyaretci"] .storefront-nav .raf-kisayol { display: none; }
   body[data-rol="ziyaretci"] #ekran-ara { padding: 0 16px 32px; }
   body[data-rol="ziyaretci"] .storefront-top { display: none; }
   body[data-rol="ziyaretci"] .storefront-top a { display: none; }
@@ -1038,6 +1040,51 @@ body[data-rol="ziyaretci"] .dizin-arama { display: flex; align-items: center; ga
   .dizin-arama label { grid-column: 1 / -1; }
   .dizin-arama input { min-width: 0; width: 100%; }
   body[data-rol="ziyaretci"] #katalog-aciklama:not(:empty) { display: block; margin-top: 8px; }
+}
+
+/* Marka işareti ve kategori menüsü: kitapçıya ait, küçük ve okunaklı. */
+.marka-amblem { display: none; }
+#ekran-ara .marka .marka-palavra, #ekran-ara .marka .marka-isim { font: inherit; text-transform: none; letter-spacing: -.015em; }
+body[data-rol="ziyaretci"] .marka-ana { flex-direction: row; align-items: center; gap: 10px; }
+body[data-rol="ziyaretci"] .marka-ana .marka-amblem { display: grid; place-items: center; flex: 0 0 36px; width: 36px; height: 30px; margin: 0; color: #19344a; }
+body[data-rol="ziyaretci"] .marka-ana .marka-amblem svg { display: block; width: 36px; height: 30px; }
+body[data-rol="ziyaretci"] #ekran-ara .marka-ana .marka-palavra { display: flex; flex-direction: column; gap: 0; min-width: 0; margin: 0; font: inherit; font-weight: 600; letter-spacing: -.015em; }
+body[data-rol="ziyaretci"] #ekran-ara .marka-ana .marka-isim { margin: 0; color: #19344a; font: inherit; letter-spacing: -.015em; }
+body[data-rol="ziyaretci"] #ekran-ara .marka-ana .marka-alt { margin: 5px 0 0; color: #c44454; font: 600 12px/1 var(--govde-yazi); letter-spacing: .12em; }
+.kitap-menu > summary { gap: 8px; }
+.kitap-menu > summary:focus-visible { outline: 2px solid #19344a; outline-offset: 3px; }
+.menu-chevron { width: 17px; height: 17px; transition: transform .14s ease; }
+.kitap-menu[open] > summary .menu-chevron { transform: rotate(180deg); }
+
+@media (max-width: 700px) {
+  body[data-rol="ziyaretci"] #ekran-ara .marka { font-size: 21px; }
+  body[data-rol="ziyaretci"] .hesap-dugme { padding: 0 4px; min-height: 44px; }
+  body[data-rol="ziyaretci"] .marka-ana { gap: 6px; }
+  body[data-rol="ziyaretci"] .marka-ana .marka-amblem { flex-basis: 28px; width: 28px; }
+  body[data-rol="ziyaretci"] .marka-ana .marka-amblem svg { width: 28px; }
+}
+@media (min-width: 1500px) {
+  body[data-rol="ziyaretci"] .storefront-promo { position: relative; isolation: isolate; overflow: visible; }
+  body[data-rol="ziyaretci"] .storefront-promo::before,
+  body[data-rol="ziyaretci"] .storefront-promo::after {
+    content: ''; position: absolute; top: 0; bottom: 0;
+    width: min(260px, calc((100vw - 1240px) / 2 - 32px));
+    background: url("assets/kitap-kanatlari.webp") center / contain no-repeat;
+    pointer-events: none; z-index: -1;
+  }
+  body[data-rol="ziyaretci"] .storefront-promo::before { left: calc((1240px - 100vw) / 2 + 16px); }
+  body[data-rol="ziyaretci"] .storefront-promo::after { right: calc((1240px - 100vw) / 2 + 16px); transform: scaleX(-1); }
+}
+
+@media (max-width: 370px) {
+  body[data-rol="ziyaretci"] .storefront-header { gap: 8px; }
+  body[data-rol="ziyaretci"] #ekran-ara .marka { font-size: 19px; }
+  body[data-rol="ziyaretci"] .marka-ana { gap: 6px; }
+  body[data-rol="ziyaretci"] .marka-ana .marka-amblem { display: none; }
+  body[data-rol="ziyaretci"] .marka-ana .marka-alt { font-size: 10px; letter-spacing: .1em; }
+  body[data-rol="ziyaretci"] .hesap-dugme { padding: 0 5px; font-size: 12px; }
+  body[data-rol="ziyaretci"] .sepet-dugme { padding: 0 6px; font-size: 12px; }
+  body[data-rol="ziyaretci"] .sepet-dugme span { min-width: 18px; height: 18px; margin-left: 4px; font-size: 10px; }
 }
 
 .detay-aciklama, .detay-nusha { margin-top: 24px; }

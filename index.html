@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#f5eee0">
+<meta name="theme-color" content="#ffffff">
 <!-- Google Search Console dogrulamasi — sitemap gonderimi buna bagli, SILME. -->
 <meta name="google-site-verification" content="fXB_8wkSUHt0STfb36E0XPR5gwMpGWzPuqjLgjUuu4E">
 <title>Pastelhayaller Sahaf · Çorum Sahaf — İkinci El ve Nadir Kitap</title>
@@ -28,15 +28,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..700,0..100,0..1&family=Inter+Tight:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=021">
-<link rel="stylesheet" href="bilgilendirme.css?v=019">
+<link rel="stylesheet" href="styles.css?v=023">
+<link rel="stylesheet" href="bilgilendirme.css?v=023">
 </head>
 <!-- Ziyaretçi varsayılan: giriş ağ turları sürerken müşteri boş/krem ekran görmesin.
      Personel oturumu roluUygula() ile kendi temasına geçer. -->
 <body data-rol="ziyaretci">
 <aside id="depolama-bilgisi" class="depolama-bilgisi" aria-label="Tarayıcı depolaması hakkında" hidden>
-  <p>Sepetinizin ve oturumunuzun çalışması için cihazınızda kayıt tutuyoruz. Reklam ve analiz amaçlı takip kullanmıyoruz. <a href="/cerez-politikasi.html">Çerez bilgilendirmesi</a></p>
-  <button id="depolama-bilgisi-kapat" type="button">Bilgilendirmeyi kapat</button>
+  <p>Sepet ve oturum için cihazınızda kayıt tutuyoruz. Reklam ve analiz takibi kullanmıyoruz. <a href="/cerez-politikasi.html">Çerez bilgilendirmesi</a></p>
+  <button id="depolama-bilgisi-kapat" type="button">Anladım</button>
 </aside>
 
 <div id="deneme-serit" class="serit" hidden>
@@ -103,7 +103,16 @@
   <header class="baslik">
     <span id="rol-rozet" class="rozet" hidden>Ziyaretçi</span>
     <div class="marka-blok">
-      <h1 class="marka kucuk"><a class="marka-ana" href="./" data-rota>Pastelhayaller<span>Sahaf</span></a></h1>
+      <h1 class="marka kucuk"><a class="marka-ana" href="./" data-rota>
+        <span class="marka-amblem" aria-hidden="true">
+          <svg viewBox="0 0 40 32" fill="none" focusable="false">
+            <path d="M3 7.5c5.3-.2 10.3 1.1 15 4v16c-4.7-2.9-9.7-4.2-15-4V7.5Z" fill="#19344a"/>
+            <path d="M37 7.5c-5.3-.2-10.3 1.1-15 4v16c4.7-2.9 9.7-4.2 15-4V7.5Z" fill="#c44454"/>
+            <path d="M20 11.5v16M4 9.5c4.7-.1 9.4 1.1 14 3.7M36 9.5c-4.7-.1-9.4 1.1-14 3.7" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="marka-palavra"><span class="marka-isim">Pastelhayaller</span><span class="marka-alt">Sahaf</span></span>
+      </a></h1>
       <span class="magaza-konum">Çorum · Bahçelievler</span>
     </div>
     <div class="baslik-eylemler">
@@ -132,7 +141,7 @@
   </div>
   <nav class="storefront-nav customer-only" aria-label="Kitap mağazası">
     <details id="kitap-menu" class="kitap-menu">
-      <summary>Kitap <span aria-hidden="true">⌄</span></summary>
+      <summary>Kategoriler <svg class="menu-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"></path></svg></summary>
       <div class="mega-menu">
         <div><h2>Kitapları keşfet</h2>
           <a href="?bolum=kitaplar" data-rota>Tüm kitaplar</a>
@@ -172,6 +181,9 @@
     </details>
     <a href="?bolum=kitaplar" data-rota>Tüm kitaplar</a>
     <a href="?bolum=yeni-gelenler" data-rota>Yeni gelenler</a>
+    <a class="raf-kisayol" href="?bolum=kategori&amp;ad=roman" data-rota>Roman</a>
+    <a class="raf-kisayol" href="?bolum=kategori&amp;ad=siir" data-rota>Şiir</a>
+    <a class="raf-kisayol" href="?bolum=kategori&amp;ad=tarih" data-rota>Tarih</a>
     <a href="?bolum=yazarlar" data-rota>Yazarlar</a>
     <a href="?bolum=yayinevleri" data-rota>Yayınevleri</a>
     <a href="#magaza-bilgileri">Dükkânımız</a>
@@ -486,9 +498,9 @@
   <p><a href="vitrin/">Tüm kitapların listesi</a> · <a href="vitrin/#kategoriler">Kategorilere göre kitaplar</a></p>
   <p>Elindeki ikinci el kitapları satmak için <a href="/iletisim.html#kitap-alimi">kitap alımı ve iletişim bilgilerine</a> bakabilirsin.</p>
 <nav class="bilgi-baglantilari" aria-label="Bilgilendirme">
-  <a href="/gizlilik.html">Gizlilik ve kişisel veriler</a>
-  <a href="/cerez-politikasi.html">Çerezler ve tarayıcı depolaması</a>
-  <a href="/islem-rehberi.html">İşlem rehberi</a>
+  <a href="/gizlilik.html">KVKK aydınlatma metni</a>
+  <a href="/cerez-politikasi.html">Çerez politikası</a>
+  <a href="/islem-rehberi.html">Ayırtma ve teslim</a>
   <a href="/iletisim.html">İletişim</a>
 </nav>
 </footer>
