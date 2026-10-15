@@ -13,7 +13,8 @@ for (const file of files) {
   const html = await read(file);
   assert(html.includes('href="https://pastelhayaller.com/' + file + '"'), file + ' canonical');
   assert(!html.includes('noindex'));
-  assert(!html.includes('<script'), 'Information pages need no app auth or storage scripts');
+  assert(html.includes('/analiz.js?v=001'));
+  assert(!html.includes('src="app.js'));
   assert.equal((html.match(/<h1>/g) || []).length, 1);
   assert(html.includes('Piribaba Çamlığı, Bahçelievler Mah., Sanat Sk. No:18, 19200 Çorum Merkez/Çorum'));
   assert(html.includes('Pazartesi–Cumartesi 10:00–17:00 · Pazar kapalı'));
@@ -38,27 +39,5 @@ for (const [field, min, max] of [['ad_soyad', 2, 120], ['iletisim', 5, 160], ['k
 }
 assert.equal([...alimTeklifiDogrula({ ...valid, ad_soyad: '😀'.repeat(120) }).ad_soyad].length, 120, 'Postgres char_length counts code points');
 
-const bannerSource = await read('depolama-bilgisi.js');
-const key = 'pastelhayaller_depolama_bilgisi_kapatildi';
-const policy = await read('cerez-politikasi.html');
-assert(policy.includes('Bu sekmenin tarayıcı oturumu boyunca'));
-assert(policy.includes('Otomatik süre sonu yoktur'));
-for (const text of [policy, await read('gizlilik.html')]) {
-  assert.doesNotMatch(text, /Supabase|GitHub|jsDelivr|Google Fonts|localStorage|sessionStorage|auth-token|pastelhayaller_ziyaretci|pastelhayaller_depolama|EXIF|24 saat/);
-}
-assert(app.includes('Çerez bilgilendirmesi'));
-assert.doesNotMatch(app, /Supabase/);
-for (const mode of ['first', 'closed', 'blocked']) {
-  let listener, written;
-  const banner = { hidden: true };
-  const button = { addEventListener: (event, fn) => { assert.equal(event, 'click'); listener = fn; } };
-  vm.runInNewContext(bannerSource, {
-    document: { getElementById: id => id === 'depolama-bilgisi' ? banner : button },
-    sessionStorage: { getItem: k => { assert.equal(k, key); if (mode === 'blocked') throw Error('Blocked'); return mode === 'closed' ? '1' : null; }, setItem: (k, value) => { if (mode === 'blocked') throw Error('Blocked'); written = [k, value]; } },
-  });
-  assert.equal(banner.hidden, mode === 'closed');
-  listener();
-  assert.equal(banner.hidden, true);
-  if (mode !== 'blocked') assert.deepEqual(written, [key, '1']);
-}
-console.log('Bilgilendirme: 4 indexlenebilir sayfa, canonical/footer/sitemap bağlantıları, form veri sınırları ve depolama bildirimi geçti.');
+assert((await read('cerez-politikasi.html')).includes('180 gün'));
+console.log('Bilgi sayfaları, canonical/footer/sitemap bağlantıları ve form veri sınırları geçti.');

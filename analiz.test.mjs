@@ -1,0 +1,37 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
+const source = readFileSync(new URL('analiz.js',import.meta.url),'utf8');
+function ortam({kayit=null,engelli=false,kimlik='G-TEST1234',rol='ziyaretci'}={}) {
+  const scripts=[],writes=[],cookies=[],clicks={},storage={};
+  const buttons = Object.fromEntries(['hayir','evet','tercih'].map(k=>[k,{focus(){},addEventListener(e,fn){clicks[k]=fn;}}]));
+  const kart={hidden:false,setAttribute(){},querySelector(s){return buttons[s.includes('hayir')?'hayir':s.includes('evet')?'evet':'hayir'];}};
+  const doc={body:{dataset:{rol},appendChild(){}},head:{appendChild(el){if(el.src)scripts.push(el.src);}},referrer:'https://example.com/?email=private@example.com',createElement(tag){return tag==='aside'?kart:{};},querySelectorAll(){return [buttons.tercih];},addEventListener(e,fn){storage.click=fn;}};
+  Object.defineProperty(doc,'cookie',{get(){return '_ga=old; _ga_TEST1234=old; session=keep';},set(v){cookies.push(v);}});
+  const win={addEventListener(e,fn){storage[e]=fn;}};
+  let reloads=0;
+  const context={window:win,document:doc,location:{origin:'https://pastelhayaller.com',hostname:'pastelhayaller.com',pathname:'/',reload(){reloads++;}},localStorage:{getItem(){if(engelli)throw Error();return kayit;},setItem(k,v){if(engelli)throw Error();writes.push([k,v]);}},Date,URL};
+  vm.runInNewContext(source.replace(/const kimlik = '[^']*';/,`const kimlik = '${kimlik}';`),context);
+  return {win,scripts,writes,cookies,clicks,storage,kart,reloads:()=>reloads};
+}
+const first=ortam(); assert.equal(first.scripts.length,0); first.win.pastelOlcum('view_item'); assert.equal(first.win.dataLayer,undefined);
+first.clicks.hayir(); assert.equal(first.scripts.length,0); assert.equal(first.kart.hidden,true);
+first.clicks.tercih(); assert.equal(first.kart.hidden,false);
+first.clicks.evet(); assert.equal(first.scripts.length,1);
+first.clicks.evet(); assert.equal(first.scripts.length,1,'Tek Google etiketi');
+const events=()=>first.win.dataLayer.map(x=>Array.from(x)).filter(x=>x[0]==='event');
+assert.equal(events().length,1);
+first.win.pastelOlcum('add_to_cart',{item_id:'abc12345',email:'private@example.com',text:'mesaj',kitap_sayisi:3});
+assert.equal(events().at(-1)[2].items[0].item_id,'abc12345');
+assert(!JSON.stringify(events()).includes('private')); assert(!JSON.stringify(events()).includes('mesaj'));
+assert.equal(events()[0][2].page_location,'https://pastelhayaller.com/');
+assert.equal(events()[0][2].page_referrer,'https://example.com');
+const before=events().length; first.win.pastelOlcum('purchase'); assert.equal(events().length,before,'Satış uydurulmaz');
+first.clicks.hayir(); assert.equal(first.reloads(),1); assert(first.cookies.length>0); assert(!first.cookies.some(c=>c.startsWith('session=')));
+first.win.pastelOlcum('view_item'); assert.equal(events().length,before,'Geri çekilince olay yok');
+for(const kayit of [null,'bad',JSON.stringify({izin:true,son:0}),JSON.stringify({izin:false,son:Date.now()+100000})]) assert.equal(ortam({kayit}).scripts.length,0);
+assert.equal(ortam({kayit:JSON.stringify({izin:true,son:Date.now()+100000})}).scripts.length,1);
+const blocked=ortam({engelli:true}); blocked.clicks.evet(); assert.equal(blocked.scripts.length,1);
+const off=ortam({kimlik:''}); off.clicks.evet(); assert.equal(off.scripts.length,0);
+const staff=ortam({rol:'yonetici'}); staff.clicks.evet(); assert.equal(staff.win.dataLayer.filter(x=>x[0]==='event').length,0);
+console.log('Analiz: varsayılan ret, kabul/ret/değiştirme, eski/bozuk kayıt, engelli depolama, kişisel veri filtreleme, geri çekme ve personel olayları geçti.');

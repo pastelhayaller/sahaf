@@ -304,6 +304,7 @@ function detayAc(k, odak) {
   seciliKitap = k;
   detayOdak = odak;
   git('detay', { kitap: k });
+  window.pastelOlcum?.('view_item', { item_id: String(k.id).slice(0, 8) });
 }
 
 function detayCiz() {
@@ -352,6 +353,7 @@ function sepeteEkle(k) {
   if (sepet.some(x => x.id === k.id)) return;
   sepet.push({ id: k.id, ad: k.ad, yazar: k.yazar, fiyat: k.fiyat, raf: k.raf, foto_url: k.foto_url || null });
   sepetKaydet(); sepetRozetiniYaz();
+  window.pastelOlcum?.('add_to_cart', { item_id: String(k.id).slice(0, 8) });
   const detayDugmesi = $('#btn-detay-sepet');
   if (detayDugmesi && seciliKitap?.id === k.id) { detayDugmesi.disabled = true; detayDugmesi.textContent = 'Sepette'; }
   bildir(`✓ «${k.ad}» sepete eklendi`);
@@ -383,6 +385,8 @@ function sepetiCiz() {
 function sepetiAc() { sepetiCiz(); git('sepet'); }
 
 function whatsappRezervasyon() {
+  if (!sepet.length) return;
+  window.pastelOlcum?.('whatsapp_click', { kaynak: 'sepet', kitap_sayisi: sepet.length });
   const mesaj = rezervasyonMetni(sepet, paraYaz);
   window.open(`https://wa.me/${WHATSAPP_NUMARASI}?text=${encodeURIComponent(mesaj)}`, '_blank', 'noopener');
 }

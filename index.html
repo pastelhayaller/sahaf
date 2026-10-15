@@ -36,10 +36,6 @@
 <!-- Ziyaretçi varsayılan: giriş ağ turları sürerken müşteri boş/krem ekran görmesin.
      Personel oturumu roluUygula() ile kendi temasına geçer. -->
 <body data-rol="ziyaretci">
-<aside id="depolama-bilgisi" class="depolama-bilgisi" aria-label="Tarayıcı depolaması hakkında" hidden>
-  <p>Sepet ve oturum için cihazınızda kayıt tutuyoruz. Reklam ve analiz takibi kullanmıyoruz. <a href="/cerez-politikasi.html">Çerez bilgilendirmesi</a></p>
-  <button id="depolama-bilgisi-kapat" type="button">Anladım</button>
-</aside>
 
 <div id="deneme-serit" class="serit" hidden>
   Deneme modu — veriler sadece bu cihazda saklanıyor.
@@ -505,9 +501,11 @@
   <a href="/islem-rehberi.html">Ayırtma ve teslim</a>
   <a href="/iletisim.html">İletişim</a>
 </nav>
+<p class="sosyal-baglantilar"><a href="https://www.instagram.com/pastelhayallersanat/" target="_blank" rel="noopener noreferrer">Instagram · @pastelhayallersanat</a></p>
+<button type="button" data-analiz-tercihi>Çerez tercihleri</button>
 </footer>
 
-<script src="depolama-bilgisi.js?v=019" defer></script>
-<script type="module" src="app.js?v=023"></script>
+<script type="module" src="app.js?v=026"></script>
+<script src="/analiz.js?v=001" defer></script>
 </body>
 </html>
