@@ -224,9 +224,9 @@ function sayfa({ baslik, aciklama, govde, kanonik, jsonld, gorsel }) {
 <meta property="og:type" content="website">
 <meta property="og:url" content="${kac(kanonik)}">
 ${gorsel ? `<meta property="og:image" content="${kac(gorsel)}">\n` : ''}
-<link rel="stylesheet" href="/fonts.css?v=001">
+<link rel="stylesheet" href="/fonts.min.css?v=030">
 <style>${STIL}</style>
-<link rel="stylesheet" href="/bilgilendirme.css?v=019">
+<link rel="stylesheet" href="/bilgilendirme.min.css?v=030">
 ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, '\\u003c')}</script>` : ''}
 </head>
 <body>

@@ -1,0 +1,10 @@
+{
+  "type": "module",
+  "scripts": {
+    "build": "node client-build.mjs",
+    "test": "node client-build.test.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
