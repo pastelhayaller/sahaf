@@ -24,5 +24,5 @@ console.log('Client minification outputs parse, preserve imports, and reduce CSS
 // Published artifacts must be rebuilt whenever readable source changes.
 for (const [source, output, loader] of [['app.js','app.min.js','js'], ...assets.map(([a,b]) => [a,b,'css'])]) {
   const expected = await transform(await readFile(source, 'utf8'), {loader, minify:true, legalComments:'eof'});
-  assert.equal(await readFile(output, 'utf8'), expected.code, output + ' is stale');
+  assert.equal((await readFile(output, 'utf8')).replaceAll('\r\n','\n'), expected.code, output + ' is stale');
 }
