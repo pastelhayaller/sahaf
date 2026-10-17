@@ -105,11 +105,16 @@ function sepetRozetiniYaz() {
   $('#detay-sepet-sayi').textContent = sepet.length;
 }
 
-// eylem: { etiket, fn } — geri sayımsız tek düğme (ör. "Sepete git").
+// eylem: { etiket, fn, baslik?, kapak? } — sağ üstte kart, geri sayımsız tek düğme (ör. "Sepete git").
 function bildir(metin, geriAlFn, eylem) {
   clearTimeout(bildirimZaman);
   clearInterval(bildirimSayac);
-  $('#bildirim-metin').textContent = metin;
+  $('#bildirim').classList.toggle('kart-bildirim', !!eylem);
+  const kapak = $('#bildirim-kapak');
+  kapak.hidden = !eylem?.kapak;
+  if (eylem?.kapak) kapak.src = eylem.kapak;
+  if (eylem?.baslik) $('#bildirim-metin').innerHTML = `<strong>${escapeHtml(eylem.baslik)}</strong><span>${escapeHtml(metin)}</span>`;
+  else $('#bildirim-metin').textContent = metin;
   const btn = $('#bildirim-geri');
   const fn = geriAlFn || eylem?.fn;
   btn.hidden = !fn;
@@ -367,7 +372,7 @@ function sepeteEkle(k) {
   const detayDugmesi = $('#btn-detay-sepet');
   if (detayDugmesi && seciliKitap?.id === k.id) { detayDugmesi.disabled = true; detayDugmesi.textContent = 'Sepette'; }
   listeyiTazele();
-  bildir(`✓ «${k.ad}» sepete eklendi`, null, { etiket: 'Sepete git', fn: sepetiAc });
+  bildir(k.ad, null, { etiket: 'Sepete git', fn: sepetiAc, baslik: '✓ Sepete eklendi', kapak: k.foto_url ? kucukKapakUrl(k.foto_url) : null });
 }
 
 function sepettenCikar(id) {
