@@ -20,6 +20,7 @@ import {
   SUPABASE_URL, SUPABASE_ANON_KEY, ZIYARETCI_EPOSTA, ZIYARETCI_SIFRE
 } from './config.js';
 import { KATEGORILER, kategoriGecerli } from './kategori.js';
+import { kategoriRehberi, ilgiliKitaplar } from './kesif.js';
 
 const KOK = dirname(fileURLToPath(import.meta.url));
 const CIKTI = join(KOK, 'vitrin');
@@ -145,6 +146,17 @@ const fiyatYaz = f =>
 
 // Müşteri uygulamasının (index.html, ziyaretçi teması) renk ve yazı dili; iki yüz tek mağaza.
 const STIL = `
+/* Category guides and lightweight discovery links share the storefront language. */
+.kategori-rehber{margin:18px 0 24px;max-width:850px;color:#455866;font-size:15px;line-height:1.65}
+.kategori-rehber p{margin:0 0 10px}
+.kategori-rehber nav{display:flex;gap:8px;flex-wrap:wrap}
+.kategori-rehber nav a{display:inline-flex;align-items:center;min-height:44px;padding:6px 12px;border:1px solid #d6dfe5;border-radius:5px;color:#19344a;text-decoration:none}
+.kitap-kesfi{margin-top:36px}.kitap-kesfi section{margin:28px 0}.kitap-kesfi h2{font-size:21px;color:#19344a;margin:0 0 14px}
+.kesif-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}
+.kesif-kitap{display:flex;flex-direction:column;gap:7px;min-width:0;padding:16px;border:1px solid #d6dfe5;border-radius:5px;background:#fff;color:#19344a;text-align:left;text-decoration:none;font:inherit;cursor:pointer;overflow-wrap:anywhere}
+.kesif-kitap span{font-size:14px;color:#455866}.kesif-kitap:hover{border-color:#19344a}.kesif-kitap:focus-visible{outline:2px solid #19344a;outline-offset:3px}
+
+
 :root{--lacivert:#19344a;--gri:#64717c;--gri-2:#455866;--zemin:#f4f6f8;--cizgi:#e3e8ed;
 --kirmizi:#c44454;--kirmizi-koyu:#a43140}
 *{box-sizing:border-box}
@@ -271,7 +283,25 @@ function kunye(k) {
     .map(([b, d]) => `<dt>${kac(b)}</dt><dd>${kac(d)}</dd>`).join('')}</dl>`;
 }
 
-export function kitapSayfasi(k, slug) {
+export function kitapKesfi(k, kayitlar) {
+  const adaylar = kayitlar.map(r => r.k);
+  const yazar = ilgiliKitaplar(k, adaylar, 'yazar');
+  const kategori = ilgiliKitaplar(k, adaylar, 'kategori', yazar);
+  const bolumler = [['Aynı yazardan',yazar],['Aynı kategoriden',kategori]].filter(([,kitaplar]) => kitaplar.length);
+  if (!bolumler.length) return '';
+  const sluglar = new Map(kayitlar.map(r => [String(r.k.id),r.slug]));
+  return '<div class="kitap-kesfi">' + bolumler.map(([baslik,kitaplar]) => '<section><h2>' + baslik + '</h2><div class="kesif-grid">' + kitaplar.map(k =>
+    '<a class="kesif-kitap" href="' + SITE + '/vitrin/kitap/' + kac(sluglar.get(String(k.id))) + '.html"><strong>' + kac(k.ad) + '</strong><span>' + kac(k.yazar) + '</span>' + (fiyatYaz(k.fiyat) ? '<span>' + kac(fiyatYaz(k.fiyat)) + '</span>' : '') + '</a>'
+  ).join('') + '</div></section>').join('') + '</div>';
+}
+
+export function kategoriRehberiHtml(key, mevcut = Object.keys(KATEGORILER)) {
+  const rehber = kategoriRehberi(key);
+  if (!rehber) return '';
+  return '<section class="kategori-rehber" aria-label="Kategori rehberi"><p>' + kac(rehber[0]) + '</p><nav aria-label="İlgili kategoriler">' + rehber[1].filter(k => mevcut.includes(k)).map(k => '<a href="' + SITE + '/vitrin/kategori/' + k + '.html">' + kac(KATEGORILER[k]) + '</a>').join('') + '</nav></section>';
+}
+
+export function kitapSayfasi(k, slug, kayitlar = []) {
   const kanonik = `${SITE}/vitrin/kitap/${slug}.html`;
   const fiyat = fiyatYaz(k.fiyat);
   const yazar = k.yazar ? `${k.yazar}` : null;
@@ -301,7 +331,8 @@ ${fiyat ? `<p class="fiyat">${kac(fiyat)}</p>` : ''}
 ${kitapAciklamasi ? `<section class="kitap-hakkinda"><h2>Kitap hakkında</h2><p>${kac(kitapAciklamasi)}</p></section>` : ''}
 ${k.notlar ? `<section class="nusha"><h2>Bu nüsha</h2><div class="not">${kac(k.notlar)}</div></section>` : ''}
 </div>
-</div>`;
+</div>
+${kitapKesfi(k,kayitlar)}`;
 
   // ponytail: fiyat yoksa offers yazmıyoruz — uydurma fiyat structured data'da yalan olur.
   const jsonld = {
@@ -343,7 +374,7 @@ export function kategoriNavigasyonu(gruplar) {
     ` <a href="${SITE}/vitrin/kategori/${key}.html">${kac(ad)} (${kayitlar.length})</a>`).join('')}</nav>`;
 }
 
-export function listeSayfasi(kayitlar, { baslik, aciklama, h1, ustMetin, kanonik = `${SITE}/vitrin/`, kategoriNav = '' } = {}) {
+export function listeSayfasi(kayitlar, { baslik, aciklama, h1, ustMetin, kanonik = `${SITE}/vitrin/`, kategoriNav = '', rehberHtml = '' } = {}) {
   // Fotoğraflılar önde (sort kararlı: kendi içlerinde A→Z kalır); vitrin gri kutuyla açılmasın.
   const sirali = [...kayitlar].sort((a, b) => !a.k.foto_url - !b.k.foto_url);
   const kartlar = sirali.map(({ k, slug }, i) => `
@@ -359,6 +390,7 @@ export function listeSayfasi(kayitlar, { baslik, aciklama, h1, ustMetin, kanonik
 ${kategoriNav}
 <h1>${kac(h1 ?? 'Çorum Sahaf — Kitaplarımız')}</h1>
 <p class="yazar">${kac(ustMetin ?? `${kayitlar.length} ikinci el ve nadir kitap · Çorum'daki dükkânımızda satışta`)}</p>
+${rehberHtml}
 <div class="izgara">${kartlar}</div>`;
 
   return sayfa({
@@ -369,11 +401,12 @@ ${kategoriNav}
   });
 }
 
-export function kategoriSayfasi({ key, ad, kayitlar }) {
+export function kategoriSayfasi({ key, ad, kayitlar }, mevcut = Object.keys(KATEGORILER)) {
   const kanonik = `${SITE}/vitrin/kategori/${key}.html`;
   return listeSayfasi(kayitlar, {
     baslik: `${ad} — İkinci El Kitaplar · Pastelhayaller Sahaf Çorum`,
     aciklama: `Çorum Pastelhayaller Sahaf'ta ${ad} kategorisindeki ${kayitlar.length} ikinci el kitap. Bahçelievler, Sanat Sokak No:18. WhatsApp'tan ayırt, dükkândan al.`,
+    rehberHtml: kategoriRehberiHtml(key,mevcut),
     h1: `${ad} — Çorum Sahaf`,
     ustMetin: `${ad} kategorisinde ${kayitlar.length} kitap · Çorum'daki dükkânımızda satışta`,
     kanonik,
@@ -399,17 +432,17 @@ async function uret() {
   await rm(CIKTI, { recursive: true, force: true });
   await mkdir(join(CIKTI, 'kitap'), { recursive: true });
 
-  const kayitlar = [];
-  for (const k of kitaplar) {
-    const { slug, kanonik, html } = kitapSayfasi(k, sluglar.get(String(k.id)));
-    await writeFile(join(CIKTI, 'kitap', `${slug}.html`), html, 'utf8');
-    kayitlar.push({ k, slug, kanonik });
+  const kayitlar = kitaplar.map(k => ({k, slug:sluglar.get(String(k.id))}));
+  for (const r of kayitlar) {
+    const { kanonik, html } = kitapSayfasi(r.k, r.slug, kayitlar);
+    r.kanonik = kanonik;
+    await writeFile(join(CIKTI, 'kitap', r.slug + '.html'), html, 'utf8');
   }
 
   const gruplar = kategoriGruplari(kayitlar);
   await mkdir(join(CIKTI, 'kategori'), { recursive: true });
   for (const grup of gruplar) {
-    await writeFile(join(CIKTI, 'kategori', `${grup.key}.html`), kategoriSayfasi(grup), 'utf8');
+    await writeFile(join(CIKTI, 'kategori', `${grup.key}.html`), kategoriSayfasi(grup, gruplar.map(g => g.key)), 'utf8');
   }
   await writeFile(join(CIKTI, 'index.html'), listeSayfasi(kayitlar, { kategoriNav: kategoriNavigasyonu(gruplar) }), 'utf8');
 

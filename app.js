@@ -1,9 +1,12 @@
 import * as db from './db.js?v=023';
 import { kucukKapakUrl, kapakSrcset, telefonDuzenle, kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER, kategoriGecerli } from './ui-helpers.js?v=031';
 
+import { kategoriRehberi, ilgiliKitaplar } from './kesif.js?v=032';
+
 const $ = (s) => document.querySelector(s);
 const ekranlar = ['giris', 'hesap', 'ara', 'detay', 'ekle', 'duzenle', 'sepet', 'alim-teklif', 'teklifler'];
 let seciliKitap = null;
+let kesifIstek = 0;
 let detayOdak = null;
 let sonSilinen = null;
 let bildirimZaman = null;
@@ -355,7 +358,8 @@ function detayCiz() {
         ${!fiyatVar(k) ? '<p class="ipucu">Güncel fiyatı WhatsApp’tan sorabilirsin.</p>' : ''}
         <button id="btn-detay-sepet" class="btn birincil" type="button">${sepet.some(x => x.id === k.id) ? 'Sepette' : 'Sepete ekle'}</button>
       </div>
-    </article>`;
+    </article>
+    <div id="detay-kesif" class="kitap-kesfi" hidden></div>`;
   if (k.foto_url) {
     const gorsel = $('#detay-icerik .detay-gorsel');
     const foto = fotoDugmesi([k.foto_url], 0, `${k.ad} kapağı`);
@@ -368,6 +372,32 @@ function detayCiz() {
   const ekle = $('#btn-detay-sepet');
   ekle.disabled = sepet.some(x => x.id === k.id);
   ekle.addEventListener('click', () => sepeteEkle(k));
+  detayKesfiYaz(k);
+}
+
+async function detayKesfiYaz(k) {
+  const istek = ++kesifIstek;
+  const kap = $('#detay-kesif');
+  const sorgular = [k.yazar ? {yazar:k.yazar} : null, kategoriGecerli(k.kategori) ? {kategori:k.kategori} : null];
+  const sonuc = await Promise.allSettled(sorgular.map(s => s ? Promise.resolve().then(() => db.listele({...s, sirala:'yeni'})) : Promise.resolve({kayitlar:[]})));
+  if (istek !== kesifIstek || seciliKitap?.id !== k.id || yoneticiMi()) return;
+  const okunan = sonuc.map(r => r.status === 'fulfilled' ? r.value.kayitlar : []);
+  const yazar = ilgiliKitaplar(k, okunan[0], 'yazar');
+  const kategori = ilgiliKitaplar(k, okunan[1], 'kategori', yazar);
+  kap.replaceChildren();
+  [["Aynı yazardan",yazar],["Aynı kategoriden",kategori]].forEach(([baslik,kitaplar]) => {
+    if (!kitaplar.length) return;
+    const bolum = document.createElement('section');
+    const h = document.createElement('h2'); h.textContent = baslik; bolum.appendChild(h);
+    const liste = document.createElement('div'); liste.className = 'kesif-grid';
+    kitaplar.forEach(kitap => {
+      const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'kesif-kitap';
+      btn.innerHTML = `<strong>${escapeHtml(kitap.ad)}</strong><span>${escapeHtml(kitap.yazar || '')}</span><span>${escapeHtml(kitapFiyatEtiketi(kitap, paraYaz))}</span>`;
+      btn.addEventListener('click', () => { detayAc(kitap,btn); window.scrollTo(0,0); }); liste.appendChild(btn);
+    });
+    bolum.appendChild(liste); kap.appendChild(bolum);
+  });
+  kap.hidden = !kap.children.length;
 }
 
 function sepeteEkle(k) {
@@ -770,6 +800,16 @@ function magazaSayfasiCiz() {
     : dizinMi ? 'Katalogda adı bulunan tüm kayıtlar. Bir isim seçerek kitaplarını gör.'
     : rota.bolum === 'ana' ? 'Aradığın kitap, belki de bu rafta.' : '';
   $('#magaza-vitrini').hidden = rota.bolum !== 'ana' || rota.sayfa !== 1;
+  const rehber = kategoriMi ? kategoriRehberi(rota.deger) : null;
+  const rehberAlan = $('#kategori-rehber'); rehberAlan.replaceChildren(); rehberAlan.hidden = !rehber;
+  if (rehber) {
+    const p = document.createElement('p'); p.textContent = rehber[0]; rehberAlan.appendChild(p);
+    const nav = document.createElement('nav'); nav.setAttribute('aria-label','İlgili kategoriler');
+    rehber[1].forEach(key => {
+      const a = document.createElement('a'); a.href = rotaUrl({...rotaOku(),bolum:'kategori',deger:key}); a.textContent = KATEGORILER[key]; rotaBagla(a); nav.appendChild(a);
+    });
+    rehberAlan.appendChild(nav);
+  }
   const yol = $('#magaza-yol');
   yol.replaceChildren();
   yol.hidden = rota.bolum === 'ana';

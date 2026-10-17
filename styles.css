@@ -1139,3 +1139,13 @@ body.cekmece-acik #ekran-sepet {
 #ekran-sepet .sepet-kalem > * { align-self: center; }
 #ekran-sepet .sepet-kalem > .btn { min-height: 34px; border: 1px solid #c8d0d8; border-radius: 4px; color: #455866; font-size: 13px; }
 #ekran-sepet .sepet-kalem > .btn:hover { border-color: #c44454; color: #c44454; }
+
+/* Category guides and lightweight discovery links share the storefront language. */
+.kategori-rehber{margin:18px 0 24px;max-width:850px;color:#455866;font-size:15px;line-height:1.65}
+.kategori-rehber p{margin:0 0 10px}
+.kategori-rehber nav{display:flex;gap:8px;flex-wrap:wrap}
+.kategori-rehber nav a{display:inline-flex;align-items:center;min-height:44px;padding:6px 12px;border:1px solid #d6dfe5;border-radius:5px;color:#19344a;text-decoration:none}
+.kitap-kesfi{margin-top:36px}.kitap-kesfi section{margin:28px 0}.kitap-kesfi h2{font-size:21px;color:#19344a;margin:0 0 14px}
+.kesif-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}
+.kesif-kitap{display:flex;flex-direction:column;gap:7px;min-width:0;padding:16px;border:1px solid #d6dfe5;border-radius:5px;background:#fff;color:#19344a;text-align:left;text-decoration:none;font:inherit;cursor:pointer;overflow-wrap:anywhere}
+.kesif-kitap span{font-size:14px;color:#455866}.kesif-kitap:hover{border-color:#19344a}.kesif-kitap:focus-visible{outline:2px solid #19344a;outline-offset:3px}

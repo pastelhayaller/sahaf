@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 import * as helpers from './ui-helpers.js';
+import * as kesifHelpers from './kesif.js';
 
 const money = f => `${f} ₺`;
 assert.deepEqual(helpers.kitapKunye({ yayinevi: 'İletişim', basim_yili: 1998, durum: 'İyi' }), ['İletişim', 1998, 'İyi']);
@@ -59,7 +60,7 @@ const history = {
   replaceState(value, unused, url) { if (position < 0) position = 0; entries[position] = structuredClone(value); setUrl(url); entryUrls[position] = location.href; },
 };
 const context = vm.createContext({
-  ...helpers, console, history, URL, URLSearchParams, HTMLImageElement: Element,
+  ...helpers, ...kesifHelpers, console, history, URL, URLSearchParams, HTMLImageElement: Element,
   document: { querySelector: get, querySelectorAll: () => [], createElement: tag => new Element(tag), createDocumentFragment: () => new Element(), contains: () => false, addEventListener: (name, fn) => { documentEvents[name] = fn; }, body: new Element('body') },
   window: { location, addEventListener: (name, fn) => { windowEvents[name] = fn; }, scrollTo() {}, open() {} },
   localStorage: { getItem: () => '[]', setItem() {} },
@@ -286,3 +287,25 @@ for (const giris of ['0532 123 45 67', '+90 532 123 45 67', '5321234567', '0532-
 }
 for (const gecersiz of ['0312 123 45 67', '12345', '', null]) assert.equal(helpers.telefonDuzenle(gecersiz), null, String(gecersiz));
 console.log('Telefon: TR cep numarası biçimleri tek biçime iniyor, sabit hat reddediliyor.');
+
+// Discovery survives partial failures and ignores a late response from another book.
+run("rol='ziyaretci'; seciliKitap={id:'discover',ad:'Başlangıç',yazar:'A',kategori:'roman'}; db.listele=async p=>p.yazar ? {kayitlar:[{id:'other',ad:'Diğer kitap',yazar:'A',kategori:'roman'}]} : {kayitlar:[{id:'cat',ad:'Kategoriden',yazar:'B',kategori:'roman'}]};");
+await run('detayKesfiYaz(seciliKitap)');
+assert.equal(get('#detay-kesif').children.length,2);
+assert.equal(get('#detay-kesif').hidden,false);
+let discoveryScroll;context.window.scrollTo=(x,y)=>{discoveryScroll=[x,y];};run("acikEkran='detay';");
+get('#detay-kesif').children[0].children[1].children[0].listeners.click();
+assert.deepEqual(discoveryScroll,[0,0],'Another detail must open at its title even when clicked near the bottom');
+assert.equal(history.state.kitap.id,'other');
+run("seciliKitap={id:'partial',ad:'Başlangıç',yazar:'A',kategori:'roman'}; db.listele=async p=>{if(p.yazar)throw Error('offline');return {kayitlar:[{id:'cat',ad:'Kategoriden',yazar:'B',kategori:'roman'}]};};");
+await run('detayKesfiYaz(seciliKitap)');
+assert.equal(get('#detay-kesif').children.length,1);
+assert.equal(get('#detay-kesif').children[0].children[0].textContent,'Aynı kategoriden');
+let releaseOld;context.oldResult=new Promise(resolve=>{releaseOld=resolve;});
+run("seciliKitap={id:'old',ad:'Eski',yazar:'A'};db.listele=()=>oldResult;");
+const oldRequest=run('detayKesfiYaz(seciliKitap)');await Promise.resolve();
+run("seciliKitap={id:'new',ad:'Yeni',yazar:'B'};db.listele=async()=>({kayitlar:[{id:'latest',ad:'Güncel',yazar:'B'}]});");
+await run('detayKesfiYaz(seciliKitap)');releaseOld({kayitlar:[{id:'stale',ad:'Eski sonuç',yazar:'A'}]});await oldRequest;
+assert.match(get('#detay-kesif').children[0].children[1].children[0].innerHTML,/Güncel/);
+run("db.listele=async()=>({kayitlar:[]});");await run('detayKesfiYaz(seciliKitap)');assert.equal(get('#detay-kesif').hidden,true);
+console.log('Keşif UI: detay açma, kısmi hata, eski yanıt dışlama ve boş alan gizleme geçti.');
