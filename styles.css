@@ -1108,3 +1108,7 @@ body.cekmece-acik #ekran-sepet {
 .cekmece-devam { display: block; width: 100%; margin-top: 10px; }
 @keyframes cekmece-kay { from { transform: translateX(100%); } to { transform: none; } }
 @media (prefers-reduced-motion: reduce) { body.cekmece-acik #ekran-sepet { animation: none; } }
+/* Sepet satırları: kapak | ad | fiyat | Çıkar sütunları her satırda aynı hizada. */
+#ekran-sepet .sepet-kalem { display: grid; grid-template-columns: 40px minmax(0, 1fr) 84px 64px; }
+#ekran-sepet .sepet-kalem .kart-fiyat { text-align: right; }
+#ekran-sepet .sepet-kalem > .btn { justify-self: end; width: 64px; padding: 0; }

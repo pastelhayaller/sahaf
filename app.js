@@ -105,15 +105,22 @@ function sepetRozetiniYaz() {
   $('#detay-sepet-sayi').textContent = sepet.length;
 }
 
-function bildir(metin, geriAlFn) {
+// eylem: { etiket, fn } — geri sayımsız tek düğme (ör. "Sepete git").
+function bildir(metin, geriAlFn, eylem) {
   clearTimeout(bildirimZaman);
   clearInterval(bildirimSayac);
   $('#bildirim-metin').textContent = metin;
   const btn = $('#bildirim-geri');
-  btn.hidden = !geriAlFn;
-  btn.onclick = geriAlFn ? () => { bildirimKapat(); geriAlFn(); } : null;
+  const fn = geriAlFn || eylem?.fn;
+  btn.hidden = !fn;
+  btn.onclick = fn ? () => { bildirimKapat(); fn(); } : null;
   $('#bildirim').hidden = false;
 
+  if (eylem) {
+    btn.textContent = eylem.etiket;
+    bildirimZaman = setTimeout(bildirimKapat, 4000);
+    return;
+  }
   if (!geriAlFn) {
     bildirimZaman = setTimeout(bildirimKapat, 2200);
     return;
@@ -360,7 +367,7 @@ function sepeteEkle(k) {
   const detayDugmesi = $('#btn-detay-sepet');
   if (detayDugmesi && seciliKitap?.id === k.id) { detayDugmesi.disabled = true; detayDugmesi.textContent = 'Sepette'; }
   listeyiTazele();
-  sepetiAc();
+  bildir(`✓ «${k.ad}» sepete eklendi`, null, { etiket: 'Sepete git', fn: sepetiAc });
 }
 
 function sepettenCikar(id) {
@@ -384,7 +391,7 @@ function sepetiCiz() {
   $('#sepet-fiyat-notu').textContent = `${bilinmeyen} kitabın fiyatı sorulacak; bu kitaplar ara toplama dahil değil. Kesin tutarı sahaf teyit eder.`;
   sepet.forEach(k => {
     const el = document.createElement('div'); el.className = 'sepet-kalem';
-    el.innerHTML = `${k.foto_url ? `<img class="sepet-kapak" src="${escapeHtml(kucukKapakUrl(k.foto_url))}" data-asil="${escapeHtml(k.foto_url)}" alt="">` : ''}
+    el.innerHTML = `${k.foto_url ? `<img class="sepet-kapak" src="${escapeHtml(kucukKapakUrl(k.foto_url))}" data-asil="${escapeHtml(k.foto_url)}" alt="">` : '<span class="sepet-kapak"></span>'}
       <span class="kart-orta"><span class="kart-ad">${escapeHtml(k.ad)}</span>${k.yazar ? `<span class="kart-yazar">${escapeHtml(k.yazar)}</span>` : ''}</span>
       <span class="kart-fiyat">${kitapFiyatEtiketi(k, paraYaz)}</span>`;
     const sil = document.createElement('button'); sil.className = 'btn sade kucuk'; sil.type = 'button'; sil.textContent = 'Çıkar';
