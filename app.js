@@ -1,5 +1,5 @@
 import * as db from './db.js?v=023';
-import { kucukKapakUrl, telefonDuzenle, kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER, kategoriGecerli } from './ui-helpers.js?v=023';
+import { kucukKapakUrl, kapakSrcset, telefonDuzenle, kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER, kategoriGecerli } from './ui-helpers.js?v=031';
 
 const $ = (s) => document.querySelector(s);
 const ekranlar = ['giris', 'hesap', 'ara', 'detay', 'ekle', 'duzenle', 'sepet', 'alim-teklif', 'teklifler'];
@@ -219,11 +219,17 @@ function escapeHtml(s) {
 
 // Küçük kapak kopyası yoksa (yeni yüklenmiş) bir kez orijinale düş. Yakalama
 // evresinde durdurulur ki img'nin kendi "kapak yok" dinleyicisi erken çalışmasın.
-function kapakSrc(img, url) { img.src = kucukKapakUrl(url); img.dataset.asil = url; }
+function kapakSrc(img, url, sizes = '(max-width: 600px) 120px, 150px') {
+  img.dataset.asil = url;
+  const srcset = kapakSrcset(url);
+  if (srcset) { img.sizes = sizes; img.srcset = srcset; }
+  img.src = kucukKapakUrl(url);
+}
 document.addEventListener('error', ev => {
   const img = ev.target;
   if (!(img instanceof HTMLImageElement) || !img.dataset.asil || img.src === img.dataset.asil) return;
   ev.stopImmediatePropagation();
+  img.removeAttribute('srcset');
   img.src = img.dataset.asil;
 }, true);
 
@@ -702,12 +708,12 @@ function magazaVitriniYaz(kitaplar) {
     dugme.setAttribute('aria-label', `${k.ad} — ayrıntıları gör`);
     dugme.dataset.kitapId = String(k.id);
     const img = document.createElement('img');
-    kapakSrc(img, k.foto_url);
+    kapakSrc(img, k.foto_url, '(max-width: 600px) 90px, 140px');
     img.alt = `${k.ad} kapağı`;
     img.width = 116;
     img.height = 173;
     img.decoding = 'async';
-    img.loading = 'lazy';
+    img.loading = 'eager';
     img.addEventListener('error', () => dugme.remove(), { once: true });
     dugme.appendChild(img);
     dugme.addEventListener('click', () => detayAc(k, dugme));

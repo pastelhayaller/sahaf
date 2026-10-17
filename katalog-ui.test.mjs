@@ -47,6 +47,7 @@ class Element {
 }
 function get(selector) { if (!elements.has(selector)) elements.set(selector, new Element()); return elements.get(selector); }
 const windowEvents = {};
+const documentEvents = {};
 let position = -1;
 const entries = [];
 const entryUrls = [];
@@ -58,8 +59,8 @@ const history = {
   replaceState(value, unused, url) { if (position < 0) position = 0; entries[position] = structuredClone(value); setUrl(url); entryUrls[position] = location.href; },
 };
 const context = vm.createContext({
-  ...helpers, console, history, URL, URLSearchParams,
-  document: { querySelector: get, querySelectorAll: () => [], createElement: tag => new Element(tag), createDocumentFragment: () => new Element(), contains: () => false, addEventListener() {}, body: new Element('body') },
+  ...helpers, console, history, URL, URLSearchParams, HTMLImageElement: Element,
+  document: { querySelector: get, querySelectorAll: () => [], createElement: tag => new Element(tag), createDocumentFragment: () => new Element(), contains: () => false, addEventListener: (name, fn) => { documentEvents[name] = fn; }, body: new Element('body') },
   window: { location, addEventListener: (name, fn) => { windowEvents[name] = fn; }, scrollTo() {}, open() {} },
   localStorage: { getItem: () => '[]', setItem() {} },
   db: { VARSAYILAN_SIRALAMA: 'yeni', normalize: s => (s || '').toLocaleLowerCase('tr'), durum: { yamaEksik: false } },
@@ -118,6 +119,14 @@ assert.equal(ilkKapak.fetchPriority, 'high');
 assert.equal(ilkKapak.width, 213);
 assert.equal(ilkKapak.height, 284);
 assert.equal(ilkKapak.decoding, 'async');
+assert.match(ilkKapak.srcset, /-160\.webp 160w, .*?-320\.webp 320w, .*?-480\.webp 480w/);
+assert.match(ilkKapak.sizes, /120px/);
+let fallbackStopped = false;
+documentEvents.error({target:ilkKapak, stopImmediatePropagation(){fallbackStopped=true;}});
+assert.equal(fallbackStopped, true);
+assert.equal(ilkKapak.srcset, undefined, 'Failed responsive candidate must not override original fallback');
+assert.equal(ilkKapak.src, ilkKapak.dataset.asil);
+assert.equal(helpers.kapakSrcset('external.jpg'), '');
 assert.equal(run("kartYap({ id: 'H', ad: 'İkinci kitap', foto_url: 'https://x.supabase.co/storage/v1/object/public/kitap-kapaklari/925eed62-0e99-4592-b95b-c3b4652229e5.jpg' })").children[0].children[0].loading, 'lazy');
 await run("liste.sayfa = 4; liste.sirala = 'fiyat'; rotaAc(rotaOku('?bolum=arama&q=Çorum'));");
 assert.equal(run('liste.terim'), 'Çorum');

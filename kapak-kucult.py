@@ -38,6 +38,8 @@ def main():
                 webp_yeni += 1
         except Exception as h:  # tek bozuk kapak üretimi durdurmasın; sayfa orijinale düşer
             print(f'Kapak atlandı: {url} ({h})', file=sys.stderr)
+    from kapak_boyutlari import uret
+    uret()
     print(f'Kapak kopyaları: {jpg_yeni} yeni JPEG, {webp_yeni} yeni/güncel WebP.')
 
 

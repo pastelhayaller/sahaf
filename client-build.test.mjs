@@ -11,7 +11,7 @@ const assets = [
 const app = await readFile('app.min.js', 'utf8');
 await transform(app, { loader: 'js' });
 assert.match(app, /\.\/db\.js\?v=023/);
-assert.match(app, /\.\/ui-helpers\.js\?v=023/);
+assert.match(app, /\.\/ui-helpers\.js\?v=031/);
 
 for (const [source, minified] of assets) {
   const [sourceStat, minifiedStat] = await Promise.all([stat(source), stat(minified)]);

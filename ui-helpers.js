@@ -7,6 +7,12 @@ export function kucukKapakUrl(url) {
   return m ? `https://pastelhayaller.com/kapak/${m[1]}.webp` : url;
 }
 
+// Width descriptors match the actual files produced by kapak_boyutlari.py.
+export function kapakSrcset(url) {
+  const small = kucukKapakUrl(url);
+  return small !== url ? [160, 320, 480].map(w => small.replace('https://pastelhayaller.com', '').replace('.webp', '-' + w + '.webp') + ' ' + w + 'w').join(', ') : '';
+}
+
 export function buyukKapakUrl(url) {
   const m = /\/kitap-kapaklari\/([0-9a-f-]{36})\.(?:jpg|png|webp)$/.exec(url || '');
   return m ? `https://pastelhayaller.com/kapak/${m[1]}.jpg` : url;
