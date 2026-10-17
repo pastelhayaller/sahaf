@@ -30,7 +30,7 @@
 <link rel="preload" href="fonts/inter-tight-400-700-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/inter-tight-400-700-latin-ext.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/fonts.css?v=001">
-<link rel="stylesheet" href="styles.css?v=025">
+<link rel="stylesheet" href="styles.css?v=026">
 <link rel="stylesheet" href="bilgilendirme.css?v=023">
 </head>
 <!-- Ziyaretçi varsayılan: giriş ağ turları sürerken müşteri boş/krem ekran görmesin.
@@ -446,9 +446,10 @@
   <button id="btn-hesap-cikis" class="btn ikincil hesap-cikis" type="button">Çıkış yap</button>
 </section>
 
-<section id="ekran-sepet" class="ekran" hidden>
+<div id="cekmece-perde" class="cekmece-perde"></div>
+<section id="ekran-sepet" class="ekran" role="dialog" aria-label="Rezervasyon sepeti" hidden>
   <header class="baslik">
-    <button class="btn sade" type="button" data-geri>‹ Geri</button>
+    <button class="btn sade" type="button" data-geri aria-label="Sepeti kapat">✕ Kapat</button>
     <h2>Rezervasyon sepeti</h2>
   </header>
   <p class="ipucu">Kitaplar henüz ayrılmadı. Satıcı stok durumunu WhatsApp’tan teyit eder.</p>
@@ -460,6 +461,7 @@
   <p id="sepet-fiyat-notu" class="ipucu fiyat-notu" hidden>Fiyatı bulunmayan kitaplar için WhatsApp’tan güncel fiyatı soracağız.</p>
   <p class="ipucu">Hazırlanan mesaj WhatsApp’ta açılır; inceleyip kendin gönderirsin. <a href="/gizlilik.html">Gizlilik bilgisi</a> · <a href="/islem-rehberi.html">Ayırtma nasıl işler?</a></p>
   <button id="btn-whatsapp" class="btn whatsapp" type="button">WhatsApp’tan rezervasyon iste</button>
+  <button class="btn ikincil cekmece-devam" type="button" data-geri>Alışverişe devam et</button>
 </section>
 
 <!-- ONAY -->
@@ -505,7 +507,7 @@
 <button type="button" data-analiz-tercihi>Çerez tercihleri</button>
 </footer>
 
-<script type="module" src="app.js?v=026"></script>
+<script type="module" src="app.js?v=027"></script>
 <script src="/analiz.js?v=001" defer></script>
 </body>
 </html>

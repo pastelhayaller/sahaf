@@ -24,7 +24,7 @@ class Element {
   constructor(tag = 'div') {
     this.tagName = tag; this.children = []; this.listeners = {}; this.dataset = {};
     this.hidden = false; this.disabled = false; this.textContent = ''; this.style = {};
-    this.classList = { add: name => { this.className += ` ${name}`; } };
+    this.classList = { add: name => { this.className += ` ${name}`; }, toggle() {} };
   }
   set innerHTML(value) {
     this.html = value;

@@ -42,8 +42,11 @@ function durumUygula(d) {
     seciliKitap = d.kitap;
     detayCiz();
   }
-  if (d.ekran === 'sepet') sepetiCiz();
+  if (d.ekran === 'sepet' || d.cekmece) sepetiCiz();
   ekranCiz(d.ekran);
+  // Sepet çekmecesi: açık ekranın üstüne sağdan kayar, liste yerinde kalır.
+  if (d.cekmece) $('#ekran-sepet').hidden = false;
+  document.body.classList.toggle('cekmece-acik', !!d.cekmece);
   $('#onay').hidden = !d.onay;
   $('#foto-buyut').hidden = !d.buyut;
 }
@@ -356,7 +359,15 @@ function sepeteEkle(k) {
   window.pastelOlcum?.('add_to_cart', { item_id: String(k.id).slice(0, 8) });
   const detayDugmesi = $('#btn-detay-sepet');
   if (detayDugmesi && seciliKitap?.id === k.id) { detayDugmesi.disabled = true; detayDugmesi.textContent = 'Sepette'; }
-  bildir(`✓ «${k.ad}» sepete eklendi`);
+  listeyiTazele();
+  sepetiAc();
+}
+
+function sepettenCikar(id) {
+  sepet = sepet.filter(x => x.id !== id);
+  sepetKaydet(); sepetRozetiniYaz(); sepetiCiz();
+  const detayDugmesi = $('#btn-detay-sepet');
+  if (detayDugmesi && seciliKitap?.id === id) { detayDugmesi.disabled = false; detayDugmesi.textContent = 'Sepete ekle'; }
   listeyiTazele();
 }
 
@@ -377,12 +388,21 @@ function sepetiCiz() {
       <span class="kart-orta"><span class="kart-ad">${escapeHtml(k.ad)}</span>${k.yazar ? `<span class="kart-yazar">${escapeHtml(k.yazar)}</span>` : ''}</span>
       <span class="kart-fiyat">${kitapFiyatEtiketi(k, paraYaz)}</span>`;
     const sil = document.createElement('button'); sil.className = 'btn sade kucuk'; sil.type = 'button'; sil.textContent = 'Çıkar';
-    sil.addEventListener('click', () => { sepet = sepet.filter(x => x.id !== k.id); sepetKaydet(); sepetRozetiniYaz(); sepetiCiz(); });
+    sil.addEventListener('click', () => sepettenCikar(k.id));
     el.appendChild(sil); kap.appendChild(el);
   });
 }
 
-function sepetiAc() { sepetiCiz(); git('sepet'); }
+function sepetiAc() {
+  if (history.state?.cekmece) { sepetiCiz(); return; }
+  const d = { ...history.state, cekmece: true };
+  history.pushState(d, '');
+  durumUygula(d);
+}
+$('#cekmece-perde').addEventListener('click', () => history.back());
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && history.state?.cekmece) history.back();
+});
 
 function whatsappRezervasyon() {
   if (!sepet.length) return;
