@@ -1,3 +1,4 @@
+import { fiyatAraligi } from './fiyat.js';
 import { alimTeklifiDogrula } from './db.js';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -60,7 +61,7 @@ const history = {
   replaceState(value, unused, url) { if (position < 0) position = 0; entries[position] = structuredClone(value); setUrl(url); entryUrls[position] = location.href; },
 };
 const context = vm.createContext({
-  ...helpers, ...kesifHelpers, console, history, URL, URLSearchParams, HTMLImageElement: Element,
+  ...helpers, ...kesifHelpers, fiyatAraligi, console, history, URL, URLSearchParams, HTMLImageElement: Element,
   document: { querySelector: get, querySelectorAll: () => [], createElement: tag => new Element(tag), createDocumentFragment: () => new Element(), contains: () => false, addEventListener: (name, fn) => { documentEvents[name] = fn; }, body: new Element('body') },
   window: { location, addEventListener: (name, fn) => { windowEvents[name] = fn; }, scrollTo() {}, open() {} },
   localStorage: { getItem: () => '[]', setItem() {} },
@@ -71,6 +72,9 @@ const source = (await readFile(new URL('app.js', import.meta.url), 'utf8')).repl
 vm.runInContext(source, context);
 vm.runInContext('const gercekListeyiTazele = listeyiTazele; listeyiTazele = async () => {};', context);
 const run = code => vm.runInContext(code, context);
+const fiyatPopstate = windowEvents.popstate;
+const fiyatSubmit = get('#fiyat-form').listeners.submit;
+const fiyatTemizle = get('#fiyat-temizle').listeners.click;
 async function step(delta) { position += delta; setUrl(entryUrls[position]); await windowEvents.popstate({ state: history.state }); }
 run("koku('ara'); detayAc({ id: 'A', ad: 'A kitabı', fiyat: 25, foto_url: 'kapak.jpg' }, null);");
 assert.equal(history.state.kitap.id, 'A');
@@ -358,3 +362,34 @@ assert.match(adaptedDetail, /Fiyat için sor/);
 assert.match(adaptedDetail, /Stok durumu dükkân tarafından teyit edilir/);
 assert.equal((adaptedDetail.match(/class="detay-raf-link"/g)||[]).length,3);
 console.log('Ürün detayı: güvenli raf bağlantıları, fiyat önceliği, bilinmeyen fiyat ve tek sepet eylemi geçti.');
+
+// Price routes roundtrip, reject invalid ranges, and preserve context/history.
+windowEvents.popstate = fiyatPopstate;
+assert.deepEqual(fiyatAraligi('0', '100,50'), {minFiyat:0,maxFiyat:100.5});
+assert.deepEqual(fiyatAraligi(' ', ''), {minFiyat:null,maxFiyat:null});
+for (const [min,max] of [['-1',''],['1.001',''],['Infinity',''],['10','5'],['1e3',''],['true','']]) assert.throws(()=>fiyatAraligi(min,max));
+const priceRoute=helpers.rotaOku('?bolum=kategori&ad=roman&min=0&max=100.50&sayfa=3');
+assert.equal(priceRoute.minFiyat,0);assert.equal(priceRoute.maxFiyat,100.5);
+assert.deepEqual(helpers.rotaOku(new URL(helpers.rotaUrl(priceRoute),'https://example.test/').search),priceRoute);
+assert.match(helpers.rotaOku('?min=100&max=10').fiyatHatasi,/büyük olamaz/);
+assert.equal(helpers.rotaOku('?bolum=yazarlar&min=100').minFiyat,null);
+run("rol='ziyaretci';listeyiTazele=async()=>{};rotaAc(rotaOku('?bolum=kategori&ad=roman&sayfa=3'));");
+get('#fiyat-min').value='10';get('#fiyat-max').value='50,50';
+fiyatSubmit({preventDefault(){}});
+assert.equal(run('rota.bolum'),'kategori');assert.equal(run('rota.deger'),'roman');
+assert.equal(run('rota.sayfa'),1);assert.equal(run('rota.maxFiyat'),50.5);
+await step(-1);assert.equal(run('rota.sayfa'),3);assert.equal(run('rota.minFiyat'),null);
+await step(1);assert.equal(run('rota.maxFiyat'),50.5);
+fiyatTemizle();assert.equal(run('rota.maxFiyat'),null);assert.equal(run('rota.deger'),'roman');
+get('#fiyat-min').value='100';get('#fiyat-max').value='5';const beforePriceError=position;
+fiyatSubmit({preventDefault(){}});
+assert.equal(position,beforePriceError);assert.match(get('#fiyat-hata').textContent,/büyük olamaz/);
+console.log('Fiyat UI: virgül/sıfır, URL/history, bağlam koruma, sayfa1, temizleme ve geçersiz aralık geçti.');
+
+run("rol='ziyaretci';rotaUygula(rotaOku('?min=100&max=5'));db.listele=async()=>{throw Error('should not query');};");
+await run('gercekListeyiTazele()');
+assert.match(get('#sayfa-mesaj').children[0].textContent,/büyük olamaz/);
+run("rol='yonetici';db.listele=async p=>{if(p.minFiyat!==undefined||p.maxFiyat!==undefined)throw Error('visitor filter leaked to staff');return {kayitlar:[],toplam:0,sayfa:1,sayfaSayisi:1};};");
+await run('gercekListeyiTazele()');
+assert.equal(get('#ara-durum').textContent,'Henüz kitap eklenmemiş.');
+console.log('Fiyat hata/rol: bozuk URL sorguyu durdurur, ziyaretçi fiyatı personel listesine taşınmaz.');

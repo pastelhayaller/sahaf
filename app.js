@@ -1,5 +1,6 @@
-import * as db from './db.js?v=023';
-import { kucukKapakUrl, kapakSrcset, telefonDuzenle, kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER, kategoriGecerli } from './ui-helpers.js?v=031';
+import { fiyatAraligi } from './fiyat.js';
+import * as db from './db.js?v=024';
+import { kucukKapakUrl, kapakSrcset, telefonDuzenle, kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER, kategoriGecerli } from './ui-helpers.js?v=035';
 
 import { kategoriRehberi, ilgiliKitaplar } from './kesif.js?v=032';
 
@@ -737,7 +738,7 @@ function listeYaz(sonuc, terimVarMi) {
 // Vitrin yalnız varsayılan raf görünümünde; aramada sonuçlar öne çıkar.
 function magazaVitriniYaz(kitaplar) {
   const vitrin = $('#magaza-vitrini');
-  vitrin.hidden = rota.bolum !== 'ana' || liste.sayfa !== 1;
+  vitrin.hidden = rota.bolum !== 'ana' || liste.sayfa !== 1 || rota.minFiyat != null || rota.maxFiyat != null;
   $('#katalog-baslik').textContent = rotaBasligi(rota);
   if (yoneticiMi() || vitrin.hidden) return;
   const kap = $('#vitrin-kapaklari');
@@ -766,6 +767,9 @@ function rotaUygula(yeni) {
   Object.assign(liste, { terim: rota.terim, sirala: rota.sirala, sayfa: rota.sayfa });
   $('#arama').value = rota.bolum === 'arama' ? rota.terim : '';
   $('#siralama').value = rota.sirala;
+  $('#fiyat-min').value = rota.minFiyat ?? '';
+  $('#fiyat-max').value = rota.maxFiyat ?? '';
+  $('#fiyat-hata').textContent = '';
   $('#dizin-arama').value = rota.terim;
 }
 
@@ -809,7 +813,7 @@ function magazaSayfasiCiz() {
     : rota.bolum === 'arama' ? (rota.terim ? `“${rota.terim}” için kitaplar` : 'Bir kitap adı veya yazar yaz.')
     : dizinMi ? 'Katalogda adı bulunan tüm kayıtlar. Bir isim seçerek kitaplarını gör.'
     : rota.bolum === 'ana' ? 'Aradığın kitap, belki de bu rafta.' : '';
-  $('#magaza-vitrini').hidden = rota.bolum !== 'ana' || rota.sayfa !== 1;
+  $('#magaza-vitrini').hidden = rota.bolum !== 'ana' || rota.sayfa !== 1 || rota.minFiyat != null || rota.maxFiyat != null || !!rota.fiyatHatasi;
   const rehber = kategoriMi ? kategoriRehberi(rota.deger) : null;
   const rehberAlan = $('#kategori-rehber'); rehberAlan.replaceChildren(); rehberAlan.hidden = !rehber;
   if (rehber) {
@@ -830,6 +834,10 @@ function magazaSayfasiCiz() {
     if (hedef.bolum === rota.bolum && hedef.deger === rota.deger) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   });
+  $('#fiyat-form').hidden = dizinMi || gecersizKategori || eksikSecim;
+  $('#fiyat-temizle').hidden = !rota.fiyatHatasi && rota.minFiyat == null && rota.maxFiyat == null;
+  $('#fiyat-aktif').textContent = rota.fiyatHatasi ? '' : rota.minFiyat != null || rota.maxFiyat != null
+    ? `Fiyat: ${rota.minFiyat == null ? '0 ₺' : paraYaz(rota.minFiyat)} – ${rota.maxFiyat == null ? 'üst sınır yok' : paraYaz(rota.maxFiyat)}. Fiyatı belirtilmeyen kitaplar bu aralıkta gösterilmez.` : '';
   $('#sayfa-mesaj').hidden = true;
   return { dizinMi, gecersizKategori, eksikSecim };
 }
@@ -938,10 +946,10 @@ async function listeyiTazele() {
   try {
     if (!yoneticiMi()) {
       const { dizinMi, gecersizKategori, eksikSecim } = magazaSayfasiCiz();
-      if (gecersizKategori || eksikSecim || (rota.bolum === 'arama' && !rota.terim)) {
+      if (gecersizKategori || eksikSecim || rota.fiyatHatasi || (rota.bolum === 'arama' && !rota.terim)) {
         $('#sonuclar').replaceChildren();
         $('#ara-durum').textContent = '';
-        sayfaMesaji(gecersizKategori ? 'Bu kategori bulunamadı. Kitap menüsünden bir kategori seçebilirsin.'
+        sayfaMesaji(rota.fiyatHatasi ? rota.fiyatHatasi : gecersizKategori ? 'Bu kategori bulunamadı. Kitap menüsünden bir kategori seçebilirsin.'
           : eksikSecim ? 'Dizinden bir isim seçerek kitaplarına ulaşabilirsin.' : 'Aramaya başlamak için yukarıya bir kitap adı veya yazar yaz.');
         return;
       }
@@ -953,6 +961,7 @@ async function listeyiTazele() {
       yayinevi: rota.bolum === 'yayinevi' ? rota.deger : '',
       basimVar: rota.bolum === 'yeni-basimlar',
       kategori: rota.bolum === 'kategori' ? rota.deger : null,
+      minFiyat: rota.minFiyat, maxFiyat: rota.maxFiyat,
     };
     const sonuc = await db.listele({ ...liste, ...filtre });
     if (benim !== istekSayaci) return;
@@ -962,7 +971,11 @@ async function listeyiTazele() {
       history.replaceState({ ...history.state, rota: { ...rota } }, '', rotaUrl(rota));
     }
     listeYaz(sonuc, !!liste.terim);
-    if (!yoneticiMi() && !sonuc.kayitlar.length) sayfaMesaji('Bu sayfada gösterilecek kitap bulunamadı.');
+    if (!yoneticiMi() && !sonuc.kayitlar.length) {
+      $('#ara-durum').textContent = '0 kitap';
+      $('#bos-sonuc').hidden = true;
+      sayfaMesaji(rota.minFiyat != null || rota.maxFiyat != null ? 'Bu fiyat aralığında kitap bulunamadı. Aralığı genişletebilir veya fiyat filtresini temizleyebilirsin.' : 'Bu sayfada gösterilecek kitap bulunamadı.');
+    }
   } catch (e) {
     if (benim !== istekSayaci) return;
     $('#sonuclar').replaceChildren();
@@ -1501,6 +1514,18 @@ $('#magaza-arama-form').addEventListener('submit', ev => {
   ev.preventDefault();
   if (!yoneticiMi()) rotaAc({ ...rotaOku('?bolum=arama'), terim: $('#arama').value.trim() });
 });
+$('#fiyat-form').addEventListener('submit', ev => {
+  ev.preventDefault();
+  if (yoneticiMi()) return;
+  try {
+    const fiyat = fiyatAraligi($('#fiyat-min').value, $('#fiyat-max').value);
+    rotaAc({ ...rota, ...fiyat, fiyatHatasi: null, sayfa: 1 });
+  } catch (e) { $('#fiyat-hata').textContent = e.message; }
+});
+$('#fiyat-temizle').addEventListener('click', () => {
+  if (!yoneticiMi()) rotaAc({ ...rota, minFiyat: null, maxFiyat: null, fiyatHatasi: null, sayfa: 1 });
+});
+
 $('#dizin-arama-form').addEventListener('submit', ev => {
   ev.preventDefault();
   if (!yoneticiMi()) rotaAc({ ...rota, terim: $('#dizin-arama').value.trim(), sayfa: 1 });

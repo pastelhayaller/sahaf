@@ -1,3 +1,4 @@
+import { fiyatAraligi } from './fiyat.js';
 import { kategoriGecerli } from './kategori.js';
 // Veri katmanı. İki mod, tek sözleşme:
 //   config.js doluysa  -> Supabase
@@ -265,7 +266,8 @@ function yerelSirala(liste, sirala) {
  * envanter listelenir — eskiden ana ekranda yalnız "son 20" görünüyordu.
  * Döner: { kayitlar, toplam, sayfa, sayfaSayisi }
  */
-export async function listele({ terim = '', sirala = VARSAYILAN_SIRALAMA, sayfa = 1, yazar = '', yayinevi = '', basimVar = false, kategori = null } = {}) {
+export async function listele({ terim = '', sirala = VARSAYILAN_SIRALAMA, sayfa = 1, yazar = '', yayinevi = '', basimVar = false, kategori = null, minFiyat = null, maxFiyat = null } = {}) {
+  ({ minFiyat, maxFiyat } = fiyatAraligi(minFiyat, maxFiyat));
   if (kategori !== null && !kategoriGecerli(kategori)) return { kayitlar: [], toplam: 0, sayfa: 1, sayfaSayisi: 1 };
   const s = SIRALAMALAR[sirala] || SIRALAMALAR[VARSAYILAN_SIRALAMA];
   const t = normalize(terim);
@@ -274,7 +276,9 @@ export async function listele({ terim = '', sirala = VARSAYILAN_SIRALAMA, sayfa 
   if (denemeModu) {
     const tumu = yerelOku().filter(k => (!t || normalize(`${k.ad} ${k.yazar || ''} ${k.raf}`).includes(t))
       && (!yazar || k.yazar === yazar) && (!yayinevi || k.yayinevi === yayinevi)
-      && (kategori === null || k.kategori === kategori) && (!basimVar || k.basim_yili != null));
+      && (kategori === null || k.kategori === kategori) && (!basimVar || k.basim_yili != null)
+      && (minFiyat === null || (k.fiyat != null && k.fiyat !== '' && Number(k.fiyat) >= minFiyat))
+      && (maxFiyat === null || (k.fiyat != null && k.fiyat !== '' && Number(k.fiyat) <= maxFiyat)));
     const sirali = yerelSirala(tumu, sirala);
     const toplam = sirali.length;
     const sayfaSayisi = Math.max(1, Math.ceil(toplam / SAYFA_BOYU));
@@ -291,6 +295,8 @@ export async function listele({ terim = '', sirala = VARSAYILAN_SIRALAMA, sayfa 
     if (yazar) q = q.eq('yazar', yazar);
     if (yayinevi) q = q.eq('yayinevi', yayinevi);
     if (basimVar) q = q.not('basim_yili', 'is', null);
+    if (minFiyat !== null) q = q.gte('fiyat', minFiyat);
+    if (maxFiyat !== null) q = q.lte('fiyat', maxFiyat);
     // nullsFirst:false — fiyatı girilmemiş kitap her iki yönde de en sonda.
     q = q.order(s.kolon, { ascending: s.artan, nullsFirst: false });
     // İkincil sıra: eşit fiyat/ad'da sayfalar arası kayma olmasın.

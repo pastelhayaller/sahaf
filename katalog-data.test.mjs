@@ -1,3 +1,4 @@
+import { fiyatAraligi } from './fiyat.js';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
@@ -16,13 +17,15 @@ const client = {
     const q = {
       select(value) { columns = value; return q; },
       order() { return q; },
+      gte(column,value) { filters.push({column,value,op:'gte'});return q; },
+      lte(column,value) { filters.push({column,value,op:'lte'});return q; },
       eq(column, value) { filters.push({ column, value, op: 'eq' }); return q; },
       not(column, op, value) { assert.equal(op, 'is'); assert.equal(value, null); filters.push({ column, op: 'notnull' }); return q; },
       ilike(column, value) { filters.push({ column, value, op: 'ilike' }); return q; },
       async range(start, end) {
         requests.push({ start, end, columns, filters: structuredClone(filters) });
         if (fail) return { error: { message: 'NetworkError' } };
-        const filtered = rows.filter(row => filters.every(f => f.op === 'eq' ? row[f.column] === f.value : f.op === 'notnull' ? row[f.column] != null : true));
+        const filtered = rows.filter(row => filters.every(f => f.op === 'eq' ? row[f.column] === f.value : f.op === 'notnull' ? row[f.column] != null : f.op === 'gte' ? row[f.column] != null && row[f.column] !== '' && Number(row[f.column]) >= f.value : f.op === 'lte' ? row[f.column] != null && row[f.column] !== '' && Number(row[f.column]) <= f.value : true));
         // Server cap is deliberately smaller than the requested 500 rows.
         return { data: filtered.slice(start, Math.min(end + 1, start + 200)), count: filtered.length, error: null };
       },
@@ -31,7 +34,7 @@ const client = {
   },
 };
 const source = (await readFile(new URL('db.js', import.meta.url), 'utf8')).replace(/import\s*\{[\s\S]*?\}\s*from '\.\/config.js';/, '').replace(/^import .*;\r?\n/gm, '').replace(/^export /gm, '');
-const ctx = vm.createContext({ SUPABASE_URL: 'https://example.test', SUPABASE_ANON_KEY: 'public-test', ZIYARETCI_EPOSTA: '', ZIYARETCI_SIFRE: '', ayar: { GOOGLE_GIRIS: false }, client, console, kategoriGecerli });
+const ctx = vm.createContext({ SUPABASE_URL: 'https://example.test', SUPABASE_ANON_KEY: 'public-test', ZIYARETCI_EPOSTA: '', ZIYARETCI_SIFRE: '', ayar: { GOOGLE_GIRIS: false }, client, console, kategoriGecerli, fiyatAraligi });
 vm.runInContext(source, ctx);
 vm.runInContext('_sb = client;', ctx);
 const run = code => vm.runInContext(code, ctx);
@@ -90,6 +93,7 @@ console.log('Kategori: exact count/paging, invalid filter, omitted-field preserv
 let localRows = Array.from({ length: 24 }, (_, i) => ({ id: `local-${i}`, ad: `Kitap ${i}`, raf: 'A1', kategori: i < 23 ? 'roman' : null, durum: 'İyi', yayinevi: 'Yayın', basim_yili: 2020, foto_url: 'cover.jpg' }));
 const local = vm.createContext({ SUPABASE_URL: '', SUPABASE_ANON_KEY: '', ZIYARETCI_EPOSTA: '', ZIYARETCI_SIFRE: '', ayar: { GOOGLE_GIRIS: false }, console, kategoriGecerli,
   localStorage: { getItem: () => JSON.stringify(localRows), setItem: (key, value) => { localRows = JSON.parse(value); } } });
+local.fiyatAraligi = fiyatAraligi;
 vm.runInContext(source, local);
 const localRun = code => vm.runInContext(code, local);
 const localPage = await localRun("listele({ kategori: 'roman', sayfa: 2 })");
@@ -129,3 +133,24 @@ assert.equal(localRows.find(k => k.id === complete.id).aciklama, local.savedDesc
 assert.equal((await localRun('eksikKuyrugu()')).length, 1, 'Missing description must not add every book to queue');
 assert.match(await readFile(new URL('supabase/yama-009-kitap-aciklamasi.sql', import.meta.url), 'utf8'), /char_length\(aciklama\) <= 3000/);
 console.log('Description type/limit/trim/omission/undo/optional-queue checks passed.');
+
+const pricedRows=Array.from({length:31},(_,i)=>({id:`priced-${i}`,ad:`Kitap ${i}`,kategori:'roman',yazar:'A',fiyat:i}));
+pricedRows.push({id:'unknown',ad:'Bilinmeyen',kategori:'roman',yazar:'A',fiyat:null});
+rows.splice(0,rows.length,...pricedRows);requests=[];
+const pricePage=await run("listele({kategori:'roman',yazar:'A',minFiyat:5,maxFiyat:29,sayfa:2})");
+assert.equal(pricePage.toplam,25);assert.equal(pricePage.sayfaSayisi,2);assert.equal(pricePage.kayitlar.length,5);
+assert(pricePage.kayitlar.every(k=>k.fiyat>=5&&k.fiyat<=29));
+assert(requests[0].filters.some(f=>f.op==='gte'&&f.value===5));
+assert(requests[0].filters.some(f=>f.op==='lte'&&f.value===29));
+assert(requests[0].filters.some(f=>f.column==='kategori'&&f.value==='roman'));
+const noPriceRequests=requests.length;
+await assert.rejects(run('listele({minFiyat:100,maxFiyat:10})'),/büyük olamaz/);
+assert.equal(requests.length,noPriceRequests,'Invalid ranges must fail before the query');
+localRows=structuredClone(pricedRows);
+const zeroPrice=await localRun('listele({minFiyat:0,maxFiyat:0})');
+assert.equal(zeroPrice.toplam,1);assert.equal(zeroPrice.kayitlar[0].fiyat,0);
+assert.equal((await localRun('listele({maxFiyat:10})')).toplam,11);
+assert.equal((await localRun('listele({minFiyat:30})')).toplam,1);
+assert.equal((await localRun('listele({minFiyat:99})')).toplam,0);
+assert.equal((await localRun('listele()')).toplam,32,'Clearing price includes unknowns again');
+console.log('Fiyat veri: server count/paging+combined filters, invalid before query, local zero/one-sided/null/reset passed.');

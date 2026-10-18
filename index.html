@@ -32,7 +32,7 @@
 <link rel="preload" href="fonts/inter-tight-400-700-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/inter-tight-400-700-latin-ext.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/fonts.min.css?v=030">
-<link rel="stylesheet" href="styles.min.css?v=034">
+<link rel="stylesheet" href="styles.min.css?v=035">
 <link rel="stylesheet" href="bilgilendirme.min.css?v=030">
 </head>
 <!-- Ziyaretçi varsayılan: giriş ağ turları sürerken müşteri boş/krem ekran görmesin.
@@ -209,6 +209,12 @@
   <form id="dizin-arama-form" class="dizin-arama customer-only" hidden>
     <label id="dizin-arama-etiket" for="dizin-arama">İsim ara</label>
     <input id="dizin-arama" type="search" autocomplete="off"><button type="submit">Dizinde ara</button>
+  </form>
+  <form id="fiyat-form" class="fiyat-filtre customer-only" aria-label="Fiyat aralığı" hidden>
+    <div class="fiyat-alan"><label for="fiyat-min">En düşük fiyat (₺)</label><input id="fiyat-min" type="text" inputmode="decimal" maxlength="18" placeholder="Alt sınır yok" autocomplete="off"></div>
+    <div class="fiyat-alan"><label for="fiyat-max">En yüksek fiyat (₺)</label><input id="fiyat-max" type="text" inputmode="decimal" maxlength="18" placeholder="Üst sınır yok" autocomplete="off"></div>
+    <button type="submit">Fiyatı uygula</button><button id="fiyat-temizle" type="button" hidden>Fiyatı temizle</button>
+    <p id="fiyat-aktif" class="fiyat-aciklama" aria-live="polite"></p><p id="fiyat-hata" class="fiyat-aciklama hata" role="alert"></p>
   </form>
   <div class="arac-cubugu">
     <p id="ara-durum" class="durum" aria-live="polite"></p>
@@ -511,7 +517,7 @@
 <button type="button" data-analiz-tercihi>Çerez tercihleri</button>
 </footer>
 
-<script type="module" src="app.min.js?v=034"></script>
+<script type="module" src="app.min.js?v=035"></script>
 <script src="/analiz.js?v=001" defer></script>
 </body>
 </html>

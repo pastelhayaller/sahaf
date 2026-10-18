@@ -1,3 +1,4 @@
+import { fiyatAraligi } from './fiyat.js';
 import { KATEGORILER } from './kategori.js';
 export { KATEGORILER, kategoriGecerli } from './kategori.js';
 // Ham Storage kapağının kapak-kucult.py ile üretilen ~25 KB WebP kopyası. Kopya
@@ -67,7 +68,11 @@ export function rotaOku(query = '') {
   const bolum = BOLUMLER.includes(p.get('bolum')) ? p.get('bolum') : 'ana';
   const varsayilan = ['kitaplar', 'yazar', 'yayinevi'].includes(bolum) ? 'ad' : bolum === 'yeni-basimlar' ? 'basim' : 'yeni';
   const no = Number(p.get('sayfa'));
-  return { bolum, deger: p.get('ad') || '', terim: p.get('q') || '',
+  let fiyat = { minFiyat: null, maxFiyat: null }, fiyatHatasi = null;
+  if (!['yazarlar', 'yayinevleri'].includes(bolum)) {
+    try { fiyat = fiyatAraligi(p.get('min'), p.get('max')); } catch (e) { fiyatHatasi = e.message; }
+  }
+  return { ...fiyat, fiyatHatasi, bolum, deger: p.get('ad') || '', terim: p.get('q') || '',
     sirala: SIRALAR.includes(p.get('sira')) ? p.get('sira') : varsayilan,
     sayfa: Number.isSafeInteger(no) && no > 0 ? no : 1 };
 }
@@ -76,6 +81,8 @@ export function rotaUrl(rota) {
   if (rota.bolum !== 'ana') p.set('bolum', rota.bolum);
   if (rota.deger) p.set('ad', rota.deger);
   if (rota.terim) p.set('q', rota.terim);
+  if (rota.minFiyat != null) p.set('min', rota.minFiyat);
+  if (rota.maxFiyat != null) p.set('max', rota.maxFiyat);
   p.set('sira', rota.sirala);
   if (rota.sayfa > 1) p.set('sayfa', rota.sayfa);
   return './' + (p.size ? '?' + p.toString() : '');
