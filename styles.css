@@ -884,7 +884,7 @@ body[data-rol="ziyaretci"] .arac-cubugu { align-items: center; margin: 14px 0 20
 body[data-rol="ziyaretci"] .arac-cubugu .durum { margin: 0 auto 0 0; font: 13px/1.4 var(--govde-yazi); letter-spacing: 0; text-transform: none; }
 body[data-rol="ziyaretci"] .durum::after { display: none; }
 body[data-rol="ziyaretci"] .arac-cubugu label { font: 13px var(--govde-yazi); letter-spacing: 0; text-transform: none; }
-body[data-rol="ziyaretci"] #siralama { min-height: 40px; max-width: 170px; border: 1px solid var(--cizgi); border-radius: 4px; padding: 0 10px; font: 13px var(--govde-yazi); background: #fff; letter-spacing: 0; }
+body[data-rol="ziyaretci"] #siralama { min-height: 44px; max-width: 170px; border: 1px solid var(--cizgi); border-radius: 4px; padding: 0 10px; font: 13px var(--govde-yazi); background: #fff; letter-spacing: 0; }
 body[data-rol="ziyaretci"] .katalog-calisma-alani { display: block; }
 body[data-rol="ziyaretci"] #sonuclar { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 24px 18px; }
 body[data-rol="ziyaretci"] .customer-kart {
@@ -897,7 +897,7 @@ body[data-rol="ziyaretci"] .customer-kart:active { transform: none; }
 .urun-kapak { display: grid; place-items: center; width: 100%; height: 212px; padding: 12px; border: 0; border-radius: 3px; background: #f4f6f8; color: #64717c; font: 13px/1.5 var(--govde-yazi); cursor: pointer; }
 body[data-rol="ziyaretci"] .customer-kart .kart-kapak { display: block; width: 100%; height: 188px; aspect-ratio: 3 / 4; object-fit: contain; border: 0; background: transparent; }
 body[data-rol="ziyaretci"] .customer-kart .kart-orta { align-self: stretch; margin: 15px 0 12px; flex: 1; }
-body[data-rol="ziyaretci"] .customer-kart .kart-ad { display: block; width: 100%; padding: 0; border: 0; background: transparent; font: 600 16px/1.35 var(--govde-yazi); color: #19344a; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+body[data-rol="ziyaretci"] .customer-kart .kart-ad { display: block; width: 100%; min-height: 44px; padding: 0; border: 0; background: transparent; font: 600 16px/1.35 var(--govde-yazi); color: #19344a; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
 body[data-rol="ziyaretci"] .customer-kart .kart-ad:hover { color: #a43140; }
 body[data-rol="ziyaretci"] .customer-kart .kart-yazar { margin-top: 6px; font: 13px/1.4 var(--govde-yazi); color: #64717c; }
 .kart-kunye { display: block; margin-top: 8px; color: #64717c; font: 12px/1.4 var(--govde-yazi); overflow-wrap: anywhere; }
@@ -1137,7 +1137,7 @@ body.cekmece-acik #ekran-sepet {
 @keyframes kart-bildirim-in { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
 @media (max-width: 600px) { .bildirim.kart-bildirim { top: 12px; right: 16px; } }
 #ekran-sepet .sepet-kalem > * { align-self: center; }
-#ekran-sepet .sepet-kalem > .btn { min-height: 34px; border: 1px solid #c8d0d8; border-radius: 4px; color: #455866; font-size: 13px; }
+#ekran-sepet .sepet-kalem > .btn { min-height: 44px; border: 1px solid #c8d0d8; border-radius: 4px; color: #455866; font-size: 13px; }
 #ekran-sepet .sepet-kalem > .btn:hover { border-color: #c44454; color: #c44454; }
 
 /* Category guides and lightweight discovery links share the storefront language. */
