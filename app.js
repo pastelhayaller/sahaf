@@ -333,14 +333,18 @@ function detayAc(k, odak) {
   window.pastelOlcum?.('view_item', { item_id: String(k.id).slice(0, 8) });
 }
 
+function detayRafLinki(bolum, deger, etiket = deger) {
+  return `<a class="detay-raf-link" data-rota href="${escapeHtml(rotaUrl({ ...rotaOku(), bolum, deger, sirala: bolum === 'kategori' ? 'yeni' : 'ad' }))}">${escapeHtml(etiket)}</a>`;
+}
+
 function detayCiz() {
   const k = seciliKitap;
   if (!k) return;
   const kapak = '<p class="detay-kapak-yok">Bu kayıt için kapak görseli yok.</p>';
   const kunye = [
-    kategoriGecerli(k.kategori) && `<div><dt>Kategori</dt><dd>${escapeHtml(KATEGORILER[k.kategori])}</dd></div>`,
-    k.yazar && `<div><dt>Yazar</dt><dd>${escapeHtml(k.yazar)}</dd></div>`,
-    k.yayinevi && `<div><dt>Yayınevi</dt><dd>${escapeHtml(k.yayinevi)}</dd></div>`,
+    kategoriGecerli(k.kategori) && `<div><dt>Kategori</dt><dd>${detayRafLinki('kategori', k.kategori, KATEGORILER[k.kategori])}</dd></div>`,
+    k.yazar && `<div><dt>Yazar</dt><dd>${detayRafLinki('yazar', k.yazar)}</dd></div>`,
+    k.yayinevi && `<div><dt>Yayınevi</dt><dd>${detayRafLinki('yayinevi', k.yayinevi)}</dd></div>`,
     k.basim_yili && `<div><dt>Basım yılı</dt><dd>${escapeHtml(k.basim_yili)}</dd></div>`,
     k.durum && `<div><dt>Durum</dt><dd>${escapeHtml(k.durum)}</dd></div>`,
   ].filter(Boolean).join('');
@@ -351,14 +355,17 @@ function detayCiz() {
       <div class="detay-gorsel">${kapak}</div>
       <div class="detay-metin">
         <h1>${escapeHtml(k.ad || 'Adsız kitap')}</h1>
+        <div class="detay-eylem">
+          <p class="detay-fiyat">${fiyat}</p>
+          <button id="btn-detay-sepet" class="btn birincil" type="button">${sepet.some(x => x.id === k.id) ? 'Sepette' : 'Sepete ekle'}</button>
+        </div>
+        ${!fiyatVar(k) ? '<p class="ipucu">Güncel fiyatı WhatsApp’tan sorabilirsin.</p>' : ''}
+        <p class="detay-teslim">WhatsApp’tan ayırt, dükkândan al. Stok durumu dükkân tarafından teyit edilir. <a href="/islem-rehberi.html">Nasıl işler?</a></p>
         ${aciklama ? `<section class="detay-aciklama"><h2>Kitap hakkında</h2><p>${escapeHtml(aciklama)}</p></section>` : ''}
         <section class="detay-nusha"><h2>Bu nüsha</h2>
           ${kunye ? `<dl class="detay-kunye">${kunye}</dl>` : '<p class="ipucu">Bu kayıt için ek künye bilgisi bulunmuyor.</p>'}
           ${k.notlar ? `<p class="detay-not"><strong>Nüsha notu</strong>${escapeHtml(k.notlar)}</p>` : ''}
         </section>
-        <p class="detay-fiyat">${fiyat}</p>
-        ${!fiyatVar(k) ? '<p class="ipucu">Güncel fiyatı WhatsApp’tan sorabilirsin.</p>' : ''}
-        <button id="btn-detay-sepet" class="btn birincil" type="button">${sepet.some(x => x.id === k.id) ? 'Sepette' : 'Sepete ekle'}</button>
       </div>
     </article>
     <div id="detay-kesif" class="kitap-kesfi" hidden></div>`;
@@ -374,6 +381,7 @@ function detayCiz() {
   const ekle = $('#btn-detay-sepet');
   ekle.disabled = sepet.some(x => x.id === k.id);
   ekle.addEventListener('click', () => sepeteEkle(k));
+  document.querySelectorAll('#detay-icerik a[data-rota]').forEach(rotaBagla);
   detayKesfiYaz(k);
 }
 

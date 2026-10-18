@@ -233,7 +233,7 @@ assert.equal(saved.value.kategori, 'roman');
 run("ekleAc();");
 assert.equal(get('#ekle-kategori').value, '');
 run("rol = 'ziyaretci'; detayAc({ id: 'r', ad: 'Roman', kategori: 'roman' }, null);");
-assert.match(get('#detay-icerik').innerHTML, /<dt>Kategori<\/dt><dd>Roman<\/dd>/);
+assert.match(get('#detay-icerik').innerHTML, /<dt>Kategori<\/dt><dd><a[^>]+>Roman<\/a><\/dd>/);
 
 context.descriptionText = 'Birinci satır\n<script>alert(1)</script> & ikinci satır';
 run("detayAc({ id: 'desc', ad: 'Kitap', aciklama: descriptionText, notlar: 'Kapakta çizik', durum: 'İyi' }, null);");
@@ -338,3 +338,23 @@ for (const [query, expected] of [['?islem=kitap-alimi', true], ['', false], ['?i
   assert.equal(vm.runInContext('fiyatTalebiBaglantisi', isolated), expected, query);
 }
 console.log('Form bağlantısı: ziyaretçi açılışı, geri dönüş, tek kullanım, personel ve bilinmeyen işlem geçti.');
+
+// Product metadata uses the existing exact routes and escapes both text and attributes.
+const unsafeName = 'Bir & "İsim" <yazar>';
+context.unsafeName = unsafeName;
+const authorLink = run("detayRafLinki('yazar', unsafeName)");
+assert.match(authorLink, /data-rota/);
+assert.ok(authorLink.includes('&amp;'));
+assert.ok(authorLink.includes('&lt;yazar&gt;'));
+assert.ok(!authorLink.includes('<yazar>'));
+const href = authorLink.match(/href="([^"]+)"/)[1].replaceAll('&amp;', '&');
+assert.equal(helpers.rotaOku(new URL(href, 'https://example.com/').search).deger, unsafeName);
+assert.equal(helpers.rotaOku(new URL(href, 'https://example.com/').search).sirala, 'ad');
+run("seciliKitap={id:'layout',ad:'Uzun kitap',yazar:'A',yayinevi:'B',kategori:'roman',aciklama:'Uzun açıklama',fiyat:null};detayCiz();");
+const adaptedDetail = get('#detay-icerik').innerHTML;
+assert.ok(adaptedDetail.indexOf('detay-eylem') < adaptedDetail.indexOf('detay-aciklama'));
+assert.equal((adaptedDetail.match(/id="btn-detay-sepet"/g)||[]).length, 1, 'Mobile and desktop share one cart action');
+assert.match(adaptedDetail, /Fiyat için sor/);
+assert.match(adaptedDetail, /Stok durumu dükkân tarafından teyit edilir/);
+assert.equal((adaptedDetail.match(/class="detay-raf-link"/g)||[]).length,3);
+console.log('Ürün detayı: güvenli raf bağlantıları, fiyat önceliği, bilinmeyen fiyat ve tek sepet eylemi geçti.');

@@ -1149,3 +1149,18 @@ body.cekmece-acik #ekran-sepet {
 .kesif-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}
 .kesif-kitap{display:flex;flex-direction:column;gap:7px;min-width:0;padding:16px;border:1px solid #d6dfe5;border-radius:5px;background:#fff;color:#19344a;text-align:left;text-decoration:none;font:inherit;cursor:pointer;overflow-wrap:anywhere}
 .kesif-kitap span{font-size:14px;color:#455866}.kesif-kitap:hover{border-color:#19344a}.kesif-kitap:focus-visible{outline:2px solid #19344a;outline-offset:3px}
+
+/* Nüsha ayrıntıları okunurken fiyat ve ayırtma yolu erişilebilir kalsın. */
+.detay-eylem { margin: 24px 0 14px; }
+.detay-eylem .detay-fiyat { margin: 0 0 14px; }
+.detay-eylem .btn.birincil { margin: 0; }
+.detay-teslim { margin: 0 0 26px; color: #455866; font-size: 14px; line-height: 1.6; }
+.detay-teslim a, .detay-raf-link { color: #19344a; text-underline-offset: 3px; }
+.detay-raf-link { display: inline-flex; align-items: center; min-height: 44px; overflow-wrap: anywhere; max-width: 100%; }
+@media (max-width: 700px) {
+  body:has(#ekran-detay:not([hidden])) { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+  .detay-eylem { position: fixed; inset: auto 0 0; z-index: 12; margin: 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: center; background: #fff; border-top: 1px solid #d6dfe5; box-shadow: 0 -4px 16px #19344a12; }
+  .detay-eylem .detay-fiyat { margin: 0; font-size: 22px; overflow-wrap: anywhere; }
+  .detay-eylem .btn { min-width: 0; padding: 8px; }
+  body.cekmece-acik .detay-eylem { visibility: hidden; }
+}
