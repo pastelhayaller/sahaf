@@ -1173,4 +1173,8 @@ body[data-rol="ziyaretci"] .fiyat-filtre { display: flex; flex-wrap: wrap; align
 #fiyat-temizle { background: #fff; color: #19344a; }
 .fiyat-aciklama { flex-basis: 100%; margin: 0; font-size: 13px; line-height: 1.5; color: #455866; }
 .fiyat-aciklama:empty { display: none; }
-@media (max-width: 700px) { .fiyat-filtre { gap: 10px; padding: 12px; } .fiyat-alan { flex-basis: calc(50% - 5px); max-width: none; } }
+@media (max-width: 700px) {
+  body[data-rol="ziyaretci"] .fiyat-filtre { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 12px; }
+  .fiyat-alan { max-width: none; }
+  .fiyat-aciklama { grid-column: 1 / -1; }
+}
