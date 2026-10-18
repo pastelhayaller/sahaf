@@ -309,3 +309,32 @@ await run('detayKesfiYaz(seciliKitap)');releaseOld({kayitlar:[{id:'stale',ad:'Es
 assert.match(get('#detay-kesif').children[0].children[1].children[0].innerHTML,/Güncel/);
 run("db.listele=async()=>({kayitlar:[]});");await run('detayKesfiYaz(seciliKitap)');assert.equal(get('#detay-kesif').hidden,true);
 console.log('Keşif UI: detay açma, kısmi hata, eski yanıt dışlama ve boş alan gizleme geçti.');
+
+// Direct entry uses the existing form only once, after the visitor role is known.
+get('#alim-teklif-form').reset = () => {};
+run(`hesapDugmesiniGuncelle = async () => {}; raflariTazele = async () => {};
+  kuyrukSayisiniTazele = () => {}; db.rolGetir = async () => 'ziyaretci';
+  fiyatTalebiBaglantisi = true;`);
+await run('araEkraniAc()');
+assert.equal(history.state.ekran, 'alim-teklif');
+assert.equal(get('#ekran-alim-teklif').hidden, false);
+assert.equal(offerUploads, 0, 'Opening a direct link must not upload');
+assert.equal(offerInserts, 0, 'Opening a direct link must not submit');
+await step(-1);
+assert.equal(history.state.ekran, 'ara', 'Back from direct form returns to the catalog');
+await run('araEkraniAc()');
+assert.equal(history.state.ekran, 'ara', 'Later session changes must not reopen the form');
+run("fiyatTalebiBaglantisi = true; db.rolGetir = async () => 'yonetici';");
+await run('araEkraniAc()');
+assert.equal(history.state.ekran, 'ara', 'Staff keep their normal start screen');
+assert.equal(run('fiyatTalebiBaglantisi'), false);
+run("db.rolGetir = async () => 'ziyaretci';");
+await run('araEkraniAc()');
+assert.equal(history.state.ekran, 'ara', 'Staff logout must not trigger the old action');
+for (const [query, expected] of [['?islem=kitap-alimi', true], ['', false], ['?islem=bilinmeyen', false]]) {
+  setUrl(`http://localhost/${query}`);
+  const isolated = vm.createContext({...context, window: {...context.window, location}});
+  vm.runInContext(source, isolated);
+  assert.equal(vm.runInContext('fiyatTalebiBaglantisi', isolated), expected, query);
+}
+console.log('Form bağlantısı: ziyaretçi açılışı, geri dönüş, tek kullanım, personel ve bilinmeyen işlem geçti.');

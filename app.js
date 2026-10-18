@@ -23,6 +23,8 @@ let teklifFotograflari = [];
 // boş liste görmek en sık rastlanan sayfalama hatası.
 const liste = { terim: '', sirala: db.VARSAYILAN_SIRALAMA, sayfa: 1 };
 let rota = rotaOku(window.location.search);
+// Açılış bağlantısı oturum kurulunca bir kez işlenir.
+let fiyatTalebiBaglantisi = new URLSearchParams(window.location.search).get('islem') === 'kitap-alimi';
 
 // 'yonetici' (baba + eş) veya 'ziyaretci'. Ziyaretçi sadece görür.
 // Bu değişken arayüzü şekillendirir; asıl kilit Supabase'deki RLS'tir.
@@ -1593,6 +1595,9 @@ async function araEkraniAc() {
   $('#btn-cikis').hidden = db.denemeModu || !yoneticiMi();
   roluUygula();
   await hesapDugmesiniGuncelle();
+  const teklifAc = fiyatTalebiBaglantisi && !yoneticiMi();
+  fiyatTalebiBaglantisi = false;
+  if (teklifAc) return alimTeklifAc();
   if (yoneticiMi()) await raflariTazele();
   await listeyiTazele();
   kuyrukSayisiniTazele();
