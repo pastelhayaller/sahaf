@@ -25,7 +25,7 @@ import { kategoriRehberi, ilgiliKitaplar } from './kesif.js';
 const KOK = dirname(fileURLToPath(import.meta.url));
 const CIKTI = join(KOK, 'vitrin');
 const SITE = 'https://pastelhayaller.com';
-const WHATSAPP = '905369782758';
+const WHATSAPP = '905320668219';
 
 // Google İşletme Profili ile birebir aynı olmalı (ad/adres/telefon tutarlılığı yerel sıralamayı etkiler).
 // index.html'deki JSON-LD de aynı bilgiyi taşır; birini değiştirirsen ötekini de değiştir.
@@ -37,7 +37,7 @@ export const ISLETME = {
   '@id': 'https://pastelhayaller.com/#isletme',
   name: 'Pastelhayaller Sahaf',
   url: 'https://pastelhayaller.com/',
-  telephone: '+90 536 978 27 58',
+  telephone: '+90 532 066 82 19',
   address: {
     '@type': 'PostalAddress',
     streetAddress: 'Piribaba Çamlığı, Bahçelievler Mah., Sanat Sk. No:18',
@@ -254,7 +254,7 @@ ${govde}
 <footer>
   <b>Pastelhayaller Sahaf</b> · Çorum<br>
   <a href="${HARITA}">${ADRES}</a><br>
-  ${SAATLER} · <a href="https://wa.me/${WHATSAPP}">0536 978 27 58 (WhatsApp)</a><br>
+  ${SAATLER} · <a href="https://wa.me/${WHATSAPP}">0532 066 82 19 (WhatsApp)</a><br>
   <a href="${SITE}/">Kitap ara ve sepete ekle</a> · <a href="${SITE}/vitrin/">Tüm kitaplar</a>
 <nav class="bilgi-baglantilari" aria-label="Bilgilendirme">
   <a href="/gizlilik.html">Gizlilik ve kişisel veriler</a>
