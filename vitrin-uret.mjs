@@ -147,6 +147,7 @@ const fiyatYaz = f =>
 // Müşteri uygulamasının (index.html, ziyaretçi teması) renk ve yazı dili; iki yüz tek mağaza.
 const STIL = `
 /* Category guides and lightweight discovery links share the storefront language. */
+.sayfalama{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:24px 0}.sayfalama a,.sayfalama [aria-current]{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:6px 12px;border:1px solid #d6dfe5;border-radius:5px;text-decoration:none}.sayfalama [aria-current]{background:#19344a;color:#fff}
 .kategori-rehber{margin:18px 0 24px;max-width:850px;color:#455866;font-size:15px;line-height:1.65}
 .kategori-rehber p{margin:0 0 10px}
 .kategori-rehber nav{display:flex;gap:8px;flex-wrap:wrap}
@@ -374,7 +375,7 @@ export function kategoriNavigasyonu(gruplar) {
     ` <a href="${SITE}/vitrin/kategori/${key}.html">${kac(ad)} (${kayitlar.length})</a>`).join('')}</nav>`;
 }
 
-export function listeSayfasi(kayitlar, { baslik, aciklama, h1, ustMetin, kanonik = `${SITE}/vitrin/`, kategoriNav = '', rehberHtml = '' } = {}) {
+export function listeSayfasi(kayitlar, { baslik, aciklama, h1, ustMetin, kanonik = `${SITE}/vitrin/`, kategoriNav = '', rehberHtml = '', gezinme = '' } = {}) {
   // Fotoğraflılar önde (sort kararlı: kendi içlerinde A→Z kalır); vitrin gri kutuyla açılmasın.
   const sirali = [...kayitlar].sort((a, b) => !a.k.foto_url - !b.k.foto_url);
   const kartlar = sirali.map(({ k, slug }, i) => `
@@ -391,7 +392,9 @@ ${kategoriNav}
 <h1>${kac(h1 ?? 'Çorum Sahaf — Kitaplarımız')}</h1>
 <p class="yazar">${kac(ustMetin ?? `${kayitlar.length} ikinci el ve nadir kitap · Çorum'daki dükkânımızda satışta`)}</p>
 ${rehberHtml}
-<div class="izgara">${kartlar}</div>`;
+${gezinme}
+<div class="izgara">${kartlar}</div>
+${gezinme}`;
 
   return sayfa({
     baslik: baslik ?? 'Çorum Sahaf — Kitaplarımız · Pastelhayaller Sahaf',
@@ -399,6 +402,42 @@ ${rehberHtml}
     govde, kanonik,
     jsonld: { '@context': 'https://schema.org', ...ISLETME }
   });
+}
+
+// Kitap URL'leri sabit kalır; tam katalog küçük ve taranabilir sayfalara bölünür.
+export const KATALOG_SAYFA_BOYUTU = 96;
+export const katalogUrl = n => n === 1 ? `${SITE}/vitrin/` : `${SITE}/vitrin/sayfa/${n}.html`;
+export function katalogGezinmesi(n, toplam) {
+  if (toplam <= 1) return '';
+  const sayilar = [...new Set([1, toplam, n - 2, n - 1, n, n + 1, n + 2])]
+    .filter(i => i >= 1 && i <= toplam).sort((a, b) => a - b);
+  const link = (i, metin, rel = '') => `<a href="${katalogUrl(i)}"${rel ? ` rel="${rel}"` : ''}>${metin}</a>`;
+  return `<nav class="sayfalama" aria-label="Katalog sayfaları">${n > 1 ? link(n - 1, '← Önceki', 'prev') : ''}` +
+    sayilar.map((i, ix) => (ix && i > sayilar[ix - 1] + 1 ? '<span aria-hidden="true">…</span>' : '') +
+      (i === n ? `<span aria-current="page" aria-label="Sayfa ${i}">${i}</span>` : link(i, i))).join('') +
+    `${n < toplam ? link(n + 1, 'Sonraki →', 'next') : ''}</nav>`;
+}
+
+export function katalogSayfalari(kayitlar) {
+  const sirali = [...kayitlar].sort((a, b) => !a.k.foto_url - !b.k.foto_url);
+  const toplam = Math.max(1, Math.ceil(sirali.length / KATALOG_SAYFA_BOYUTU));
+  const kategoriNav = kategoriNavigasyonu(kategoriGruplari(kayitlar));
+  return Array.from({ length: toplam }, (_, ix) => {
+    const n = ix + 1, kanonik = katalogUrl(n);
+    return { dosya: n === 1 ? 'index.html' : `sayfa/${n}.html`, kanonik,
+      html: listeSayfasi(sirali.slice(ix * KATALOG_SAYFA_BOYUTU, n * KATALOG_SAYFA_BOYUTU), {
+        kanonik, kategoriNav, gezinme: katalogGezinmesi(n, toplam),
+        baslik: `Çorum Sahaf — Kitaplarımız${n > 1 ? ` — Sayfa ${n}` : ''} · Pastelhayaller Sahaf`,
+        h1: `Çorum Sahaf — Kitaplarımız${n > 1 ? ` — Sayfa ${n}` : ''}`,
+        aciklama: `Çorum'da sahaf: Pastelhayaller Sahaf'ta satışta olan ${kayitlar.length} ikinci el ve nadir kitap. Sayfa ${n}/${toplam}. Bahçelievler, Sanat Sokak No:18. WhatsApp'tan ayırt, dükkândan al.`,
+        ustMetin: `${kayitlar.length} ikinci el ve nadir kitap · Sayfa ${n}/${toplam} · Çorum'daki dükkânımızda satışta`
+      }) };
+  });
+}
+
+export function siteHaritasi(urller) {
+  // lastmod isteğe bağlı: gerçek sayfa değişim tarihi izlenmeden üretim gününü yazma.
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...new Set(urller)].map(url => `<url><loc>${kac(url)}</loc></url>`).join('\n')}\n</urlset>`;
 }
 
 export function kategoriSayfasi({ key, ad, kayitlar }, mevcut = Object.keys(KATEGORILER)) {
@@ -444,20 +483,16 @@ async function uret() {
   for (const grup of gruplar) {
     await writeFile(join(CIKTI, 'kategori', `${grup.key}.html`), kategoriSayfasi(grup, gruplar.map(g => g.key)), 'utf8');
   }
-  await writeFile(join(CIKTI, 'index.html'), listeSayfasi(kayitlar, { kategoriNav: kategoriNavigasyonu(gruplar) }), 'utf8');
+  const katalog = katalogSayfalari(kayitlar);
+  await mkdir(join(CIKTI, 'sayfa'), { recursive: true });
+  for (const sayfa of katalog) await writeFile(join(CIKTI, sayfa.dosya), sayfa.html, 'utf8');
 
-  const bugun = new Date().toISOString().slice(0, 10);
-  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url><loc>${SITE}/</loc><lastmod>${bugun}</lastmod></url>
-<url><loc>${SITE}/vitrin/</loc><lastmod>${bugun}</lastmod></url>
-<url><loc>${SITE}/gizlilik.html</loc><lastmod>${bugun}</lastmod></url>
-<url><loc>${SITE}/cerez-politikasi.html</loc><lastmod>${bugun}</lastmod></url>
-<url><loc>${SITE}/islem-rehberi.html</loc><lastmod>${bugun}</lastmod></url>
-<url><loc>${SITE}/iletisim.html</loc><lastmod>${bugun}</lastmod></url>
-${kayitlar.map(r => `<url><loc>${r.kanonik}</loc><lastmod>${bugun}</lastmod></url>`).join('\n')}
-${gruplar.map(({ key }) => `<url><loc>${SITE}/vitrin/kategori/${key}.html</loc><lastmod>${bugun}</lastmod></url>`).join('\n')}
-</urlset>`;
+  const sitemap = siteHaritasi([
+    `${SITE}/`, `${SITE}/gizlilik.html`, `${SITE}/cerez-politikasi.html`,
+    `${SITE}/islem-rehberi.html`, `${SITE}/iletisim.html`,
+    ...katalog.map(s => s.kanonik), ...kayitlar.map(r => r.kanonik),
+    ...gruplar.map(({ key }) => `${SITE}/vitrin/kategori/${key}.html`)
+  ]);
   await writeFile(join(KOK, 'sitemap.xml'), sitemap, 'utf8');
   await writeFile(join(KOK, 'robots.txt'),
     `User-agent: *\nAllow: /\nSitemap: ${SITE}/sitemap.xml\n`, 'utf8');
