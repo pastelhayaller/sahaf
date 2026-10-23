@@ -302,6 +302,24 @@ export function kategoriRehberiHtml(key, mevcut = Object.keys(KATEGORILER)) {
   return '<section class="kategori-rehber" aria-label="Kategori rehberi"><p>' + kac(rehber[0]) + '</p><nav aria-label="İlgili kategoriler">' + rehber[1].filter(k => mevcut.includes(k)).map(k => '<a href="' + SITE + '/vitrin/kategori/' + k + '.html">' + kac(KATEGORILER[k]) + '</a>').join('') + '</nav></section>';
 }
 
+// Aynı baskı iddiası yok: yalnız aynı başlık ve bilinen yazar eşleşen kayıtlar.
+export function digerNushalar(k, kayitlar) {
+  const anahtar = value => String(value ?? '').trim().toLocaleLowerCase('tr-TR');
+  const ad = anahtar(k.ad), yazar = anahtar(k.yazar);
+  if (!ad || !yazar || /^(anonim|kolektif|komisyon|bilinmiyor|belirtilmemiş|yazar (bilinmiyor|belli değil|belirtilmemiş)|[-?])$/.test(yazar)) return '';
+  const gorulen = new Set([String(k.id)]);
+  const digerleri = kayitlar.filter(r => {
+    const id = String(r.k.id);
+    if (gorulen.has(id) || anahtar(r.k.ad) !== ad || anahtar(r.k.yazar) !== yazar) return false;
+    gorulen.add(id); return true;
+  });
+  if (!digerleri.length) return '';
+  return '<section class="diger-nushalar kitap-kesfi"><h2>Diğer nüshalar</h2><p>Aynı başlık ve yazara ait diğer kayıtlar. Yayınevi, basım yılı ve durum bilgilerini karşılaştır; aynı baskı olmayabilir.</p><div class="kesif-grid">' + digerleri.map(({ k: d, slug }) => {
+    const bilgiler = [d.yayinevi, d.basim_yili ? `${d.basim_yili} basımı` : null, d.durum].filter(Boolean).join(' · ');
+    return `<a class="kesif-kitap" href="${SITE}/vitrin/kitap/${kac(slug)}.html"><strong>${kac(d.ad)}</strong><span>Nüsha kodu: ${kac(String(d.id).slice(0, 8))}</span><span>${kac(bilgiler || 'Ek bilgi için nüshanın sayfasını incele.')}</span><span>${kac(fiyatYaz(d.fiyat) ?? 'Fiyat için sor')}</span></a>`;
+  }).join('') + '</div></section>';
+}
+
 export function kitapSayfasi(k, slug, kayitlar = []) {
   const kanonik = `${SITE}/vitrin/kitap/${slug}.html`;
   const fiyat = fiyatYaz(k.fiyat);
@@ -312,7 +330,7 @@ export function kitapSayfasi(k, slug, kayitlar = []) {
   const aciklama = [ozet, k.ad, yazar, k.yayinevi, k.basim_yili, k.durum ? `Durum: ${k.durum}` : null, fiyat, 'Çorum\'daki Pastelhayaller Sahaf\'ta satışta.']
     .filter(Boolean).join(' — ').slice(0, 300);
 
-  const mesaj = encodeURIComponent(`Merhaba, "${k.ad}" kitabı hâlâ var mı?`);
+  const mesaj = encodeURIComponent(`Merhaba, "${k.ad}" kitabının ${String(k.id).slice(0, 8)} kodlu nüshası hâlâ var mı?\n${kanonik}`);
 
   const kategoriBaglantisi = kategoriGecerli(k.kategori)
     ? ` / <a href="${SITE}/vitrin/kategori/${k.kategori}.html">${kac(KATEGORILER[k.kategori])}</a>` : '';
@@ -324,15 +342,17 @@ export function kitapSayfasi(k, slug, kayitlar = []) {
     : '<div class="kapak-yok">Kapak fotoğrafı yakında</div>'}</div>
 <div>
 <h1>${kac(k.ad)}</h1>
+<p class="stok-notu">Nüsha kodu: ${kac(String(k.id).slice(0, 8))}</p>
 ${yazar ? `<p class="yazar">${kac(yazar)}</p>` : ''}
 ${baskiKunyesi}
 ${fiyat ? `<p class="fiyat">${kac(fiyat)}</p>` : ''}
 <a class="dugme" href="https://wa.me/${WHATSAPP}?text=${mesaj}">WhatsApp'tan ayırt</a>
-<p class="stok-notu">Kitap Çorum'daki dükkânımızda; ayırtıp dükkândan teslim alabilirsin. Her kitaptan tek nüsha var.</p>
+<p class="stok-notu">Kitap Çorum'daki dükkânımızda; ayırtıp dükkândan teslim alabilirsin. Her kayıt tek bir nüshayı temsil eder.</p>
 ${kitapAciklamasi ? `<section class="kitap-hakkinda"><h2>Kitap hakkında</h2><p>${kac(kitapAciklamasi)}</p></section>` : ''}
 ${k.notlar ? `<section class="nusha"><h2>Bu nüsha</h2><div class="not">${kac(k.notlar)}</div></section>` : ''}
 </div>
 </div>
+${digerNushalar(k,kayitlar)}
 ${kitapKesfi(k,kayitlar)}`;
 
   // ponytail: fiyat yoksa offers yazmıyoruz — uydurma fiyat structured data'da yalan olur.
