@@ -966,7 +966,7 @@ body[data-rol="ziyaretci"] .iskelet i { display: none; }
   body[data-rol="ziyaretci"] .storefront-promo { grid-template-columns: 1fr; gap: 10px; margin-bottom: 18px; }
   .promo-ana { min-height: 0; padding: 18px; grid-template-columns: minmax(0, 1fr) 100px; gap: 12px; }
   .promo-metin h2 { font-size: 24px; margin-bottom: 15px; }
-  .promo-metin p { display: none; }
+  .promo-metin p { margin-bottom: 14px; font-size: 13px; line-height: 1.45; }
   .promo-kesfet { font-size: 12px; padding: 0 12px; }
   .promo-kapaklar { gap: 4px; }
   body[data-rol="ziyaretci"] .storefront-promo .alim-cagri { padding: 12px 18px; gap: 3px; }

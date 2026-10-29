@@ -198,6 +198,17 @@ context.db.listele = async request => { exactRequest = request; return { kayitla
 await run("rotaAc(rotaOku('?bolum=yazar&ad=Oğuz%20Atay'));");
 assert.equal(exactRequest.yazar, 'Oğuz Atay');
 assert.equal(exactRequest.yayinevi, '');
+let finishBooks;
+context.db.listele = () => new Promise(resolve => { finishBooks = resolve; });
+get('#sonuclar').appendChild(new Element('old-book'));
+get('#ara-durum').textContent = '3348 kitap';
+const loading = run("rotaAc(rotaOku('?bolum=arama&q=Sabahattin'))");
+assert.equal(get('#katalog-baslik').textContent, 'Arama sonuçları');
+assert.equal(get('#ara-durum').textContent, 'Kitaplar yükleniyor…');
+assert.equal(get('#sonuclar').children.some(el => el.tagName === 'old-book'), false);
+finishBooks({ kayitlar: [], toplam: 0, sayfa: 1, sayfaSayisi: 1 });
+await loading;
+context.db.listele = async request => { exactRequest = request; return { kayitlar: [], toplam: 0, sayfa: 1, sayfaSayisi: 1 }; };
 let finishDirectory;
 context.db.dizin = () => new Promise(resolve => { finishDirectory = resolve; });
 const stale = run("rotaAc(rotaOku('?bolum=yazarlar'));");

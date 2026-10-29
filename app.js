@@ -955,7 +955,8 @@ async function listeyiTazele() {
       }
       if (dizinMi) return await dizinYaz(benim);
     }
-    if (!$('#sonuclar').firstChild) iskeletYaz();
+    iskeletYaz();
+    $('#ara-durum').textContent = 'Kitaplar yükleniyor…';
     const filtre = yoneticiMi() ? {} : {
       yazar: rota.bolum === 'yazar' ? rota.deger : '',
       yayinevi: rota.bolum === 'yayinevi' ? rota.deger : '',
