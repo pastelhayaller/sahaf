@@ -1,5 +1,5 @@
 import { fiyatAraligi } from './fiyat.js';
-import * as db from './db.js?v=024';
+import * as db from './db.js?v=025';
 import { kucukKapakUrl, kapakSrcset, telefonDuzenle, kitapFiyatEtiketi, kitapKunye, fiyatVar, sepetOzeti, rezervasyonMetni, rotaOku, rotaUrl, rotaBasligi, KATEGORILER, kategoriGecerli } from './ui-helpers.js?v=035';
 
 import { kategoriRehberi, ilgiliKitaplar } from './kesif.js?v=032';
@@ -1331,8 +1331,13 @@ $('#duzenle-form').addEventListener('submit', async (ev) => {
 });
 
 // --- Silme + geri alma ---------------------------------------------------
-function onaySor(metin, evetFn) {
+function onaySor(metin, evetFn, hayir) {
   $('#onay-metin').textContent = metin;
+  // İsteğe bağlı üçüncü seçenek (ör. "satılmadı"); her çağrıda sıfırlanır.
+  const hayirBtn = $('#onay-hayir');
+  hayirBtn.hidden = !hayir;
+  $('#onay-evet').textContent = (hayir && hayir.evetEtiket) || 'Evet, sil';
+  hayirBtn.onclick = hayir ? () => { history.back(); hayir.fn(); } : null;
   const d = { ekran: (history.state && history.state.ekran) || 'duzenle', onay: true };
   history.pushState(d, '');
   durumUygula(d);
@@ -1343,13 +1348,13 @@ function onaySor(metin, evetFn) {
 
 $('#btn-satildi').addEventListener('click', () => {
   if (!seciliKitap) return;
-  onaySor(`«${seciliKitap.ad}» silinecek. Emin misin?`, async () => {
-    const yedek = { ...seciliKitap };
+  const yedek = { ...seciliKitap };
+  const sil = async (satildi) => {
     try {
-      await db.sil(yedek.id);
+      await db.sil(yedek.id, satildi);
       sonSilinen = yedek;
       history.back();
-      bildir('Kitap silindi', async () => {
+      bildir(satildi ? 'Satıldı olarak kaydedildi' : 'Kitap silindi', async () => {
         try {
           await db.geriKoy(sonSilinen);
           await listeyiTazele();
@@ -1359,7 +1364,9 @@ $('#btn-satildi').addEventListener('click', () => {
     } catch (e) {
       hataGoster('#duzenle-hata', e);
     }
-  });
+  };
+  onaySor(`«${yedek.ad}» satıldı mı?`, () => sil(true),
+    { evetEtiket: 'Evet, satıldı', fn: () => sil(false) });
 });
 
 // --- Giriş / çıkış -------------------------------------------------------

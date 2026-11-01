@@ -389,13 +389,20 @@ export async function guncelle(id, kitap) {
   return data;
 }
 
-export async function sil(id) {
+// satildi: true = satıldı, false = hatalı/mükerrer kayıt, null = bilinmiyor.
+// Kayıt yama-010'daki kitap_sil + tetikleyiciyle silinen_kitaplar'a düşer.
+export async function sil(id, satildi = null) {
   dizinOnbellegi.clear();
   if (denemeModu) {
     yerelYaz(yerelOku().filter(k => k.id !== id));
     return;
   }
-  const { error } = await (await sb()).from(TABLO).delete().eq('id', id);
+  const istemci = await sb();
+  let { error } = await istemci.rpc('kitap_sil', { p_id: id, p_satildi: satildi });
+  // Yama-010 henüz çalıştırılmadıysa eski yola düş: silme bozulmasın.
+  if (error && error.code === 'PGRST202') {
+    ({ error } = await istemci.from(TABLO).delete().eq('id', id));
+  }
   if (error) throw hata(yetkiHatasi(error));
 }
 

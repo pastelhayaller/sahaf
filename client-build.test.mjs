@@ -10,7 +10,7 @@ const assets = [
 
 const app = await readFile('app.min.js', 'utf8');
 await transform(app, { loader: 'js' });
-assert.match(app, /\.\/db\.js\?v=024/);
+assert.match(app, /\.\/db\.js\?v=025/);
 assert.match(app, /\.\/ui-helpers\.js\?v=035/);
 
 for (const [source, minified] of assets) {
