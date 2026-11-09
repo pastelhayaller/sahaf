@@ -1330,6 +1330,24 @@ $('#duzenle-form').addEventListener('submit', async (ev) => {
   }
 });
 
+// Aynı kitaptan bir nüsha daha: kayıtlı halini kopyalar, ekran yerinde kalır
+// ki üç nüsha için üç kez basılabilsin. Kapak URL'si paylaşılır; silme kapağa dokunmaz.
+$('#btn-aynisi').addEventListener('click', async (ev) => {
+  if (!seciliKitap) return;
+  const dugme = ev.currentTarget;
+  dugme.disabled = true; // çift dokunuş iki kopya açmasın
+  hataGizle('#duzenle-hata');
+  try {
+    const { id, ...kopya } = seciliKitap;
+    await db.ekle(kopya);
+    bildir(`✓ «${seciliKitap.ad}» bir nüsha daha eklendi`);
+  } catch (e) {
+    hataGoster('#duzenle-hata', e);
+  } finally {
+    dugme.disabled = false;
+  }
+});
+
 // --- Silme + geri alma ---------------------------------------------------
 function onaySor(metin, evetFn, hayir) {
   $('#onay-metin').textContent = metin;
