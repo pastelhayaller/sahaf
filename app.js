@@ -1153,8 +1153,15 @@ async function kapakUrlHazirla(alan) {
 }
 
 // --- Ekle ---------------------------------------------------------------
+// Kopya modunda form kaynak kitapla dolu açılır; kaydedince düzenlemeye döner.
+let kopyaModu = false;
+
 function ekleAc(onDolguAd = '') {
   if (!yoneticiMi()) return; // Ziyaretçi bu ekrana hiç giremez.
+  kopyaModu = false;
+  $('#ekle-baslik').textContent = 'Kitap ekle';
+  $('#ekle-gonder').textContent = 'Kaydet';
+  $('#ekle-kopya-ipucu').hidden = true;
   hataGizle('#ekle-hata');
   $('#ekle-ad').value = onDolguAd;
   $('#ekle-yazar').value = '';
@@ -1187,6 +1194,12 @@ $('#ekle-form').addEventListener('submit', async (ev) => {
       foto_url: await kapakUrlHazirla('ekle'),
     };
     await db.ekle(kitap);
+    if (kopyaModu) {
+      kopyaModu = false;
+      bildir('✓ Nüsha eklendi');
+      history.back(); // kaynak kitabın düzenleme ekranına dön
+      return;
+    }
     // Raf DOLU kalır: aynı rafa arka arkaya giriş için.
     $('#ekle-ad').value = '';
     $('#ekle-yazar').value = '';
@@ -1330,22 +1343,28 @@ $('#duzenle-form').addEventListener('submit', async (ev) => {
   }
 });
 
-// Aynı kitaptan bir nüsha daha: kayıtlı halini kopyalar, ekran yerinde kalır
-// ki üç nüsha için üç kez basılabilsin. Kapak URL'si paylaşılır; silme kapağa dokunmaz.
-$('#btn-aynisi').addEventListener('click', async (ev) => {
-  if (!seciliKitap) return;
-  const dugme = ev.currentTarget;
-  dugme.disabled = true; // çift dokunuş iki kopya açmasın
-  hataGizle('#duzenle-hata');
-  try {
-    const { id, ...kopya } = seciliKitap;
-    await db.ekle(kopya);
-    bildir(`✓ «${seciliKitap.ad}» bir nüsha daha eklendi`);
-  } catch (e) {
-    hataGoster('#duzenle-hata', e);
-  } finally {
-    dugme.disabled = false;
-  }
+// Aynı kitaptan bir nüsha daha: Ekle formu bu kitabın bilgileriyle dolu açılır.
+// Durumu/fiyatı farklı olabilir; kullanıcı gözden geçirip kendisi ekler.
+// Kapak URL'si paylaşılır; silme kapak dosyasına dokunmaz.
+$('#btn-aynisi').addEventListener('click', () => {
+  const k = seciliKitap;
+  if (!k) return;
+  ekleAc(k.ad || '');
+  kopyaModu = true;
+  $('#ekle-baslik').textContent = 'Aynısından ekle';
+  $('#ekle-gonder').textContent = 'Bu nüshayı ekle';
+  $('#ekle-kopya-ipucu').hidden = false;
+  $('#ekle-yazar').value = k.yazar || '';
+  $('#ekle-raf').value = k.raf || '';
+  $('#ekle-fiyat').value = k.fiyat == null ? '' : k.fiyat;
+  $('#ekle-notlar').value = k.notlar || '';
+  $('#ekle-yayinevi').value = k.yayinevi || '';
+  $('#ekle-basim-yili').value = k.basim_yili == null ? '' : k.basim_yili;
+  $('#ekle-durum').value = k.durum || '';
+  $('#ekle-kategori').value = kategoriGecerli(k.kategori) ? k.kategori : '';
+  $('#ekle-aciklama').value = k.aciklama || '';
+  kapakTaslaginiSifirla('ekle', k.foto_url || null);
+  $('#ekle-durum').focus();
 });
 
 // --- Silme + geri alma ---------------------------------------------------

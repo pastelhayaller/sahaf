@@ -306,10 +306,11 @@
 <section id="ekran-ekle" class="ekran" hidden>
   <header class="baslik">
     <button class="btn sade" type="button" data-geri>‹ Geri</button>
-    <h2>Kitap ekle</h2>
+    <h2 id="ekle-baslik">Kitap ekle</h2>
   </header>
 
   <form id="ekle-form" class="form" novalidate>
+    <p id="ekle-kopya-ipucu" class="ipucu" hidden>Bilgiler kopyalandı. Bu nüshada farklı olanı (durum, fiyat, not, kapak) değiştir, sonra ekle.</p>
     <label for="ekle-ad">Kitap adı *</label>
     <input id="ekle-ad" name="ad" required autocomplete="off">
 
@@ -362,7 +363,7 @@
       <p class="ipucu">Telefonla çekebilir veya başlık/yazara göre öneri alabilirsin. Öneriyi kaydetmeden önce kontrol et.</p>
     </fieldset>
 
-    <button class="btn birincil" type="submit">Kaydet</button>
+    <button id="ekle-gonder" class="btn birincil" type="submit">Kaydet</button>
     <p id="ekle-hata" class="hata" hidden></p>
   </form>
 </section>
@@ -519,7 +520,7 @@
 <button type="button" data-analiz-tercihi>Çerez tercihleri</button>
 </footer>
 
-<script type="module" src="app.min.js?v=039"></script>
+<script type="module" src="app.min.js?v=040"></script>
 <script src="/analiz.js?v=001" defer></script>
 </body>
 </html>
